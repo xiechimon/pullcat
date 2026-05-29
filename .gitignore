@@ -1,0 +1,49 @@
+# Build
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Gradle
+.gradle/
+!gradle-wrapper.jar
+
+# Maven
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbs.db (Windows)
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
+
+# OpenCode / OpenSpec
+.opencode/
+.opsx/
+openspec/
+pullcat-server/src/main/resources/prompts
