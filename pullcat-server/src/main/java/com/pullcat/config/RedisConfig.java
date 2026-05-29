@@ -10,44 +10,42 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * Redis 配置类，负责创建 RedisTemplate 及自定义序列化所需的 ObjectMapper Bean。
- * 使用 JSON 格式序列化值，Key 采用字符串序列化。
+ * Redis 配置类，用于注册自定义 ObjectMapper 与 RedisTemplate Bean。
  */
 @Configuration
 public class RedisConfig {
 
     /**
-     * 创建 Redis 专用的 ObjectMapper Bean，注册 Java 8 时间模块以支持 LocalDateTime 等类型。
+     * 创建兼容 Java 8 时间类型的 ObjectMapper Bean。
      *
-     * @return 配置了 JavaTimeModule 的 ObjectMapper 实例
+     * @return 注册了 JavaTimeModule 的 ObjectMapper 实例
      */
     @Bean
     public ObjectMapper redisObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
+        return new ObjectMapper().registerModule(new JavaTimeModule());
     }
 
     /**
-     * 配置 RedisTemplate，使用 JSON 序列化器存储对象，Key 使用字符串序列化。
+     * 创建 RedisTemplate Bean，使用 JSON 序列化值、字符串序列化键。
      *
      * @param factory      Redis 连接工厂
-     * @param objectMapper 用于 JSON 序列化的 ObjectMapper（由 {@link #redisObjectMapper()} 提供）
-     * @return 配置完成的 RedisTemplate 实例
+     * @param objectMapper 自定义 ObjectMapper
+     * @return 配置好的 RedisTemplate 实例
      */
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(
-            RedisConnectionFactory factory, ObjectMapper objectMapper) {
-
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
-
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(serializer);
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(serializer);
+
+        Jackson2JsonRedisSerializer<Object> valueSerializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+
+        template.setKeySerializer(keySerializer);
+        template.setHashKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
         template.afterPropertiesSet();
+
         return template;
     }
 }
