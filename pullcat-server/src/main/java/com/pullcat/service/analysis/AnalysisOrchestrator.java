@@ -6,12 +6,16 @@ import com.pullcat.service.llm.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * 分析编排器，负责完整的 PR 审查流程：拉取数据、构建上下文、执行五个分析任务。
+ * 分析编排器，负责完整的 PR 审查流程：拉取数据、构建上下文、执行五个分析任务，
+ * 并通过 SSE 实时推送进度。
  */
 @Slf4j
 @Service
@@ -20,23 +24,23 @@ public class AnalysisOrchestrator {
     private final GitHubApiService gitHubApiService;
     private final PromptLoader promptLoader;
     private final ContextBuilder contextBuilder;
-    private final ResultAggregator resultAggregator;
+    private final ReviewRepository reviewRepository;
     private final ChatClient chatClient;
 
     public AnalysisOrchestrator(GitHubApiService gitHubApiService,
                                 PromptLoader promptLoader,
                                 ContextBuilder contextBuilder,
-                                ResultAggregator resultAggregator,
+                                ReviewRepository reviewRepository,
                                 ChatClient chatClient) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
-        this.resultAggregator = resultAggregator;
+        this.reviewRepository = reviewRepository;
         this.chatClient = chatClient;
     }
 
     /**
-     * 执行完整的 PR 审查流程，返回包含所有分析结果的 ReviewSession。
+     * 执行完整的 PR 审查流程，结果保存到 Redis。
      */
     public ReviewSession startReview(String prUrl) {
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
@@ -44,27 +48,119 @@ public class AnalysisOrchestrator {
         ReviewSession session = new ReviewSession();
         session.setId(UUID.randomUUID().toString());
         session.setPrUrl(prUrl);
+        session.setStatus(SessionStatus.FETCHING);
+        reviewRepository.save(session);
 
         PRData prData = gitHubApiService.fetchPRData(parsed).block();
         session.setPrMetadata(prData.getMetadata());
+        session.setStatus(SessionStatus.ANALYZING);
+        reviewRepository.save(session);
 
         Map<String, String> variables = contextBuilder.buildVariables(
                 prData.getMetadata(), prData.getFileTree(), prData.getFiles());
 
-        session.getAnalyses().put("summary", executeTask(AnalysisType.SUMMARY, variables));
-        session.getAnalyses().put("risk", executeTask(AnalysisType.RISK, variables));
-        session.getAnalyses().put("quality", executeTask(AnalysisType.QUALITY, variables));
-        session.getAnalyses().put("consistency", executeTask(AnalysisType.CONSISTENCY, variables));
-        session.getAnalyses().put("testing", executeTask(AnalysisType.TESTING, variables));
+        StreamContext ctx = StreamRegistry.get(session.getId());
+
+        session.getAnalyses().put("summary", executeTask(AnalysisType.SUMMARY, variables, ctx));
+        session.getAnalyses().put("risk", executeTask(AnalysisType.RISK, variables, ctx));
+        session.getAnalyses().put("quality", executeTask(AnalysisType.QUALITY, variables, ctx));
+        session.getAnalyses().put("consistency", executeTask(AnalysisType.CONSISTENCY, variables, ctx));
+        session.getAnalyses().put("testing", executeTask(AnalysisType.TESTING, variables, ctx));
+
+        session.setStatus(SessionStatus.COMPLETED);
+        reviewRepository.save(session);
+
+        if (ctx != null) {
+            try {
+                ctx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+            } catch (IOException e) {
+                log.debug("SSE send error", e);
+            }
+        }
 
         return session;
     }
 
-    private AnalysisResult executeTask(AnalysisType type, Map<String, String> variables) {
+    private AnalysisResult executeTask(AnalysisType type, Map<String, String> variables, StreamContext ctx) {
         AnalysisTask task = createTask(type);
         String template = promptLoader.loadTemplate(type.getTemplateName());
         String prompt = promptLoader.populateTemplate(template, variables);
-        return task.execute(prompt).block();
+
+        AnalysisResult result = task.execute(prompt).block();
+
+        if (ctx != null) {
+            emitResult(ctx, type.name().toLowerCase(), result);
+        }
+
+        return result;
+    }
+
+    private void emitResult(StreamContext ctx, String taskName, AnalysisResult result) {
+        try {
+            ctx.emitter().send(SseEmitter.event()
+                    .name("task_progress")
+                    .data(Map.of("task", taskName, "status", result.getStatus().name().toLowerCase(),
+                            "model", result.getModel() != null ? result.getModel() : "",
+                            "timestamp", Instant.now().toString())));
+
+            ctx.emitter().send(SseEmitter.event().name("task_result").data(result));
+        } catch (IOException e) {
+            log.debug("SSE send error for {}: {}", taskName, e.getMessage());
+        }
+    }
+
+    /**
+     * 将审查结果发布到 GitHub PR。
+     */
+    public ReviewSession publishReview(String reviewId) {
+        ReviewSession session = reviewRepository.findById(reviewId);
+        if (session == null) {
+            throw new IllegalArgumentException("Review session not found: " + reviewId);
+        }
+
+        GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
+        String summary = buildPublishSummary(session);
+
+        Long commentId = gitHubApiService.publishReview(parsed, summary).block();
+        session.setStatus(SessionStatus.PUBLISHED);
+        session.setPublishedCommentId(commentId);
+        reviewRepository.save(session);
+
+        return session;
+    }
+
+    private String buildPublishSummary(ReviewSession session) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("## AI Code Review\n\n");
+
+        AnalysisResult summaryResult = session.getAnalyses().get("summary");
+        if (summaryResult != null && summaryResult.getContent() != null) {
+            sb.append("### Summary\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
+        }
+
+        sb.append("### Issues Overview\n\n| Severity | File | Line | Title |\n|----------|------|------|-------|\n");
+        for (AnalysisResult result : session.getAnalyses().values()) {
+            if (result.getIssues() != null) {
+                for (Issue issue : result.getIssues()) {
+                    sb.append("| ").append(issue.getSeverity()).append(" | ")
+                            .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
+                            .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
+                            .append(issue.getTitle()).append(" |\n");
+                }
+            }
+        }
+        sb.append("\n---\n*Generated by [pullcat](https://github.com)*");
+        return sb.toString();
+    }
+
+    private String extractSummaryText(String content) {
+        try {
+            String json = com.pullcat.service.llm.JsonOutputParser.extractJson(content);
+            var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+            return node.has("summary") ? node.get("summary").asText("") : content;
+        } catch (Exception e) {
+            return content;
+        }
     }
 
     private AnalysisTask createTask(AnalysisType type) {
