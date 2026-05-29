@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.pullcat.config.GitHubConfig;
 import com.pullcat.model.FileContent;
 import com.pullcat.model.GitHubFile;
+import com.pullcat.model.PRData;
 import com.pullcat.model.PRMetadata;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +113,33 @@ public class GitHubApiService {
         meta.setAdditions(json.path("additions").asInt(0));
         meta.setDeletions(json.path("deletions").asInt(0));
         return meta;
+    }
+
+    /**
+     * 一次性获取 PR 的完整数据（元数据 + diff + 文件内容 + 目录树）。
+     */
+    public Mono<PRData> fetchPRData(PRUrl prUrl) {
+        return Mono.zip(
+                fetchPRMetadata(prUrl),
+                fetchDiff(prUrl),
+                fetchChangedFiles(prUrl),
+                fetchFileTree(prUrl)
+        ).flatMap(tuple -> {
+            PRMetadata metadata = tuple.getT1();
+            String diff = tuple.getT2();
+            List<GitHubFile> changedFiles = tuple.getT3();
+            String fileTree = tuple.getT4();
+            return fetchFileContents(prUrl, changedFiles)
+                    .collectList()
+                    .map(fileContents -> {
+                        PRData prData = new PRData();
+                        prData.setMetadata(metadata);
+                        prData.setDiff(diff);
+                        prData.setFiles(fileContents);
+                        prData.setFileTree(fileTree);
+                        return prData;
+                    });
+        });
     }
 
     /**
