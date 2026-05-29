@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pullcat.model.PRMetadata;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -113,5 +117,44 @@ class GitHubApiServiceTest {
         assertThat(meta.getAdditions()).isEqualTo(10);
         assertThat(meta.getDeletions()).isEqualTo(0);
         assertThat(meta.getDescription()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "image.png", "photo.jpg", "icon.svg", "doc.pdf",
+            "archive.zip", "binary.exe", "font.ttf",
+            "lib.jar", "data.db", "package-lock.json", "yarn.lock"
+    })
+    void shouldExcludeBinaryFiles(String filename) throws Exception {
+        assertThat(invokeShouldExclude(filename)).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "src/main/Main.java", "README.md", "build.gradle",
+            "pom.xml", "src/index.ts", "test.py", "main.go"
+    })
+    void shouldNotExcludeSourceFiles(String filename) throws Exception {
+        assertThat(invokeShouldExclude(filename)).isFalse();
+    }
+
+    @Test
+    void shouldExcludeGeneratedPaths() throws Exception {
+        assertThat(invokeShouldExclude("target/classes/Foo.class")).isTrue();
+        assertThat(invokeShouldExclude("node_modules/lodash/index.js")).isTrue();
+        assertThat(invokeShouldExclude("dist/bundle.js")).isTrue();
+        assertThat(invokeShouldExclude("build/output.txt")).isTrue();
+    }
+
+    @Test
+    void shouldExcludeDotFiles() throws Exception {
+        assertThat(invokeShouldExclude(".gitignore")).isTrue();
+        assertThat(invokeShouldExclude(".env")).isTrue();
+    }
+
+    private boolean invokeShouldExclude(String filename) throws Exception {
+        Method method = GitHubApiService.class.getDeclaredMethod("shouldExcludeFile", String.class);
+        method.setAccessible(true);
+        return (boolean) method.invoke(service, filename);
     }
 }
