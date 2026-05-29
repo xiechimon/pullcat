@@ -2,20 +2,25 @@ package com.pullcat.service.github;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.pullcat.config.GitHubConfig;
+import com.pullcat.model.FileContent;
+import com.pullcat.model.GitHubFile;
 import com.pullcat.model.PRMetadata;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * GitHub API 服务，封装与 GitHub REST API 的交互逻辑。
  * <p>
- * 提供 PR URL 解析以及 PR 元数据拉取功能。所有 API 调用均以响应式（Mono）方式返回。
+ * 提供 PR URL 解析、PR 元数据拉取、diff 获取、变更文件内容和目录树获取等功能。
+ * 所有 API 调用均以响应式（Mono/Flux）方式返回。
  */
 @Slf4j
 @Service
@@ -23,6 +28,23 @@ public class GitHubApiService {
 
     private static final Pattern PR_URL_PATTERN =
             Pattern.compile("https?://github\\.com/([^/]+)/([^/]+)/pull/(\\d+).*");
+
+    private static final Set<String> BINARY_EXTENSIONS = Set.of(
+            "png", "jpg", "jpeg", "gif", "bmp", "ico", "svg",
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            "zip", "tar", "gz", "rar", "7z",
+            "exe", "dll", "so", "dylib",
+            "mp3", "mp4", "avi", "mov", "wav",
+            "ttf", "otf", "woff", "woff2", "eot",
+            "jar", "war", "ear", "class",
+            "db", "sqlite", "sqlite3",
+            "lock", "sum"
+    );
+
+    private static final String[] GENERATED_PATH_PATTERNS = {
+            "generated/", "generated-src/", "target/", "build/", "dist/",
+            "node_modules/", ".git/", "__pycache__/", "vendor/"
+    };
 
     private final WebClient webClient;
 
@@ -93,9 +115,138 @@ public class GitHubApiService {
     }
 
     /**
+     * 获取 PR 的 diff 内容（unified diff 格式）。
+     *
+     * @param prUrl 解析后的 PR URL 信息
+     * @return 包含 unified diff 文本的 {@code Mono<String>}
+     */
+    public Mono<String> fetchDiff(PRUrl prUrl) {
+        return webClient.get()
+                .uri("/repos/{owner}/{repo}/pulls/{number}", prUrl.owner(), prUrl.repo(), prUrl.number())
+                .header("Accept", "application/vnd.github.v3.diff")
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    /**
+     * 获取 PR 中变更的文件列表。
+     *
+     * @param prUrl 解析后的 PR URL 信息
+     * @return 包含变更文件列表的 {@code Mono<List<GitHubFile>>}
+     */
+    public Mono<List<GitHubFile>> fetchChangedFiles(PRUrl prUrl) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/repos/{owner}/{repo}/pulls/{number}/files")
+                        .queryParam("per_page", 100)
+                        .build(prUrl.owner(), prUrl.repo(), prUrl.number()))
+                .retrieve()
+                .bodyToFlux(GitHubFile.class)
+                .collectList();
+    }
+
+    /**
+     * 批量获取变更文件的完整内容，自动过滤二进制文件和生成目录。
+     * 单个文件获取失败时返回占位文本，不中断整体流程。
+     *
+     * @param prUrl        解析后的 PR URL 信息
+     * @param changedFiles PR 中变更的文件列表
+     * @return 包含文件内容的 {@code Flux<FileContent>} 响应式流
+     */
+    public Flux<FileContent> fetchFileContents(PRUrl prUrl, List<GitHubFile> changedFiles) {
+        return Flux.fromIterable(changedFiles)
+                .filter(file -> !shouldExcludeFile(file.getFilename()))
+                .flatMap(file -> fetchSingleFileContent(prUrl, file)
+                        .map(content -> new FileContent(file.getFilename(), content, ""))
+                        .onErrorResume(e -> {
+                            log.warn("Failed to fetch content for {}: {}", file.getFilename(), e.getMessage());
+                            return Mono.just(new FileContent(file.getFilename(), "[Content unavailable]", ""));
+                        }));
+    }
+
+    private Mono<String> fetchSingleFileContent(PRUrl prUrl, GitHubFile file) {
+        return webClient.get()
+                .uri("/repos/{owner}/{repo}/contents/{path}?ref={ref}",
+                        prUrl.owner(), prUrl.repo(), file.getFilename(), prUrl.ref())
+                .header("Accept", "application/vnd.github.v3.raw")
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.just("[Binary or large file - content not fetched]"));
+    }
+
+    /**
+     * 获取仓库的完整目录树结构（递归模式），按目录分组排列。
+     *
+     * @param prUrl 解析后的 PR URL 信息
+     * @return 包含格式化目录树字符串的 {@code Mono<String>}
+     */
+    public Mono<String> fetchFileTree(PRUrl prUrl) {
+        return webClient.get()
+                .uri("/repos/{owner}/{repo}/git/trees/{ref}?recursive=1",
+                        prUrl.owner(), prUrl.repo(), prUrl.headRef())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(json -> {
+                    JsonNode tree = json.path("tree");
+                    if (tree.isMissingNode() || !tree.isArray()) {
+                        return "File tree unavailable";
+                    }
+
+                    Map<String, List<String>> dirMap = new TreeMap<>();
+                    for (JsonNode node : tree) {
+                        String path = node.path("path").asText("");
+                        String type = node.path("type").asText("");
+                        if (!path.isEmpty() && "blob".equals(type)) {
+                            String dir = path.contains("/") ? path.substring(0, path.lastIndexOf('/')) : ".";
+                            dirMap.computeIfAbsent(dir, k -> new ArrayList<>()).add(path);
+                        }
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+                    for (Map.Entry<String, List<String>> entry : dirMap.entrySet()) {
+                        sb.append(entry.getKey()).append("/\n");
+                        for (String file : entry.getValue()) {
+                            String name = file.substring(file.lastIndexOf('/') + 1);
+                            sb.append("  ").append(name).append("\n");
+                        }
+                        sb.append("\n");
+                    }
+                    return sb.toString();
+                })
+                .onErrorReturn("File tree unavailable");
+    }
+
+    /**
+     * 判断文件是否应被排除（二进制、生成目录或特殊文件）。
+     */
+    boolean shouldExcludeFile(String filename) {
+        String lower = filename.toLowerCase();
+        int dotIndex = lower.lastIndexOf('.');
+        if (dotIndex > 0) {
+            String ext = lower.substring(dotIndex + 1);
+            if (BINARY_EXTENSIONS.contains(ext)) {
+                return true;
+            }
+        }
+        for (String pattern : GENERATED_PATH_PATTERNS) {
+            if (lower.contains(pattern)) {
+                return true;
+            }
+        }
+        String name = lower.substring(lower.lastIndexOf('/') + 1);
+        return name.startsWith(".") || "package-lock.json".equals(name) || "yarn.lock".equals(name);
+    }
+
+    /**
      * 解析后的 GitHub PR URL 信息。
      */
     public record PRUrl(String owner, String repo, int number) {
+        public String ref() {
+            return "heads/" + number;
+        }
 
+        public String headRef() {
+            return number > 0 ? String.valueOf(number) : "main";
+        }
     }
 }
