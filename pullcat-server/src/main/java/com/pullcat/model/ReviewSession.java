@@ -20,6 +20,10 @@ public class ReviewSession {
     private PRMetadata prMetadata;
     /** 各分析类型的执行结果 */
     private Map<String, AnalysisResult> analyses = new LinkedHashMap<>();
+    /** 当前会话状态 */
+    private SessionStatus status;
     /** 创建时间 */
     private Instant createdAt = Instant.now();
+    /** GitHub PR Review 评论 ID（发布后填充） */
+    private Long publishedCommentId;
 }
