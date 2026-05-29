@@ -39,11 +39,14 @@ bin/
 Thumbs.db
 ehthumbs.db
 
-# Logs
-*.log
-
 # OpenCode / OpenSpec
 .opencode/
 .opsx/
 openspec/
 pullcat-server/src/main/resources/prompts
+
+# web
+pullcat-web
+
+# Environment
+.env
