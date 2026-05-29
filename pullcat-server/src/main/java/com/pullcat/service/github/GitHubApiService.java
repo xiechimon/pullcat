@@ -237,6 +237,65 @@ public class GitHubApiService {
         return name.startsWith(".") || "package-lock.json".equals(name) || "yarn.lock".equals(name);
     }
 
+    // ─── 阶段 4：发布 PR Review ─────────────────────────────────
+
+    /**
+     * 发布 PR 审查评论到 GitHub，支持摘要正文和可选的行级 inline 评论。
+     *
+     * @param prUrl       解析后的 PR URL 信息
+     * @param summaryBody 审查摘要正文（Markdown 格式）
+     * @param comments    行级评论列表，file 或 line 为 null 的评论将被过滤
+     * @return 包含 GitHub Review ID 的 {@code Mono<Long>}
+     */
+    public Mono<Long> publishReviewWithComments(PRUrl prUrl, String summaryBody, List<ReviewComment> comments) {
+        Map<String, Object> body = buildReviewBody(summaryBody, comments);
+
+        return webClient.post()
+                .uri("/repos/{owner}/{repo}/pulls/{number}/reviews",
+                        prUrl.owner(), prUrl.repo(), prUrl.number())
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(json -> json.path("id").asLong());
+    }
+
+    /**
+     * 构建 PR Review 请求体，包含 event、body 和可选的 inline comments 数组。
+     */
+    Map<String, Object> buildReviewBody(String summaryBody, List<ReviewComment> comments) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("event", "COMMENT");
+        body.put("body", summaryBody);
+
+        if (!comments.isEmpty()) {
+            List<Map<String, Object>> commentList = comments.stream()
+                    .filter(c -> c.file() != null && c.line() != null)
+                    .map(c -> {
+                        Map<String, Object> cm = new LinkedHashMap<>();
+                        cm.put("path", c.file());
+                        cm.put("line", c.line());
+                        cm.put("side", "RIGHT");
+                        cm.put("body", c.body());
+                        return cm;
+                    })
+                    .toList();
+            body.put("comments", commentList);
+        }
+        return body;
+    }
+
+    /**
+     * 仅发布摘要正文（无行级评论）的便捷方法。
+     */
+    public Mono<Long> publishReview(PRUrl prUrl, String summaryBody) {
+        return publishReviewWithComments(prUrl, summaryBody, List.of());
+    }
+
+    /**
+     * 行级审查评论，指定文件路径、行号和评论内容。
+     */
+    public record ReviewComment(String file, Integer line, String body) {}
+
     /**
      * 解析后的 GitHub PR URL 信息。
      */
