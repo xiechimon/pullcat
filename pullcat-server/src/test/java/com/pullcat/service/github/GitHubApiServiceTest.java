@@ -8,6 +8,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -156,5 +158,61 @@ class GitHubApiServiceTest {
         Method method = GitHubApiService.class.getDeclaredMethod("shouldExcludeFile", String.class);
         method.setAccessible(true);
         return (boolean) method.invoke(service, filename);
+    }
+
+    @Test
+    void reviewCommentRecord() {
+        GitHubApiService.ReviewComment comment = new GitHubApiService.ReviewComment(
+                "src/main/Foo.java", 42, "可能存在空指针");
+
+        assertThat(comment.file()).isEqualTo("src/main/Foo.java");
+        assertThat(comment.line()).isEqualTo(42);
+        assertThat(comment.body()).isEqualTo("可能存在空指针");
+    }
+
+    @Test
+    void buildReviewBodyWithoutComments() {
+        Map<String, Object> body = service.buildReviewBody("## AI Review\n\nLGTM", List.of());
+
+        assertThat(body.get("event")).isEqualTo("COMMENT");
+        assertThat(body.get("body")).isEqualTo("## AI Review\n\nLGTM");
+        assertThat(body.containsKey("comments")).isFalse();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildReviewBodyWithComments() {
+        List<GitHubApiService.ReviewComment> comments = List.of(
+                new GitHubApiService.ReviewComment("src/Foo.java", 10, "NPE risk"),
+                new GitHubApiService.ReviewComment("src/Bar.java", 20, "missing validation")
+        );
+
+        Map<String, Object> body = service.buildReviewBody("## Summary", comments);
+
+        assertThat(body.get("event")).isEqualTo("COMMENT");
+        assertThat(body.containsKey("comments")).isTrue();
+
+        List<Map<String, Object>> commentList = (List<Map<String, Object>>) body.get("comments");
+        assertThat(commentList).hasSize(2);
+        assertThat(commentList.get(0).get("path")).isEqualTo("src/Foo.java");
+        assertThat(commentList.get(0).get("line")).isEqualTo(10);
+        assertThat(commentList.get(0).get("side")).isEqualTo("RIGHT");
+        assertThat(commentList.get(0).get("body")).isEqualTo("NPE risk");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void buildReviewBodyFiltersNullFileAndLine() {
+        List<GitHubApiService.ReviewComment> comments = List.of(
+                new GitHubApiService.ReviewComment(null, 10, "no file"),
+                new GitHubApiService.ReviewComment("src/Foo.java", null, "no line"),
+                new GitHubApiService.ReviewComment("src/Valid.java", 30, "valid")
+        );
+
+        Map<String, Object> body = service.buildReviewBody("## Summary", comments);
+
+        List<Map<String, Object>> commentList = (List<Map<String, Object>>) body.get("comments");
+        assertThat(commentList).hasSize(1);
+        assertThat(commentList.get(0).get("path")).isEqualTo("src/Valid.java");
     }
 }
