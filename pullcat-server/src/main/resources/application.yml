@@ -1,3 +1,41 @@
 spring:
   application:
     name: pullcat
+
+  # --- AI 模型配置 ---
+  # 需要 DeepSeek API Key，获取地址：https://platform.deepseek.com/api_keys
+  ai:
+    openai:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+
+  # --- Redis 配置 ---
+  # Redis 用于存储 Review 会话状态（自动过期）。
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# =============================================================================
+# pullcat 自定义配置
+# =============================================================================
+
+pullcat:
+  # --- GitHub 配置 ---
+  github:
+    # Personal Access Token，需要 repo 权限。
+    # 生成地址：https://github.com/settings/tokens
+    # 私有仓库需要 repo 权限，公开仓库需要 public_repo 权限
+    token: ${GITHUB_TOKEN}
+
+  # --- Review 会话设置 ---
+  review:
+    # Review 结果在 Redis 中的保留天数
+    session-ttl-days: 7
+
+# --- 服务器配置 ---
+server:
+  port: 8080
