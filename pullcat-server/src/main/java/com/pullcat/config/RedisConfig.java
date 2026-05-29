@@ -12,6 +12,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
+    /**
+     * 创建 Redis 专用的 ObjectMapper Bean，注册 Java 8 时间模块以支持 LocalDateTime 等类型。
+     */
     @Bean
     public ObjectMapper redisObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -19,6 +22,9 @@ public class RedisConfig {
         return mapper;
     }
 
+    /**
+     * 配置 RedisTemplate，使用 JSON 序列化器存储对象，Key 使用字符串序列化。
+     */
     @Bean
     public RedisTemplate<String, Object> redisTemplate(
             RedisConnectionFactory factory, ObjectMapper objectMapper) {

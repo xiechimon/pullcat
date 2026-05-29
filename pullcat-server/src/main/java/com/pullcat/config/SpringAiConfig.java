@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SpringAiConfig {
 
+    /**
+     * 创建 Spring AI 聊天客户端 Bean，用于与大语言模型交互。
+     */
     @Bean
     public ChatClient chatClient(OpenAiChatModel openAiChatModel) {
         return ChatClient.builder(openAiChatModel).build();

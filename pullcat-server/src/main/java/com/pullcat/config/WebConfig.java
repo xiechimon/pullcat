@@ -11,6 +11,9 @@ import java.util.List;
 @Configuration
 public class WebConfig {
 
+    /**
+     * 配置 CORS 过滤器，允许本地前端开发时的跨域请求。
+     */
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
