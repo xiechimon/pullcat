@@ -34,9 +34,9 @@ pullcat:
   # --- LLM 模型配置 ---
   llm:
     # 轻量模型：用于摘要、测试覆盖等快速分析
-    light-model: deepseek-chat
+    light-model: deepseek-v4-flash
     # 重量模型：用于风险、质量、一致性等深度分析
-    heavy-model: deepseek-reasoner
+    heavy-model: deepseek-v4-flash
 
   # --- Review 会话设置 ---
   review:

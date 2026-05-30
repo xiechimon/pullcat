@@ -23,6 +23,13 @@ public class SpringAiConfig {
     private String heavyModel;
 
     @Bean
+    public OpenAiApi openAiApi(
+            @Value("${spring.ai.openai.api-key}") String apiKey,
+            @Value("${spring.ai.openai.base-url}") String baseUrl) {
+        return new OpenAiApi(baseUrl, apiKey);
+    }
+
+    @Bean
     @Primary
     @Qualifier("lightChatModel")
     public OpenAiChatModel lightChatModel(OpenAiApi openAiApi) {
