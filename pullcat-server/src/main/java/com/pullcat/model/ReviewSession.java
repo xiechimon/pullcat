@@ -26,4 +26,8 @@ public class ReviewSession {
     private Instant createdAt = Instant.now();
     /** GitHub PR Review 评论 ID（发布后填充） */
     private Long publishedCommentId;
+    /** 审查完成时间 */
+    private Instant completedAt;
+    /** 仓库全名，格式 owner/repo */
+    private String repositoryFullName;
 }

@@ -1,6 +1,6 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
-import { createSSEConnection, createReview } from '../lib/api'
-import type { AnalysisResult, AnalysisStatus, TaskState } from '../types/review'
+import { createSSEConnection, createReview, getReview } from '../lib/api'
+import type { AnalysisResult, AnalysisStatus, ReviewSession, TaskState } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
 interface ReviewState {
@@ -30,6 +30,7 @@ type Action =
   | { type: 'TOGGLE_ISSUE'; issueId: string }
   | { type: 'SSE_CONNECT'; reviewId: string }
   | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number }
+  | { type: 'LOAD_REVIEW'; session: ReviewSession }
 
 function createInitialTasks(): TaskState[] {
   return ANALYSIS_TYPES.map((name) => ({
@@ -135,6 +136,56 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
         prDeletions: action.deletions,
       }
 
+    case 'LOAD_REVIEW': {
+      const session = action.session
+      const meta = session.prMetadata
+      const analyses = session.analyses || {}
+      const loadedResults: Record<string, AnalysisResult | null> = {}
+      const loadedTasks: TaskState[] = []
+
+      for (const name of ANALYSIS_TYPES) {
+        const result = analyses[name]
+        if (result) {
+          loadedResults[name] = result
+          loadedTasks.push({
+            name,
+            label: TASK_LABELS[name],
+            status: result.status,
+            model: result.model,
+            startedAt: result.startedAt,
+            completedAt: result.completedAt,
+          })
+        } else {
+          loadedResults[name] = null
+          loadedTasks.push({
+            name,
+            label: TASK_LABELS[name],
+            status: 'PENDING' as AnalysisStatus,
+            model: '',
+            startedAt: null,
+            completedAt: null,
+          })
+        }
+      }
+
+      return {
+        ...state,
+        reviewId: session.id,
+        prUrl: session.prUrl,
+        prTitle: meta?.title || null,
+        prOwner: meta?.owner || null,
+        prRepo: meta?.repo || null,
+        prNumber: meta?.pullNumber || null,
+        prFileCount: meta?.fileCount || null,
+        prAdditions: meta?.additions || null,
+        prDeletions: meta?.deletions || null,
+        loading: false,
+        isAnalyzing: false,
+        tasks: loadedTasks,
+        results: loadedResults,
+      }
+    }
+
     default:
       return state
   }
@@ -176,6 +227,7 @@ interface UseReviewReducerReturn {
   results: Record<string, AnalysisResult | null>
   startReview: (prUrl: string) => Promise<void>
   resumeReview: (reviewId: string, sseUrl: string) => void
+  loadReview: (reviewId: string) => Promise<void>
   toggleIssue: (issueId: string) => void
 }
 
@@ -289,6 +341,18 @@ export function useReviewReducer(): UseReviewReducerReturn {
     connectSSE(sseUrl)
   }, [connectSSE])
 
+  const loadReview = useCallback(async (id: string) => {
+    try {
+      const session = await getReview(id)
+      dispatch({ type: 'LOAD_REVIEW', session })
+    } catch (e) {
+      dispatch({
+        type: 'SUBMIT_ERROR',
+        error: e instanceof Error ? e.message : 'Failed to load review',
+      })
+    }
+  }, [])
+
   const toggleIssue = useCallback((issueId: string) => {
     dispatch({ type: 'TOGGLE_ISSUE', issueId })
   }, [])
@@ -318,6 +382,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     results: state.results,
     startReview,
     resumeReview,
+    loadReview,
     toggleIssue,
   }
 }
