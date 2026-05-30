@@ -5,13 +5,19 @@ import com.pullcat.service.github.GitHubApiService;
 import com.pullcat.service.llm.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 /**
  * 分析编排器，负责完整的 PR 审查流程：拉取数据、构建上下文、执行五个分析任务，
@@ -25,18 +31,33 @@ public class AnalysisOrchestrator {
     private final PromptLoader promptLoader;
     private final ContextBuilder contextBuilder;
     private final ReviewRepository reviewRepository;
-    private final ChatClient chatClient;
+    private final ChatClient lightChatClient;
+    private final ChatClient heavyChatClient;
+    private final ExecutorService analysisExecutor;
+    private final ResultAggregator resultAggregator;
+
+    @Value("${pullcat.llm.light-model:deepseek-chat}")
+    private String lightModelName;
+
+    @Value("${pullcat.llm.heavy-model:deepseek-reasoner}")
+    private String heavyModelName;
 
     public AnalysisOrchestrator(GitHubApiService gitHubApiService,
                                 PromptLoader promptLoader,
                                 ContextBuilder contextBuilder,
                                 ReviewRepository reviewRepository,
-                                ChatClient chatClient) {
+                                @Qualifier("lightChatClient") ChatClient lightChatClient,
+                                @Qualifier("heavyChatClient") ChatClient heavyChatClient,
+                                @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
+                                ResultAggregator resultAggregator) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
         this.reviewRepository = reviewRepository;
-        this.chatClient = chatClient;
+        this.lightChatClient = lightChatClient;
+        this.heavyChatClient = heavyChatClient;
+        this.analysisExecutor = analysisExecutor;
+        this.resultAggregator = resultAggregator;
     }
 
     /**
@@ -77,11 +98,37 @@ public class AnalysisOrchestrator {
                 Map<String, String> variables = contextBuilder.buildVariables(
                         prData.getMetadata(), prData.getFileTree(), prData.getFiles());
 
-                session.getAnalyses().put("summary", executeTask(AnalysisType.SUMMARY, variables, session.getId()));
-                session.getAnalyses().put("risk", executeTask(AnalysisType.RISK, variables, session.getId()));
-                session.getAnalyses().put("quality", executeTask(AnalysisType.QUALITY, variables, session.getId()));
-                session.getAnalyses().put("consistency", executeTask(AnalysisType.CONSISTENCY, variables, session.getId()));
-                session.getAnalyses().put("testing", executeTask(AnalysisType.TESTING, variables, session.getId()));
+                List<AnalysisType> types = List.of(
+                        AnalysisType.SUMMARY, AnalysisType.RISK, AnalysisType.QUALITY,
+                        AnalysisType.CONSISTENCY, AnalysisType.TESTING);
+
+                List<CompletableFuture<AnalysisResult>> futures = types.stream()
+                        .map(type -> CompletableFuture
+                                .supplyAsync(() -> executeTask(type, variables, session.getId()), analysisExecutor)
+                                .exceptionally(ex -> {
+                                    log.error("Task {} failed unexpectedly: {}", type, ex.getMessage());
+                                    AnalysisResult failed = new AnalysisResult(type);
+                                    failed.setStatus(AnalysisStatus.FAILED);
+                                    failed.setErrorMessage(ex.getMessage());
+                                    failed.setCompletedAt(Instant.now());
+                                    return failed;
+                                }))
+                        .toList();
+
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+                for (int i = 0; i < types.size(); i++) {
+                    try {
+                        AnalysisResult result = futures.get(i).get();
+                        session.getAnalyses().put(types.get(i).name().toLowerCase(), result);
+                    } catch (Exception e) {
+                        log.error("Failed to get result for {}: {}", types.get(i), e.getMessage());
+                        AnalysisResult failed = new AnalysisResult(types.get(i));
+                        failed.setStatus(AnalysisStatus.FAILED);
+                        failed.setErrorMessage(e.getMessage());
+                        session.getAnalyses().put(types.get(i).name().toLowerCase(), failed);
+                    }
+                }
 
                 session.setStatus(SessionStatus.COMPLETED);
                 reviewRepository.save(session);
@@ -113,7 +160,7 @@ public class AnalysisOrchestrator {
 
         StreamContext ctx = StreamRegistry.get(sessionId);
         if (ctx != null) {
-            emitProgress(ctx, type.name().toLowerCase(), "RUNNING", "deepseek-chat");
+            emitProgress(ctx, type.name().toLowerCase(), "running", task.getResult().getModel());
         }
 
         AnalysisResult result = task.execute(prompt).block();
@@ -171,16 +218,16 @@ public class AnalysisOrchestrator {
             sb.append("### Summary\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
         }
 
-        sb.append("### Issues Overview\n\n| Severity | File | Line | Title |\n|----------|------|------|-------|\n");
-        for (AnalysisResult result : session.getAnalyses().values()) {
-            if (result.getIssues() != null) {
-                for (Issue issue : result.getIssues()) {
-                    sb.append("| ").append(issue.getSeverity()).append(" | ")
-                            .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
-                            .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
-                            .append(issue.getTitle()).append(" |\n");
-                }
-            }
+        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
+        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
+
+        sb.append("### Issues Overview (").append(dedupedIssues.size()).append(" unique)\n\n");
+        sb.append("| Severity | File | Line | Title |\n|----------|------|------|-------|\n");
+        for (Issue issue : dedupedIssues) {
+            sb.append("| ").append(issue.getSeverity()).append(" | ")
+                    .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
+                    .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
+                    .append(issue.getTitle()).append(" |\n");
         }
         sb.append("\n---\n*Generated by [pullcat](https://github.com)*");
         return sb.toString();
@@ -197,13 +244,12 @@ public class AnalysisOrchestrator {
     }
 
     private AnalysisTask createTask(AnalysisType type) {
-        String modelName = "deepseek-chat";
         switch (type) {
-            case SUMMARY: return new SummaryAnalysis(chatClient, modelName);
-            case RISK: return new RiskAnalysis(chatClient, modelName);
-            case QUALITY: return new QualityAnalysis(chatClient, modelName);
-            case CONSISTENCY: return new ConsistencyAnalysis(chatClient, modelName);
-            case TESTING: return new TestingGapAnalysis(chatClient, modelName);
+            case SUMMARY: return new SummaryAnalysis(lightChatClient, lightModelName);
+            case RISK: return new RiskAnalysis(heavyChatClient, heavyModelName);
+            case QUALITY: return new QualityAnalysis(heavyChatClient, heavyModelName);
+            case CONSISTENCY: return new ConsistencyAnalysis(heavyChatClient, heavyModelName);
+            case TESTING: return new TestingGapAnalysis(lightChatClient, lightModelName);
             default: throw new IllegalArgumentException("Unknown analysis type: " + type);
         }
     }
