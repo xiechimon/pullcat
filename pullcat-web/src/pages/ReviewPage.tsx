@@ -19,19 +19,21 @@ export function ReviewPage() {
   const location = useLocation()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, error, isAnalyzing, tasks, results, resumeReview, toggleIssue } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, error, isAnalyzing, tasks, results, resumeReview, toggleIssue } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
     navigateState?.reviewId ? 'summary' : null
   )
-  const initializedRef = useRef(false)
+  const startedRef = useRef(false)
 
   useEffect(() => {
-    if (initializedRef.current) return
-    if (navigateState?.reviewId && navigateState?.sseUrl) {
-      initializedRef.current = true
+    if (navigateState?.reviewId && navigateState?.sseUrl && !startedRef.current) {
+      startedRef.current = true
       resumeReview(navigateState.reviewId, navigateState.sseUrl)
+    }
+    return () => {
+      startedRef.current = false
     }
   }, [navigateState, resumeReview])
 
@@ -64,6 +66,7 @@ export function ReviewPage() {
   const completedTasks = ANALYSIS_TYPES.filter(
     (t) => results[t]?.status === 'COMPLETED' || results[t]?.status === 'FAILED'
   )
+  const hasReview = isAnalyzing || completedTasks.length > 0
 
   return (
     <div className="pb-20">
@@ -75,7 +78,34 @@ export function ReviewPage() {
         </div>
       )}
 
-      {isAnalyzing && (
+      {prUrl && (
+        <div className="content-section">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-2">
+            <a
+              href={prUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
+            >
+              {prOwner}/{prRepo} #{prNumber}
+            </a>
+            {prTitle && (
+              <p className="text-sm text-gray-700 dark:text-gray-300">{prTitle}</p>
+            )}
+            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+              {prFileCount !== null && <span>{prFileCount} files changed</span>}
+              {prAdditions !== null && (
+                <span className="text-emerald-600 dark:text-emerald-400">+{prAdditions}</span>
+              )}
+              {prDeletions !== null && (
+                <span className="text-red-500 dark:text-red-400">-{prDeletions}</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hasReview && (
         <div className="content-section space-y-6">
           <ReviewProgress
             tasks={tasks}
@@ -86,7 +116,7 @@ export function ReviewPage() {
         </div>
       )}
 
-      {activeTaskType && isAnalyzing && (
+      {activeTaskType && (
         <div className="content-section space-y-4">
           {(() => {
             const result = results[activeTaskType]

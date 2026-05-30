@@ -5,17 +5,20 @@ import { createReview } from '../lib/api'
 
 export function HomePage() {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const handleSubmit = async (prUrl: string) => {
     setLoading(true)
+    setError(null)
     try {
       const response = await createReview(prUrl)
       navigate(`/review/${response.reviewId}`, {
         state: { reviewId: response.reviewId, sseUrl: response.sseUrl },
       })
-    } catch {
+    } catch (e) {
       setLoading(false)
+      setError(e instanceof Error ? e.message : '请求后端服务失败，请检查网络或后端状态')
     }
   }
 
@@ -33,6 +36,11 @@ export function HomePage() {
       <div className="w-full px-4 mb-6">
         <div className="input-card mx-auto">
           <PRInput onSubmit={handleSubmit} loading={loading} />
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </>
