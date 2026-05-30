@@ -53,6 +53,7 @@ export interface ReviewSession {
   completedAt: string | null
   publishedCommentId: number | null
   repositoryFullName: string | null
+  rawDiff: string | null
 }
 
 export interface Repo {
