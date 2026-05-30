@@ -45,8 +45,5 @@ ehthumbs.db
 openspec/
 pullcat-server/src/main/resources/prompts
 
-# web
-pullcat-web
-
 # Environment
 .env
