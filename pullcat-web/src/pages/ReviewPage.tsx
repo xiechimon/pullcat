@@ -19,7 +19,7 @@ export function ReviewPage() {
   const location = useLocation()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, error, isAnalyzing, tasks, results, resumeReview, toggleIssue } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
@@ -31,11 +31,15 @@ export function ReviewPage() {
     if (navigateState?.reviewId && navigateState?.sseUrl && !startedRef.current) {
       startedRef.current = true
       resumeReview(navigateState.reviewId, navigateState.sseUrl)
+    } else if (!navigateState?.sseUrl && id && !startedRef.current) {
+      startedRef.current = true
+      setActiveTaskType('summary')
+      loadReview(id)
     }
     return () => {
       startedRef.current = false
     }
-  }, [navigateState, resumeReview])
+  }, [navigateState, id, resumeReview, loadReview])
 
   const currentReviewId = id || reviewId
 
