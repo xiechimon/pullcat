@@ -1,5 +1,5 @@
-function App() {
-  return <div />
-}
+import { ReviewPage } from './pages/ReviewPage'
 
-export default App
+export default function App() {
+  return <ReviewPage />
+}
