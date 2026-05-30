@@ -77,17 +77,27 @@ export function ReviewPage() {
         </div>
       </header>
 
-      <div className="pt-28 md:pt-36 pb-12 px-4 flex flex-col items-center text-center">
+      <div 
+        className={`transition-all duration-700 ease-in-out flex flex-col items-center text-center px-4 overflow-hidden ${
+          (loading || reviewId !== null) 
+            ? 'max-h-0 opacity-0 pt-0 pb-0 mb-0' 
+            : 'max-h-[500px] opacity-100 pt-28 md:pt-36 pb-12 mb-4'
+        }`}
+      >
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-serif text-[#047857] leading-tight max-w-4xl mb-6 tracking-tight">
           AI 驱动的 Pull Request 代码审查助手
         </h1>
-        <p className="text-lg md:text-xl font-serif text-gray-600 dark:text-gray-400 max-w-2xl mb-10 leading-relaxed">
+        <p className="text-lg md:text-xl font-serif text-gray-600 dark:text-gray-400 max-w-2xl mb-6 leading-relaxed">
           输入 GitHub PR 链接，自动获取代码变更并进行多维度 AI 分析，审查后一键发布到 PR。
         </p>
       </div>
 
-      <div className="input-card">
-        <PRInput onSubmit={handleStartReview} loading={isAnalyzing} />
+      <div className={`transition-all duration-700 ease-in-out w-full px-4 ${
+        (loading || reviewId !== null) ? 'pt-24 md:pt-28 mb-6' : 'pt-0 mb-0'
+      }`}>
+        <div className="input-card mx-auto">
+          <PRInput onSubmit={handleStartReview} loading={isAnalyzing} />
+        </div>
       </div>
 
       {error && (
