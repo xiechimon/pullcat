@@ -31,6 +31,13 @@ pullcat:
     # 私有仓库需要 repo 权限，公开仓库需要 public_repo 权限
     token: ${GITHUB_TOKEN}
 
+  # --- LLM 模型配置 ---
+  llm:
+    # 轻量模型：用于摘要、测试覆盖等快速分析
+    light-model: deepseek-chat
+    # 重量模型：用于风险、质量、一致性等深度分析
+    heavy-model: deepseek-reasoner
+
   # --- Review 会话设置 ---
   review:
     # Review 结果在 Redis 中的保留天数
