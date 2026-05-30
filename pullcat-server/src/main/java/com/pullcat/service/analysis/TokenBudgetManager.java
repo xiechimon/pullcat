@@ -26,6 +26,10 @@ public class TokenBudgetManager {
         this.maxTokens = maxTokens;
     }
 
+    public int getMaxTokens() {
+        return maxTokens;
+    }
+
     /**
      * 判断上下文是否在 Token 预算内。
      */
