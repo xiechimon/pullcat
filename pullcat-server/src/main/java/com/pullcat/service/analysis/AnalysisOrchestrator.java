@@ -40,54 +40,71 @@ public class AnalysisOrchestrator {
     }
 
     /**
-     * 执行完整的 PR 审查流程，结果保存到 Redis。
+     * 创建审查会话，仅解析 URL 并保存初始状态到 Redis，不启动分析。
      */
-    public ReviewSession startReview(String prUrl) {
-        GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
+    public ReviewSession createSession(String prUrl) {
+        gitHubApiService.parsePrUrl(prUrl);
 
         ReviewSession session = new ReviewSession();
         session.setId(UUID.randomUUID().toString());
         session.setPrUrl(prUrl);
         session.setStatus(SessionStatus.FETCHING);
-        reviewRepository.save(session);
-
-        PRData prData = gitHubApiService.fetchPRData(parsed).block();
-        session.setPrMetadata(prData.getMetadata());
-        session.setStatus(SessionStatus.ANALYZING);
-        reviewRepository.save(session);
-
-        Map<String, String> variables = contextBuilder.buildVariables(
-                prData.getMetadata(), prData.getFileTree(), prData.getFiles());
-
-        StreamContext ctx = StreamRegistry.get(session.getId());
-
-        session.getAnalyses().put("summary", executeTask(AnalysisType.SUMMARY, variables, ctx));
-        session.getAnalyses().put("risk", executeTask(AnalysisType.RISK, variables, ctx));
-        session.getAnalyses().put("quality", executeTask(AnalysisType.QUALITY, variables, ctx));
-        session.getAnalyses().put("consistency", executeTask(AnalysisType.CONSISTENCY, variables, ctx));
-        session.getAnalyses().put("testing", executeTask(AnalysisType.TESTING, variables, ctx));
-
-        session.setStatus(SessionStatus.COMPLETED);
-        reviewRepository.save(session);
-
-        if (ctx != null) {
-            try {
-                ctx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
-            } catch (IOException e) {
-                log.debug("SSE send error", e);
-            }
-        }
-
         return session;
     }
 
-    private AnalysisResult executeTask(AnalysisType type, Map<String, String> variables, StreamContext ctx) {
+    /**
+     * 异步执行完整的 PR 审查流程，通过 SSE 实时推送进度。
+     */
+    public void startReviewAsync(ReviewSession session) {
+        new Thread(() -> {
+            try {
+                GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
+
+                PRData prData = gitHubApiService.fetchPRData(parsed).block();
+                session.setPrMetadata(prData.getMetadata());
+                session.setStatus(SessionStatus.ANALYZING);
+                reviewRepository.save(session);
+
+                Map<String, String> variables = contextBuilder.buildVariables(
+                        prData.getMetadata(), prData.getFileTree(), prData.getFiles());
+
+                session.getAnalyses().put("summary", executeTask(AnalysisType.SUMMARY, variables, session.getId()));
+                session.getAnalyses().put("risk", executeTask(AnalysisType.RISK, variables, session.getId()));
+                session.getAnalyses().put("quality", executeTask(AnalysisType.QUALITY, variables, session.getId()));
+                session.getAnalyses().put("consistency", executeTask(AnalysisType.CONSISTENCY, variables, session.getId()));
+                session.getAnalyses().put("testing", executeTask(AnalysisType.TESTING, variables, session.getId()));
+
+                session.setStatus(SessionStatus.COMPLETED);
+                reviewRepository.save(session);
+
+                StreamContext finalCtx = StreamRegistry.get(session.getId());
+                if (finalCtx != null) {
+                    finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+                    finalCtx.emitter().complete();
+                }
+            } catch (Exception e) {
+                log.error("Review failed: {}", e.getMessage(), e);
+                session.setStatus(SessionStatus.FAILED);
+                reviewRepository.save(session);
+                StreamContext finalCtx = StreamRegistry.get(session.getId());
+                if (finalCtx != null) {
+                    try {
+                        finalCtx.emitter().send(SseEmitter.event().name("error").data(Map.of("message", e.getMessage())));
+                        finalCtx.emitter().complete();
+                    } catch (IOException ignored) {}
+                }
+            }
+        }, "review-" + session.getId()).start();
+    }
+
+    private AnalysisResult executeTask(AnalysisType type, Map<String, String> variables, String sessionId) {
         AnalysisTask task = createTask(type);
         String template = promptLoader.loadTemplate(type.getTemplateName());
         String prompt = promptLoader.populateTemplate(template, variables);
 
         AnalysisResult result = task.execute(prompt).block();
 
+        StreamContext ctx = StreamRegistry.get(sessionId);
         if (ctx != null) {
             emitResult(ctx, type.name().toLowerCase(), result);
         }
