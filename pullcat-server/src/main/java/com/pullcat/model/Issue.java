@@ -3,6 +3,9 @@ package com.pullcat.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 分析发现的问题，包含严重程度、文件位置、描述、建议和置信度。
  */
@@ -28,6 +31,8 @@ public class Issue {
     private Double confidence;
     /** 是否被用户选中用于发布 */
     private boolean selected = true;
+    /** 来源分析维度列表（多维度交叉验证时非空） */
+    private List<String> sourceDimensions;
 
     public Issue(String id, Severity severity, String file, Integer line, String title,
                  String description, String suggestion, Double confidence) {
@@ -40,6 +45,14 @@ public class Issue {
         this.suggestion = suggestion;
         this.confidence = confidence;
         this.selected = true;
+        this.sourceDimensions = new ArrayList<>();
+    }
+
+    public List<String> getSourceDimensions() {
+        if (sourceDimensions == null) {
+            sourceDimensions = new ArrayList<>();
+        }
+        return sourceDimensions;
     }
 
     public enum Severity {
