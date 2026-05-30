@@ -13,6 +13,9 @@ export interface Issue {
   suggestion: string
   confidence: number
   selected: boolean
+  sourceDimensions?: string[]
+  feedback?: string | null
+  feedbackReason?: string | null
 }
 
 export interface AnalysisResult {
@@ -27,25 +30,55 @@ export interface AnalysisResult {
   errorMessage: string | null
 }
 
+export interface PRMetadata {
+  title: string
+  description: string
+  owner: string
+  repo: string
+  pullNumber: number
+  baseBranch: string
+  headBranch: string
+  fileCount: number
+  additions: number
+  deletions: number
+}
+
 export interface ReviewSession {
   id: string
   prUrl: string
   status: SessionStatus
-  prMetadata: {
-    title: string
-    description: string
-    owner: string
-    repo: string
-    pullNumber: number
-    baseBranch: string
-    headBranch: string
-    fileCount: number
-    additions: number
-    deletions: number
-  } | null
+  prMetadata: PRMetadata | null
   analyses: Record<string, AnalysisResult>
   createdAt: string
+  completedAt: string | null
   publishedCommentId: number | null
+  repositoryFullName: string | null
+}
+
+export interface Repo {
+  owner: string
+  repo: string
+  fullName: string
+  description: string | null
+  stars: number | null
+  language: string | null
+  addedAt: string
+}
+
+export interface ReviewListResponse {
+  items: ReviewSession[]
+  total: number
+  page: number
+  size: number
+}
+
+export interface StatsOverview {
+  totalReviews: number
+  totalIssues: number
+  repoCount: number
+  avgIssuesPerReview: number
+  severityDistribution: Record<Severity, number>
+  commonIssueTypes: { type: string; count: number }[]
 }
 
 export interface TaskState {
@@ -84,6 +117,14 @@ export const SEVERITY_BG: Record<Severity, string> = {
   MEDIUM: 'border-yellow-200 bg-yellow-50 dark:border-yellow-900/50 dark:bg-yellow-950/30',
   LOW: 'border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/30',
   INFO: 'border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/30',
+}
+
+export const SEVERITY_BAR_COLORS: Record<Severity, string> = {
+  CRITICAL: '#ef4444',
+  HIGH: '#f97316',
+  MEDIUM: '#eab308',
+  LOW: '#6b7280',
+  INFO: '#3b82f6',
 }
 
 export const ANALYSIS_TYPES: AnalysisType[] = ['summary', 'risk', 'quality', 'consistency', 'testing']
