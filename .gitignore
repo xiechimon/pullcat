@@ -43,7 +43,6 @@ ehthumbs.db
 .opencode/
 .opsx/
 openspec/
-pullcat-server/src/main/resources/prompts
 
 # Environment
 .env
