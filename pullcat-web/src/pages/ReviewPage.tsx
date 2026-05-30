@@ -4,10 +4,12 @@ import { ReviewProgress } from '../components/ReviewProgress'
 import { ResultSection } from '../components/ResultSection'
 import { LoadingPlaceholder } from '../components/LoadingPlaceholder'
 import { ActionBar } from '../components/ActionBar'
+import { DiffViewer } from '../components/DiffViewer'
+import { IssuePanel } from '../components/IssuePanel'
 import { useReviewReducer } from '../hooks/useReviewReducer'
 import { usePublish } from '../hooks/usePublish'
 import { ANALYSIS_TYPES } from '../types/review'
-import type { AnalysisType } from '../types/review'
+import type { AnalysisType, Severity } from '../types/review'
 
 interface NavigateState {
   reviewId?: string
@@ -19,12 +21,13 @@ export function ReviewPage() {
   const location = useLocation()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
     navigateState?.reviewId ? 'summary' : null
   )
+  const [activeIssueId, setActiveIssueId] = useState<string | null>(null)
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -62,6 +65,33 @@ export function ReviewPage() {
     return { selectedCount: sel, totalCount: total, selectedIssueIds: ids }
   }, [results])
 
+  const activeResult = activeTaskType ? results[activeTaskType] : null
+  const activeIssues = activeResult?.issues || []
+
+  const handleToggle = useCallback((issueId: string) => {
+    toggleIssue(issueId)
+  }, [toggleIssue])
+
+  const handleSelectAll = useCallback(() => {
+    for (const issue of activeIssues) {
+      if (!issue.selected) toggleIssue(issue.id)
+    }
+  }, [activeIssues, toggleIssue])
+
+  const handleDeselectAll = useCallback(() => {
+    for (const issue of activeIssues) {
+      if (issue.selected) toggleIssue(issue.id)
+    }
+  }, [activeIssues, toggleIssue])
+
+  const handleSelectHighAbove = useCallback(() => {
+    const highAbove: Severity[] = ['CRITICAL', 'HIGH']
+    for (const issue of activeIssues) {
+      if (highAbove.includes(issue.severity) && !issue.selected) toggleIssue(issue.id)
+      else if (!highAbove.includes(issue.severity) && issue.selected) toggleIssue(issue.id)
+    }
+  }, [activeIssues, toggleIssue])
+
   const handlePublish = useCallback(async () => {
     if (!currentReviewId) return
     await publish(currentReviewId, true, selectedIssueIds)
@@ -71,6 +101,8 @@ export function ReviewPage() {
     (t) => results[t]?.status === 'COMPLETED' || results[t]?.status === 'FAILED'
   )
   const hasReview = isAnalyzing || completedTasks.length > 0
+
+  const activeDiff = rawDiff || ''
 
   return (
     <div className="pb-20">
@@ -121,25 +153,52 @@ export function ReviewPage() {
       )}
 
       {activeTaskType && (
-        <div className="content-section space-y-4">
-          {(() => {
-            const result = results[activeTaskType]
-            const task = tasks.find((t) => t.name === activeTaskType)
-            if (result) {
-              return (
-                <ResultSection
-                  key={activeTaskType}
-                  type={activeTaskType}
-                  result={result}
-                  onIssueToggle={toggleIssue}
-                />
-              )
-            }
-            if (task) {
-              return <LoadingPlaceholder key={`loading-${activeTaskType}`} task={task} />
-            }
-            return null
-          })()}
+        <div className="content-section">
+          {activeResult ? (
+            <>
+              {activeResult.content && activeResult.content.includes('"summary"') && (
+                <div className="mb-4">
+                  <ResultSection
+                    type={activeTaskType}
+                    result={activeResult}
+                    onIssueToggle={toggleIssue}
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4" style={{ minHeight: '60vh' }}>
+                <div className="lg:col-span-3">
+                  <DiffViewer
+                    diff={activeDiff}
+                    issues={activeIssues}
+                    activeIssueId={activeIssueId}
+                    onIssueClick={setActiveIssueId}
+                  />
+                </div>
+                <div className="lg:col-span-2" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+                  <IssuePanel
+                    issues={activeIssues}
+                    activeIssueId={activeIssueId}
+                    onToggle={handleToggle}
+                    onSelectAll={handleSelectAll}
+                    onDeselectAll={handleDeselectAll}
+                    onSelectHighAbove={handleSelectHighAbove}
+                    onIssueClick={setActiveIssueId}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <LoadingPlaceholder
+              task={tasks.find(t => t.name === activeTaskType) || {
+                name: activeTaskType,
+                label: activeTaskType,
+                status: 'PENDING',
+                model: '',
+                startedAt: null,
+                completedAt: null
+              }}
+            />
+          )}
         </div>
       )}
 
