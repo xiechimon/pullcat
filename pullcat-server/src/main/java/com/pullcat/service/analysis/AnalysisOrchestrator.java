@@ -65,6 +65,15 @@ public class AnalysisOrchestrator {
                 session.setStatus(SessionStatus.ANALYZING);
                 reviewRepository.save(session);
 
+                StreamContext metaCtx = StreamRegistry.get(session.getId());
+                if (metaCtx != null) {
+                    metaCtx.emitter().send(SseEmitter.event()
+                            .name("pr_info")
+                            .data(Map.of(
+                                    "prUrl", session.getPrUrl(),
+                                    "metadata", prData.getMetadata())));
+                }
+
                 Map<String, String> variables = contextBuilder.buildVariables(
                         prData.getMetadata(), prData.getFileTree(), prData.getFiles());
 
@@ -89,7 +98,7 @@ public class AnalysisOrchestrator {
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
                     try {
-                        finalCtx.emitter().send(SseEmitter.event().name("error").data(Map.of("message", e.getMessage())));
+                        finalCtx.emitter().send(SseEmitter.event().name("review_error").data(Map.of("message", e.getMessage())));
                         finalCtx.emitter().complete();
                     } catch (IOException ignored) {}
                 }
@@ -104,13 +113,13 @@ public class AnalysisOrchestrator {
 
         StreamContext ctx = StreamRegistry.get(sessionId);
         if (ctx != null) {
-            emitProgress(ctx, type.name().toLowerCase(), "running", "deepseek-chat");
+            emitProgress(ctx, type.name().toLowerCase(), "RUNNING", "deepseek-chat");
         }
 
         AnalysisResult result = task.execute(prompt).block();
 
         if (ctx != null) {
-            emitProgress(ctx, type.name().toLowerCase(), result.getStatus().name().toLowerCase(), result.getModel());
+            emitProgress(ctx, type.name().toLowerCase(), result.getStatus().name(), result.getModel());
             try {
                 ctx.emitter().send(SseEmitter.event().name("task_result").data(result));
             } catch (IOException e) {

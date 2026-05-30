@@ -49,7 +49,7 @@ public class ReviewController {
         ReviewSession session = orchestrator.createSession(prUrl);
         reviewRepository.save(session);
 
-        orchestrator.startReviewAsync(session);
+        // DO NOT start async review here. Wait for SSE to connect!
 
         return ResponseEntity.ok(Map.of(
                 "reviewId", session.getId(),
@@ -104,10 +104,32 @@ public class ReviewController {
                     .name("connected")
                     .data(Map.of("reviewId", id)));
 
+            if (session.getStatus() == com.pullcat.model.SessionStatus.FAILED) {
+                emitter.send(SseEmitter.event().name("review_error").data(Map.of("message", "Review previously failed. Please start a new review.")));
+                emitter.complete();
+                return emitter;
+            }
+
+            if (session.getStatus() == com.pullcat.model.SessionStatus.COMPLETED) {
+                if (session.getPrMetadata() != null) {
+                    emitter.send(SseEmitter.event().name("pr_info").data(Map.of("prUrl", session.getPrUrl(), "metadata", session.getPrMetadata())));
+                }
+                for (Map.Entry<String, com.pullcat.model.AnalysisResult> entry : session.getAnalyses().entrySet()) {
+                    emitter.send(SseEmitter.event().name("task_result").data(entry.getValue()));
+                }
+                emitter.send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+                emitter.complete();
+                return emitter;
+            }
+
             emitter.send(SseEmitter.event()
                     .name("analysis_started")
                     .data(Map.of("tasks", Arrays.asList(
                             "summary", "risk", "quality", "consistency", "testing"))));
+
+            if (session.getStatus() == com.pullcat.model.SessionStatus.FETCHING) {
+                orchestrator.startReviewAsync(session);
+            }
 
         } catch (IOException e) {
             emitter.completeWithError(e);

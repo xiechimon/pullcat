@@ -85,6 +85,13 @@ export function useReview(): UseReviewReturn {
       }
     })
 
+    es.addEventListener('review_error', (event) => {
+      const data = JSON.parse((event as MessageEvent).data)
+      setError(data.message || 'Review failed')
+      setLoading(false)
+      setIsAnalyzing(false)
+    })
+
     es.onerror = () => {
       if (eventSourceRef.current) {
         setError('SSE connection error. Retrying...')

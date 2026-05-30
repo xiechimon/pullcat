@@ -5,6 +5,14 @@ import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
 interface ReviewState {
   reviewId: string | null
+  prUrl: string | null
+  prTitle: string | null
+  prOwner: string | null
+  prRepo: string | null
+  prNumber: number | null
+  prFileCount: number | null
+  prAdditions: number | null
+  prDeletions: number | null
   loading: boolean
   isAnalyzing: boolean
   error: string | null
@@ -21,6 +29,7 @@ type Action =
   | { type: 'ANALYSIS_COMPLETE' }
   | { type: 'TOGGLE_ISSUE'; issueId: string }
   | { type: 'SSE_CONNECT'; reviewId: string }
+  | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number }
 
 function createInitialTasks(): TaskState[] {
   return ANALYSIS_TYPES.map((name) => ({
@@ -113,6 +122,19 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
         reviewId: action.reviewId,
       }
 
+    case 'PR_INFO':
+      return {
+        ...state,
+        prUrl: action.prUrl,
+        prTitle: action.title,
+        prOwner: action.owner,
+        prRepo: action.repo,
+        prNumber: action.pullNumber,
+        prFileCount: action.fileCount,
+        prAdditions: action.additions,
+        prDeletions: action.deletions,
+      }
+
     default:
       return state
   }
@@ -121,6 +143,14 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
 function createInitialState(): ReviewState {
   return {
     reviewId: null,
+    prUrl: null,
+    prTitle: null,
+    prOwner: null,
+    prRepo: null,
+    prNumber: null,
+    prFileCount: null,
+    prAdditions: null,
+    prDeletions: null,
     loading: false,
     isAnalyzing: false,
     error: null,
@@ -131,6 +161,14 @@ function createInitialState(): ReviewState {
 
 interface UseReviewReducerReturn {
   reviewId: string | null
+  prUrl: string | null
+  prTitle: string | null
+  prOwner: string | null
+  prRepo: string | null
+  prNumber: number | null
+  prFileCount: number | null
+  prAdditions: number | null
+  prDeletions: number | null
   error: string | null
   loading: boolean
   isAnalyzing: boolean
@@ -162,6 +200,22 @@ export function useReviewReducer(): UseReviewReducerReturn {
       // Reset task statuses handled in START_SUBMIT
     })
 
+    es.addEventListener('pr_info', (event) => {
+      const data = JSON.parse((event as MessageEvent).data)
+      const meta = data.metadata
+      dispatch({
+        type: 'PR_INFO',
+        prUrl: data.prUrl,
+        title: meta.title || '',
+        owner: meta.owner || '',
+        repo: meta.repo || '',
+        pullNumber: meta.pullNumber || 0,
+        fileCount: meta.fileCount || 0,
+        additions: meta.additions || 0,
+        deletions: meta.deletions || 0,
+      })
+    })
+
     es.addEventListener('task_progress', (event) => {
       const data = JSON.parse((event as MessageEvent).data)
       dispatch({
@@ -182,6 +236,30 @@ export function useReviewReducer(): UseReviewReducerReturn {
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
+      }
+    })
+
+    es.addEventListener('review_error', (event) => {
+      const data = JSON.parse((event as MessageEvent).data)
+      dispatch({
+        type: 'SUBMIT_ERROR',
+        error: data.message || 'Review failed',
+      })
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    })
+
+    es.addEventListener('error', (event) => {
+      try {
+        const data = JSON.parse((event as MessageEvent).data)
+        dispatch({
+          type: 'SUBMIT_ERROR',
+          error: data.message || 'Review failed',
+        })
+      } catch {
+        dispatch({ type: 'SUBMIT_ERROR', error: 'SSE connection error' })
       }
     })
 
@@ -225,6 +303,14 @@ export function useReviewReducer(): UseReviewReducerReturn {
 
   return {
     reviewId: state.reviewId,
+    prUrl: state.prUrl,
+    prTitle: state.prTitle,
+    prOwner: state.prOwner,
+    prRepo: state.prRepo,
+    prNumber: state.prNumber,
+    prFileCount: state.prFileCount,
+    prAdditions: state.prAdditions,
+    prDeletions: state.prDeletions,
     error: state.error,
     loading: state.loading,
     isAnalyzing: state.isAnalyzing,
