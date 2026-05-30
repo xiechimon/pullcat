@@ -30,4 +30,6 @@ public class ReviewSession {
     private Instant completedAt;
     /** 仓库全名，格式 owner/repo */
     private String repositoryFullName;
+    /** 原始 unified diff 文本 */
+    private String rawDiff;
 }

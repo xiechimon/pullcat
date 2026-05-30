@@ -84,7 +84,9 @@ public class AnalysisOrchestrator {
 
                 PRData prData = gitHubApiService.fetchPRData(parsed).block();
                 session.setPrMetadata(prData.getMetadata());
+                session.setRawDiff(prData.getDiff());
                 session.setStatus(SessionStatus.ANALYZING);
+                session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
                 reviewRepository.save(session);
 
                 StreamContext metaCtx = StreamRegistry.get(session.getId());
@@ -94,7 +96,8 @@ public class AnalysisOrchestrator {
                                 .name("pr_info")
                                 .data(Map.of(
                                         "prUrl", session.getPrUrl(),
-                                        "metadata", prData.getMetadata())));
+                                        "metadata", prData.getMetadata(),
+                                        "diff", prData.getDiff() != null ? prData.getDiff() : "")));
                     } catch (IOException | IllegalStateException e) {
                         log.debug("SSE send pr_info error: {}", e.getMessage());
                     }
@@ -103,13 +106,37 @@ public class AnalysisOrchestrator {
                 Map<String, String> variables = contextBuilder.buildVariables(
                         prData.getMetadata(), prData.getFileTree(), prData.getFiles());
 
+                String discussion = "";
+                String relatedFiles = "";
+                try {
+                    discussion = gitHubApiService.fetchPRComments(parsed).block();
+                    if (discussion == null) discussion = "";
+                } catch (Exception e) {
+                    log.debug("Failed to fetch PR comments: {}", e.getMessage());
+                }
+                try {
+                    List<String> allImports = new ArrayList<>();
+                    for (FileContent file : prData.getFiles()) {
+                        allImports.addAll(contextBuilder.extractImports(file));
+                    }
+                    List<String> resolved = contextBuilder.resolveLocalImports(allImports, prData.getFileTree());
+                    relatedFiles = contextBuilder.buildRelatedFilesSection(parsed, resolved);
+                    if (relatedFiles == null) relatedFiles = "";
+                } catch (Exception e) {
+                    log.debug("Failed to build related files context: {}", e.getMessage());
+                }
+
+                final Map<String, String> finalVariables = contextBuilder.buildVariables(
+                        prData.getMetadata(), prData.getFileTree(), prData.getFiles(),
+                        discussion, relatedFiles);
+
                 List<AnalysisType> types = List.of(
                         AnalysisType.SUMMARY, AnalysisType.RISK, AnalysisType.QUALITY,
                         AnalysisType.CONSISTENCY, AnalysisType.TESTING);
 
                 List<CompletableFuture<AnalysisResult>> futures = types.stream()
                         .map(type -> CompletableFuture
-                                .supplyAsync(() -> executeTask(type, variables, session.getId()), analysisExecutor)
+                                .supplyAsync(() -> executeTask(type, finalVariables, session.getId()), analysisExecutor)
                                 .exceptionally(ex -> {
                                     log.error("Task {} failed unexpectedly: {}", type, ex.getMessage());
                                     AnalysisResult failed = new AnalysisResult(type);
