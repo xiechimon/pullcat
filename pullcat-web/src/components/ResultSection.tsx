@@ -89,6 +89,7 @@ function extractSummaryText(content: string): string {
     const json = JSON.parse(content)
     if (json.summary) return json.summary
   } catch {
+    // JSON parse failed, use raw content
   }
   return content
 }
