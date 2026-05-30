@@ -116,6 +116,56 @@ public class GitHubApiService {
     }
 
     /**
+     * 获取 PR 的 issue comments 和 review comments，合并后返回格式化的讨论文本。
+     */
+    public Mono<String> fetchPRComments(PRUrl prUrl) {
+        var issueComments = webClient.get()
+                .uri("/repos/{owner}/{repo}/issues/{number}/comments",
+                        prUrl.owner(), prUrl.repo(), prUrl.number())
+                .retrieve()
+                .bodyToFlux(JsonNode.class)
+                .map(json -> formatComment(json, "issue"))
+                .collectList();
+
+        var reviewComments = webClient.get()
+                .uri("/repos/{owner}/{repo}/pulls/{number}/comments",
+                        prUrl.owner(), prUrl.repo(), prUrl.number())
+                .retrieve()
+                .bodyToFlux(JsonNode.class)
+                .map(json -> formatComment(json, "review"))
+                .collectList();
+
+        return Mono.zip(issueComments, reviewComments)
+                .map(tuple -> {
+                    List<String> all = new ArrayList<>();
+                    all.addAll(tuple.getT1());
+                    all.addAll(tuple.getT2());
+                    if (all.isEmpty()) return "";
+                    return "## PR 讨论\n" + String.join("\n", all) + "\n";
+                });
+    }
+
+    private String formatComment(JsonNode json, String type) {
+        String user = json.path("user").path("login").asText("unknown");
+        String body = json.path("body").asText("");
+        if (body.length() > 500) body = body.substring(0, 500) + "...";
+        return String.format("@%s: %s", user, body);
+    }
+
+    /**
+     * 获取单个文件的原始内容（用于依赖文件获取）。
+     */
+    public Mono<String> fetchFileContent(PRUrl prUrl, String path) {
+        return webClient.get()
+                .uri("/repos/{owner}/{repo}/contents/{path}?ref={ref}",
+                        prUrl.owner(), prUrl.repo(), path, prUrl.ref())
+                .header("Accept", "application/vnd.github.v3.raw")
+                .retrieve()
+                .bodyToMono(String.class)
+                .onErrorReturn("");
+    }
+
+    /**
      * 一次性获取 PR 的完整数据（元数据 + diff + 文件内容 + 目录树）。
      */
     public Mono<PRData> fetchPRData(PRUrl prUrl) {
