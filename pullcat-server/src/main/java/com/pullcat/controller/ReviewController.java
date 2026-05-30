@@ -1,5 +1,6 @@
 package com.pullcat.controller;
 
+import com.pullcat.model.Issue;
 import com.pullcat.model.ReviewSession;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.ReviewRepository;
@@ -13,11 +14,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
-/**
- * 审查控制器，提供 PR 审查的创建、查看、SSE 事件流分发及结果发布等 REST 接口。
- */
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
@@ -32,12 +31,6 @@ public class ReviewController {
         this.reviewRepository = reviewRepository;
     }
 
-    /**
-     * 创建审查会话，对指定 PR 执行完整的五维度分析。
-     *
-     * @param body 请求体，需包含 "prUrl" 字段
-     * @return 包含 reviewId、status 及 sseUrl 的响应
-     */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, String> body) {
         String prUrl = body.get("prUrl");
@@ -49,8 +42,6 @@ public class ReviewController {
         ReviewSession session = orchestrator.createSession(prUrl);
         reviewRepository.save(session);
 
-        // DO NOT start async review here. Wait for SSE to connect!
-
         return ResponseEntity.ok(Map.of(
                 "reviewId", session.getId(),
                 "status", session.getStatus().name(),
@@ -58,12 +49,30 @@ public class ReviewController {
         ));
     }
 
-    /**
-     * 根据 ID 查询审查会话详情。
-     *
-     * @param id 审查会话唯一标识
-     * @return 审查会话对象，不存在时返回 404
-     */
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> listReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String repo) {
+
+        List<ReviewSession> reviews;
+        long total;
+
+        if (repo != null && !repo.isBlank()) {
+            reviews = reviewRepository.findByRepo(repo, page, size);
+            total = reviewRepository.countByRepo(repo);
+        } else {
+            reviews = reviewRepository.findAll(page, size);
+            total = reviewRepository.count();
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "items", reviews,
+                "total", total,
+                "page", page,
+                "size", size));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ReviewSession> getReview(@PathVariable String id) {
         ReviewSession session = reviewRepository.findById(id);
@@ -73,12 +82,45 @@ public class ReviewController {
         return ResponseEntity.ok(session);
     }
 
-    /**
-     * 建立 SSE 长连接，透传当前审查会话的分析事件流。
-     *
-     * @param id 审查会话唯一标识
-     * @return SseEmitter 实例，客户端可通过 EventSource 消费事件
-     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> deleteReview(@PathVariable String id) {
+        if (!reviewRepository.exists(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        reviewRepository.delete(id);
+        return ResponseEntity.ok(Map.of("deleted", true));
+    }
+
+    @PostMapping("/{reviewId}/issues/{issueId}/feedback")
+    public ResponseEntity<Map<String, Object>> submitFeedback(
+            @PathVariable String reviewId,
+            @PathVariable String issueId,
+            @RequestBody Map<String, Object> body) {
+
+        ReviewSession session = reviewRepository.findById(reviewId);
+        if (session == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        boolean accepted = Boolean.TRUE.equals(body.get("accepted"));
+        String reason = body.get("reason") != null ? body.get("reason").toString() : null;
+
+        for (var entry : session.getAnalyses().entrySet()) {
+            if (entry.getValue().getIssues() != null) {
+                for (Issue issue : entry.getValue().getIssues()) {
+                    if (issue.getId() != null && issue.getId().equals(issueId)) {
+                        issue.setFeedback(accepted ? "ACCEPTED" : "REJECTED");
+                        issue.setFeedbackReason(reason);
+                        reviewRepository.save(session);
+                        return ResponseEntity.ok(Map.of("status", "ok"));
+                    }
+                }
+            }
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
     @GetMapping(value = "/{id}/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamEvents(@PathVariable String id) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
@@ -143,12 +185,6 @@ public class ReviewController {
         return emitter;
     }
 
-    /**
-     * 将审查结果发布为 PR 评论。
-     *
-     * @param id 审查会话唯一标识
-     * @return 包含发布状态、评论 ID 及 PR URL 的响应，失败时返回 500
-     */
     @PostMapping("/{id}/publish")
     public ResponseEntity<Map<String, Object>> publishReview(@PathVariable String id) {
         try {

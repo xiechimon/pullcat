@@ -64,11 +64,12 @@ public class AnalysisOrchestrator {
      * 创建审查会话，仅解析 URL 并保存初始状态到 Redis，不启动分析。
      */
     public ReviewSession createSession(String prUrl) {
-        gitHubApiService.parsePrUrl(prUrl);
+        GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
 
         ReviewSession session = new ReviewSession();
         session.setId(UUID.randomUUID().toString());
         session.setPrUrl(prUrl);
+        session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
         session.setStatus(SessionStatus.FETCHING);
         return session;
     }
@@ -88,11 +89,15 @@ public class AnalysisOrchestrator {
 
                 StreamContext metaCtx = StreamRegistry.get(session.getId());
                 if (metaCtx != null) {
-                    metaCtx.emitter().send(SseEmitter.event()
-                            .name("pr_info")
-                            .data(Map.of(
-                                    "prUrl", session.getPrUrl(),
-                                    "metadata", prData.getMetadata())));
+                    try {
+                        metaCtx.emitter().send(SseEmitter.event()
+                                .name("pr_info")
+                                .data(Map.of(
+                                        "prUrl", session.getPrUrl(),
+                                        "metadata", prData.getMetadata())));
+                    } catch (IOException | IllegalStateException e) {
+                        log.debug("SSE send pr_info error: {}", e.getMessage());
+                    }
                 }
 
                 Map<String, String> variables = contextBuilder.buildVariables(
@@ -131,12 +136,17 @@ public class AnalysisOrchestrator {
                 }
 
                 session.setStatus(SessionStatus.COMPLETED);
+                session.setCompletedAt(Instant.now());
                 reviewRepository.save(session);
 
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
-                    finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
-                    finalCtx.emitter().complete();
+                    try {
+                        finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+                        finalCtx.emitter().complete();
+                    } catch (IOException | IllegalStateException e) {
+                        log.debug("SSE send all_complete error: {}", e.getMessage());
+                    }
                 }
             } catch (Exception e) {
                 log.error("Review failed: {}", e.getMessage(), e);
@@ -147,7 +157,7 @@ public class AnalysisOrchestrator {
                     try {
                         finalCtx.emitter().send(SseEmitter.event().name("review_error").data(Map.of("message", e.getMessage())));
                         finalCtx.emitter().complete();
-                    } catch (IOException ignored) {}
+                    } catch (IOException | IllegalStateException ignored) {}
                 }
             }
         }, "review-" + session.getId()).start();
@@ -169,7 +179,7 @@ public class AnalysisOrchestrator {
             emitProgress(ctx, type.name().toLowerCase(), result.getStatus().name(), result.getModel());
             try {
                 ctx.emitter().send(SseEmitter.event().name("task_result").data(result));
-            } catch (IOException e) {
+            } catch (IOException | IllegalStateException e) {
                 log.debug("SSE send error for task_result {}: {}", type.name(), e.getMessage());
             }
         }
@@ -184,7 +194,7 @@ public class AnalysisOrchestrator {
                     .data(Map.of("task", taskName, "status", status,
                             "model", model != null ? model : "",
                             "timestamp", Instant.now().toString())));
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             log.debug("SSE send progress error for {}: {}", taskName, e.getMessage());
         }
     }
