@@ -13,6 +13,7 @@ interface ReviewState {
   prFileCount: number | null
   prAdditions: number | null
   prDeletions: number | null
+  rawDiff: string | null
   loading: boolean
   isAnalyzing: boolean
   error: string | null
@@ -29,7 +30,7 @@ type Action =
   | { type: 'ANALYSIS_COMPLETE' }
   | { type: 'TOGGLE_ISSUE'; issueId: string }
   | { type: 'SSE_CONNECT'; reviewId: string }
-  | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number }
+  | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number; diff: string }
   | { type: 'LOAD_REVIEW'; session: ReviewSession }
 
 function createInitialTasks(): TaskState[] {
@@ -134,6 +135,7 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
         prFileCount: action.fileCount,
         prAdditions: action.additions,
         prDeletions: action.deletions,
+        rawDiff: action.diff,
       }
 
     case 'LOAD_REVIEW': {
@@ -179,6 +181,7 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
         prFileCount: meta?.fileCount || null,
         prAdditions: meta?.additions || null,
         prDeletions: meta?.deletions || null,
+        rawDiff: session.rawDiff || null,
         loading: false,
         isAnalyzing: false,
         tasks: loadedTasks,
@@ -202,6 +205,7 @@ function createInitialState(): ReviewState {
     prFileCount: null,
     prAdditions: null,
     prDeletions: null,
+    rawDiff: null,
     loading: false,
     isAnalyzing: false,
     error: null,
@@ -220,6 +224,7 @@ interface UseReviewReducerReturn {
   prFileCount: number | null
   prAdditions: number | null
   prDeletions: number | null
+  rawDiff: string | null
   error: string | null
   loading: boolean
   isAnalyzing: boolean
@@ -265,6 +270,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
         fileCount: meta.fileCount || 0,
         additions: meta.additions || 0,
         deletions: meta.deletions || 0,
+        diff: data.diff || '',
       })
     })
 
@@ -375,6 +381,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     prFileCount: state.prFileCount,
     prAdditions: state.prAdditions,
     prDeletions: state.prDeletions,
+    rawDiff: state.rawDiff,
     error: state.error,
     loading: state.loading,
     isAnalyzing: state.isAnalyzing,
