@@ -11,6 +11,7 @@ interface UseReviewReturn {
   tasks: TaskState[]
   results: Record<string, AnalysisResult | null>
   startReview: (prUrl: string) => Promise<void>
+  resumeReview: (reviewId: string, sseUrl: string) => void
 }
 
 function createInitialTasks(): TaskState[] {
@@ -109,6 +110,16 @@ export function useReview(): UseReviewReturn {
     }
   }, [connectSSE])
 
+  const resumeReview = useCallback((id: string, sseUrl: string) => {
+    setReviewId(id)
+    setLoading(true)
+    setIsAnalyzing(true)
+    setError(null)
+    setTasks(createInitialTasks())
+    setResults({})
+    connectSSE(sseUrl)
+  }, [connectSSE])
+
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -117,5 +128,5 @@ export function useReview(): UseReviewReturn {
     }
   }, [])
 
-  return { reviewId, error, loading, isAnalyzing, tasks, results, startReview }
+  return { reviewId, error, loading, isAnalyzing, tasks, results, startReview, resumeReview }
 }
