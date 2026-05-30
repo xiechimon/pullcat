@@ -102,27 +102,34 @@ public class AnalysisOrchestrator {
         String template = promptLoader.loadTemplate(type.getTemplateName());
         String prompt = promptLoader.populateTemplate(template, variables);
 
-        AnalysisResult result = task.execute(prompt).block();
-
         StreamContext ctx = StreamRegistry.get(sessionId);
         if (ctx != null) {
-            emitResult(ctx, type.name().toLowerCase(), result);
+            emitProgress(ctx, type.name().toLowerCase(), "running", "deepseek-chat");
+        }
+
+        AnalysisResult result = task.execute(prompt).block();
+
+        if (ctx != null) {
+            emitProgress(ctx, type.name().toLowerCase(), result.getStatus().name().toLowerCase(), result.getModel());
+            try {
+                ctx.emitter().send(SseEmitter.event().name("task_result").data(result));
+            } catch (IOException e) {
+                log.debug("SSE send error for task_result {}: {}", type.name(), e.getMessage());
+            }
         }
 
         return result;
     }
 
-    private void emitResult(StreamContext ctx, String taskName, AnalysisResult result) {
+    private void emitProgress(StreamContext ctx, String taskName, String status, String model) {
         try {
             ctx.emitter().send(SseEmitter.event()
                     .name("task_progress")
-                    .data(Map.of("task", taskName, "status", result.getStatus().name().toLowerCase(),
-                            "model", result.getModel() != null ? result.getModel() : "",
+                    .data(Map.of("task", taskName, "status", status,
+                            "model", model != null ? model : "",
                             "timestamp", Instant.now().toString())));
-
-            ctx.emitter().send(SseEmitter.event().name("task_result").data(result));
         } catch (IOException e) {
-            log.debug("SSE send error for {}: {}", taskName, e.getMessage());
+            log.debug("SSE send progress error for {}: {}", taskName, e.getMessage());
         }
     }
 

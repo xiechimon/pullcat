@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --color-evergreen: #047857;
   --color-evergreen-light: #ecfdf5;
@@ -23,19 +25,17 @@
   --color-success-hover: #059669;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #10b981;
-    --color-primary-hover: #34d399;
-    --color-primary-light: #064e3b;
-    --color-bg: #0f172a;
-    --color-surface: #1e293b;
-    --color-text: #f8fafc;
-    --color-text-secondary: #94a3b8;
-    --color-border: #334155;
-    --color-success: #10b981;
-    --color-success-hover: #34d399;
-  }
+:root.dark {
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+  --color-primary-light: #064e3b;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border: #334155;
+  --color-success: #10b981;
+  --color-success-hover: #34d399;
 }
 
 body {
@@ -70,4 +70,20 @@ body {
 
 .prose {
   max-width: none;
+}
+
+@keyframes breathing-light {
+  0%, 100% {
+    box-shadow: 0 0 6px var(--color-primary);
+    border-color: var(--color-primary);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-primary);
+    border-color: var(--color-primary-hover);
+  }
+}
+
+.animate-breathing {
+  animation: breathing-light 2s infinite ease-in-out;
+  border-width: 1px;
 }

@@ -7,6 +7,7 @@ interface UseReviewReturn {
   reviewId: string | null
   error: string | null
   loading: boolean
+  isAnalyzing: boolean
   tasks: TaskState[]
   results: Record<string, AnalysisResult | null>
   startReview: (prUrl: string) => Promise<void>
@@ -26,6 +27,7 @@ function createInitialTasks(): TaskState[] {
 export function useReview(): UseReviewReturn {
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tasks, setTasks] = useState<TaskState[]>(createInitialTasks())
   const [results, setResults] = useState<Record<string, AnalysisResult | null>>({})
@@ -75,6 +77,7 @@ export function useReview(): UseReviewReturn {
 
     es.addEventListener('all_complete', () => {
       setLoading(false)
+      setIsAnalyzing(false)
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
@@ -90,6 +93,7 @@ export function useReview(): UseReviewReturn {
 
   const startReview = useCallback(async (prUrl: string) => {
     setLoading(true)
+    setIsAnalyzing(true)
     setError(null)
     setTasks(createInitialTasks())
     setResults({})
@@ -101,6 +105,7 @@ export function useReview(): UseReviewReturn {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start review')
       setLoading(false)
+      setIsAnalyzing(false)
     }
   }, [connectSSE])
 
@@ -112,5 +117,5 @@ export function useReview(): UseReviewReturn {
     }
   }, [])
 
-  return { reviewId, error, loading, tasks, results, startReview }
+  return { reviewId, error, loading, isAnalyzing, tasks, results, startReview }
 }
