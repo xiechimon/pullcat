@@ -38,10 +38,6 @@ pullcat:
     # 重量模型：用于风险、质量、一致性等深度分析
     heavy-model: deepseek-v4-flash
 
-  # --- Review 会话设置 ---
-  review:
-    # Review 结果在 Redis 中的保留天数
-    session-ttl-days: 7
 
 # --- 服务器配置 ---
 server:
