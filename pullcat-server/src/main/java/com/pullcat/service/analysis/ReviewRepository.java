@@ -1,22 +1,16 @@
 package com.pullcat.service.analysis;
 
+import com.pullcat.config.RedisKeys;
 import com.pullcat.model.ReviewSession;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Repository
 public class ReviewRepository {
-
-    private static final String KEY_PREFIX = "review:";
-    private static final String INDEX_KEY = "review:index";
-    private static final String REPO_INDEX_PREFIX = "review:repo:";
-    private static final Duration TTL = Duration.ofDays(7);
 
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -24,22 +18,19 @@ public class ReviewRepository {
         this.redisTemplate = redisTemplate;
     }
 
-    private String key(String id) {
-        return KEY_PREFIX + id;
-    }
-
     public void save(ReviewSession session) {
-        redisTemplate.opsForValue().set(key(session.getId()), session, TTL);
-        redisTemplate.opsForZSet().add(INDEX_KEY, session.getId(), session.getCreatedAt().toEpochMilli());
+        redisTemplate.opsForValue().set(RedisKeys.reviewKey(session.getId()), session, RedisKeys.REVIEW_TTL);
+        redisTemplate.opsForZSet().add(RedisKeys.REVIEW_INDEX, session.getId(), session.getCreatedAt().toEpochMilli());
 
         if (session.getRepositoryFullName() != null) {
-            redisTemplate.opsForZSet().add(REPO_INDEX_PREFIX + session.getRepositoryFullName(),
+            String[] parts = session.getRepositoryFullName().split("/", 2);
+            redisTemplate.opsForZSet().add(RedisKeys.reviewRepoKey(parts[0], parts[1]),
                     session.getId(), session.getCreatedAt().toEpochMilli());
         }
     }
 
     public ReviewSession findById(String id) {
-        Object obj = redisTemplate.opsForValue().get(key(id));
+        Object obj = redisTemplate.opsForValue().get(RedisKeys.reviewKey(id));
         if (obj instanceof ReviewSession) {
             return (ReviewSession) obj;
         }
@@ -50,7 +41,7 @@ public class ReviewRepository {
         long start = (long) page * size;
         long end = start + size - 1;
 
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(INDEX_KEY, start, end);
+        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_INDEX, start, end);
         return fetchByIds(ids);
     }
 
@@ -58,22 +49,25 @@ public class ReviewRepository {
         long start = (long) page * size;
         long end = start + size - 1;
 
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(REPO_INDEX_PREFIX + fullName, start, end);
+        String[] parts = fullName.split("/", 2);
+        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(
+                RedisKeys.reviewRepoKey(parts[0], parts[1]), start, end);
         return fetchByIds(ids);
     }
 
     public long count() {
-        Long size = redisTemplate.opsForZSet().size(INDEX_KEY);
+        Long size = redisTemplate.opsForZSet().size(RedisKeys.REVIEW_INDEX);
         return size != null ? size : 0;
     }
 
     public long countByRepo(String fullName) {
-        Long size = redisTemplate.opsForZSet().size(REPO_INDEX_PREFIX + fullName);
+        String[] parts = fullName.split("/", 2);
+        Long size = redisTemplate.opsForZSet().size(RedisKeys.reviewRepoKey(parts[0], parts[1]));
         return size != null ? size : 0;
     }
 
     public List<ReviewSession> findAllReviews() {
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(INDEX_KEY, 0, -1);
+        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_INDEX, 0, -1);
         return fetchByIds(ids);
     }
 
@@ -93,13 +87,14 @@ public class ReviewRepository {
     public void delete(String id) {
         ReviewSession session = findById(id);
         if (session != null && session.getRepositoryFullName() != null) {
-            redisTemplate.opsForZSet().remove(REPO_INDEX_PREFIX + session.getRepositoryFullName(), id);
+            String[] parts = session.getRepositoryFullName().split("/", 2);
+            redisTemplate.opsForZSet().remove(RedisKeys.reviewRepoKey(parts[0], parts[1]), id);
         }
-        redisTemplate.opsForZSet().remove(INDEX_KEY, id);
-        redisTemplate.delete(key(id));
+        redisTemplate.opsForZSet().remove(RedisKeys.REVIEW_INDEX, id);
+        redisTemplate.delete(RedisKeys.reviewKey(id));
     }
 
     public boolean exists(String id) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key(id)));
+        return redisTemplate.hasKey(RedisKeys.reviewKey(id));
     }
 }

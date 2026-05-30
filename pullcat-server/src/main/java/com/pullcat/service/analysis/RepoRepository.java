@@ -1,5 +1,6 @@
 package com.pullcat.service.analysis;
 
+import com.pullcat.config.RedisKeys;
 import com.pullcat.model.Repo;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -11,9 +12,6 @@ import java.util.Set;
 @Repository
 public class RepoRepository {
 
-    private static final String KEY_PREFIX = "repo:";
-    private static final String INDEX_KEY = "repo:index";
-
     private final RedisTemplate<String, Object> redisTemplate;
 
     public RepoRepository(RedisTemplate<String, Object> redisTemplate) {
@@ -21,18 +19,17 @@ public class RepoRepository {
     }
 
     public void save(Repo repo) {
-        String key = KEY_PREFIX + repo.getFullName();
-        redisTemplate.opsForValue().set(key, repo);
-        redisTemplate.opsForSet().add(INDEX_KEY, repo.getFullName());
+        redisTemplate.opsForValue().set(RedisKeys.repoKey(repo.getFullName()), repo);
+        redisTemplate.opsForSet().add(RedisKeys.REPO_INDEX, repo.getFullName());
     }
 
     public Repo findById(String fullName) {
-        Object obj = redisTemplate.opsForValue().get(KEY_PREFIX + fullName);
+        Object obj = redisTemplate.opsForValue().get(RedisKeys.repoKey(fullName));
         return obj instanceof Repo ? (Repo) obj : null;
     }
 
     public List<Repo> findAll() {
-        Set<Object> members = redisTemplate.opsForSet().members(INDEX_KEY);
+        Set<Object> members = redisTemplate.opsForSet().members(RedisKeys.REPO_INDEX);
         List<Repo> repos = new ArrayList<>();
         if (members != null) {
             for (Object member : members) {
@@ -48,11 +45,11 @@ public class RepoRepository {
 
     public void delete(String owner, String repo) {
         String fullName = owner + "/" + repo;
-        redisTemplate.delete(KEY_PREFIX + fullName);
-        redisTemplate.opsForSet().remove(INDEX_KEY, fullName);
+        redisTemplate.delete(RedisKeys.repoKey(fullName));
+        redisTemplate.opsForSet().remove(RedisKeys.REPO_INDEX, fullName);
     }
 
     public boolean exists(String owner, String repo) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(KEY_PREFIX + owner + "/" + repo));
+        return redisTemplate.hasKey(RedisKeys.repoKey(owner + "/" + repo));
     }
 }
