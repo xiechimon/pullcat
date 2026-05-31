@@ -1,16 +1,45 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getCurrentUser } from '../lib/api'
 
 export function SettingsPage() {
   const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string } | null>(null)
   const [webhookRepo, setWebhookRepo] = useState('')
+  const [autoPublish, setAutoPublish] = useState(false)
+  const [autoPublishLoading, setAutoPublishLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     getCurrentUser().then(u => { if (!cancelled) setUser(u) }).catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    if (!webhookRepo.includes('/')) {
+      setAutoPublish(false)
+      return
+    }
+    const [owner, repo] = webhookRepo.split('/')
+    fetch(`/api/repos/${owner}/${repo}/auto-publish`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setAutoPublish(d.enabled))
+      .catch(() => setAutoPublish(false))
+  }, [webhookRepo])
+
+  const toggleAutoPublish = useCallback(() => {
+    if (!webhookRepo.includes('/')) return
+    const [owner, repo] = webhookRepo.split('/')
+    setAutoPublishLoading(true)
+    fetch(`/api/repos/${owner}/${repo}/auto-publish`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ enabled: !autoPublish }),
+    })
+      .then(r => r.json())
+      .then(d => setAutoPublish(d.enabled))
+      .finally(() => setAutoPublishLoading(false))
+  }, [webhookRepo, autoPublish])
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
@@ -66,6 +95,27 @@ export function SettingsPage() {
               </a>
           </div>
         </div>
+        {webhookRepo.includes('/') && (
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">自动发布</span>
+              <p className="text-xs text-gray-400">审查完成后自动将结果发布到 PR</p>
+            </div>
+            <button
+              onClick={toggleAutoPublish}
+              disabled={autoPublishLoading}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                autoPublish ? 'bg-emerald-600' : 'bg-gray-300 dark:bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  autoPublish ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
         <div className="text-sm text-gray-400">
           Payload URL: <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">https://your-domain/api/webhooks/github</code>
         </div>
