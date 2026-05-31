@@ -60,4 +60,9 @@ public final class RedisKeys {
     public static String repoKey(String fullName) {
         return REPO_PREFIX + fullName;
     }
+
+    /**
+     * Rule 建议缓存 key 前缀，格式: rule-suggestions:{owner}/{repo}
+     */
+    public static final String RULE_SUGGESTIONS_PREFIX = "rule-suggestions:";
 }
