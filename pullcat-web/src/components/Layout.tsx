@@ -90,7 +90,7 @@ export function Layout({ children }: LayoutProps) {
                       href="/logout"
                       onClick={async (e) => {
                         e.preventDefault()
-                        await fetch('/api/logout', { method: 'POST' })
+                        await fetch('/api/logout', { method: 'POST', credentials: 'include' })
                         setUser({ authenticated: false })
                         setMenuOpen(false)
                         navigate('/login')
