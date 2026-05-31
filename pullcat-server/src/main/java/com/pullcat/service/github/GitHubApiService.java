@@ -166,7 +166,34 @@ public class GitHubApiService {
     }
 
     /**
-     * 一次性获取 PR 的完整数据（元数据 + diff + 文件内容 + 目录树）。
+     * 更新 PR 的 Commit Status（用于显示审查进度）。
+     */
+    public Mono<Void> updateCommitStatus(PRUrl prUrl, String sha, String state, String description) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("state", state);
+        body.put("description", description);
+        body.put("context", "pullcat/code-review");
+
+        return webClient.post()
+                .uri("/repos/{owner}/{repo}/statuses/{sha}", prUrl.owner(), prUrl.repo(), sha)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
+
+    /**
+     * 获取 PR 的 head commit SHA。
+     */
+    public Mono<String> fetchHeadSha(PRUrl prUrl) {
+        return webClient.get()
+                .uri("/repos/{owner}/{repo}/pulls/{number}", prUrl.owner(), prUrl.repo(), prUrl.number())
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(json -> json.path("head").path("sha").asText(""));
+    }
+
+    /**
+     * 建议 PR reviewer（简单实现：返回仓库 collaborators）。
      */
     public Mono<PRData> fetchPRData(PRUrl prUrl) {
         return Mono.zip(
