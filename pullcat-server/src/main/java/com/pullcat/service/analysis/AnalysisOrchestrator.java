@@ -194,7 +194,7 @@ public class AnalysisOrchestrator {
                 session.setCompletedAt(Instant.now());
                 reviewRepository.save(session);
 
-                tryAutoPublish(session);
+                boolean autoPublished = tryAutoPublish(session);
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
                         .description("Duration of PR review analysis")
@@ -217,6 +217,11 @@ public class AnalysisOrchestrator {
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
                     try {
+                        if (autoPublished) {
+                            finalCtx.emitter().send(SseEmitter.event()
+                                    .name("auto_publish")
+                                    .data(Map.of("prUrl", session.getPrUrl())));
+                        }
                         finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
                         checkAndNotifyRuleSuggestions(session, finalCtx);
                         finalCtx.emitter().complete();
@@ -373,20 +378,32 @@ public class AnalysisOrchestrator {
         }
     }
 
-    private void tryAutoPublish(ReviewSession session) {
+    private boolean tryAutoPublish(ReviewSession session) {
         String fullName = session.getRepositoryFullName();
-        if (fullName == null) return;
+        if (fullName == null) return false;
         String[] parts = fullName.split("/", 2);
-        if (parts.length != 2) return;
+        if (parts.length != 2) return false;
 
         if (reviewRepository.isAutoPublishEnabled(parts[0], parts[1])) {
             try {
-                publishReview(session.getId());
+                publishAutoReview(session);
                 log.info("Auto-published review {} to PR {}", session.getId(), session.getPrUrl());
+                return true;
             } catch (Exception e) {
                 log.error("Auto-publish failed for review {}: {}", session.getId(), e.getMessage());
             }
         }
+        return false;
+    }
+
+    private void publishAutoReview(ReviewSession session) {
+        GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
+        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
+        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
+        String summary = buildPublishSummary(dedupedIssues, session);
+        gitHubApiService.publishReview(parsed, summary).block();
+        session.setStatus(SessionStatus.PUBLISHED);
+        reviewRepository.save(session);
     }
 
     private String extractSummaryText(String content) {
