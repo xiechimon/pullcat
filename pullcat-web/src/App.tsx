@@ -21,6 +21,7 @@ export default function App() {
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/repos/:owner/:repo" element={<RepoPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/logout" element={<LoginPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>
