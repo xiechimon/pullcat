@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 import java.util.Map;
 
@@ -43,6 +44,12 @@ public class GlobalExceptionHandler {
                         "error", "GitHub API 权限不足",
                         "message", message,
                         "detail", detail));
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleAsyncRequestNotUsableException(AsyncRequestNotUsableException ex) {
+        log.debug("客户端已断开 SSE 连接: {}", ex.getMessage());
+        // 直接返回 void，避免抛出 HttpMessageNotWritableException
     }
 
     @ExceptionHandler(Exception.class)

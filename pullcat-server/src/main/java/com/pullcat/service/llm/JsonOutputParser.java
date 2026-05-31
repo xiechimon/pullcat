@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+
 /**
  * JSON 输出解析工具类，用于从 LLM 返回的文本中提取并解析问题列表。
  */
@@ -23,6 +25,8 @@ public final class JsonOutputParser {
             .configure(JsonParser.Feature.ALLOW_TRAILING_COMMA, true)
             .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
             .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true)
+            .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(), true)
+            .configure(JsonReadFeature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER.mappedFeature(), true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private JsonOutputParser() {
