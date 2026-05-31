@@ -11,6 +11,17 @@
   - `docs/<文档内容>` — 文档更新
 - 开发完成后，通过 PR 的方式合入 `main`。
 
+## 开发工作流
+
+每次开始新的 OpenSpec 变更时遵循：
+
+1. **创建 OpenSpec 变更**：`/opsx-propose <change-name>` 或手动 `openspec new change "<name>"`
+2. **从 main 创建分支**：`git checkout main && git pull && git checkout -b feat/<name>` 或 `fix/<name>`
+3. **实现变更**：`/opsx-apply <change-name>` 或按 `tasks.md` 逐项完成
+4. **验证通过**：`npm run build && npm test && npm run lint`
+5. **归档变更**：`/opsx-archive <change-name>`
+6. **提交 PR**：将分支推送到远程并创建 Pull Request
+
 ## PR 规范
 
 ### 基本原则
