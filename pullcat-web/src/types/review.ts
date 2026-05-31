@@ -16,6 +16,7 @@ export interface Issue {
   sourceDimensions?: string[]
   feedback?: string | null
   feedbackReason?: string | null
+  suggestionCode?: string | null
 }
 
 export interface AnalysisResult {
