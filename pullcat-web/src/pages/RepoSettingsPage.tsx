@@ -22,7 +22,7 @@ export function RepoSettingsPage() {
   const fullName = `${owner}/${repo}`
 
   const fetchRules = () => {
-    fetch(`/api/repos/${owner}/${repo}/rules`)
+    fetch(`/api/repos/${owner}/${repo}/rules`, { credentials: 'include' })
       .then(r => r.json()).then(setRules)
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -35,18 +35,18 @@ export function RepoSettingsPage() {
     const url = rule.id
       ? `/api/repos/${owner}/${repo}/rules/${rule.id}`
       : `/api/repos/${owner}/${repo}/rules`
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
+    const res = await fetch(url, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
     if (res.ok) { fetchRules(); setShowForm(false); setEditing(null) }
   }
 
   const toggleRule = async (rule: Rule) => {
-    await fetch(`/api/repos/${owner}/${repo}/rules/${rule.id}/toggle`, { method: 'PUT' })
+    await fetch(`/api/repos/${owner}/${repo}/rules/${rule.id}/toggle`, { method: 'PUT', credentials: 'include' })
     fetchRules()
   }
 
   const deleteRule = async (id: string) => {
     if (!confirm('确定删除此规则？')) return
-    await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE' })
+    await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE', credentials: 'include' })
     fetchRules()
   }
 
