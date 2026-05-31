@@ -9,7 +9,7 @@ import { RepoPage } from './pages/RepoPage'
 import { LoginPage } from './pages/LoginPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { StatsPage } from './pages/StatsPage'
-import { RepoSettingsPage } from './pages/RepoSettingsPage'
+import { ComparePage } from './pages/ComparePage'
 
 export default function App() {
   return (
@@ -26,7 +26,7 @@ export default function App() {
             <Route path="/logout" element={<LoginPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/stats" element={<StatsPage />} />
-            <Route path="/settings/repos/:owner/:repo" element={<RepoSettingsPage />} />
+            <Route path="/compare" element={<ComparePage />} />
           </Routes>
         </Layout>
       </ErrorBoundary>
