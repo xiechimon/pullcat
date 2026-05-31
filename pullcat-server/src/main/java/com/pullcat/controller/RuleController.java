@@ -1,8 +1,8 @@
 package com.pullcat.controller;
 
-import com.pullcat.model.Issue;
 import com.pullcat.model.Rule;
 import com.pullcat.service.analysis.RuleRepository;
+import com.pullcat.service.analysis.RuleSuggestionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +15,21 @@ import java.util.UUID;
 public class RuleController {
 
     private final RuleRepository ruleRepository;
+    private final RuleSuggestionService ruleSuggestionService;
 
-    public RuleController(RuleRepository ruleRepository) {
+    public RuleController(RuleRepository ruleRepository, RuleSuggestionService ruleSuggestionService) {
         this.ruleRepository = ruleRepository;
+        this.ruleSuggestionService = ruleSuggestionService;
     }
 
     @GetMapping
     public ResponseEntity<List<Rule>> list(@PathVariable String owner, @PathVariable String repo) {
         return ResponseEntity.ok(ruleRepository.findByRepo(owner, repo));
+    }
+
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<Rule>> getSuggestions(@PathVariable String owner, @PathVariable String repo) {
+        return ResponseEntity.ok(ruleSuggestionService.getSuggestions(owner, repo));
     }
 
     @PostMapping

@@ -22,7 +22,7 @@ export function ReviewPage() {
   const location = useLocation()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, ruleSuggestionUrl, resumeReview, loadReview, toggleIssue, dismissRuleSuggestion } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
@@ -145,6 +145,28 @@ export function ReviewPage() {
         </div>
       )}
 
+      {ruleSuggestionUrl && !isAnalyzing && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 rounded-lg p-4 flex items-center justify-between">
+          <p className="text-sm text-emerald-800 dark:text-emerald-300">
+            发现潜在规则建议，可自动检测该仓库的重复问题模式
+          </p>
+          <div className="flex gap-2">
+            <a
+              href={ruleSuggestionUrl}
+              className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+            >
+              查看建议
+            </a>
+            <button
+              onClick={dismissRuleSuggestion}
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+            >
+              忽略
+            </button>
+          </div>
+        </div>
+      )}
+
       {hasReview && (
         <div className="content-section space-y-6">
           <ReviewProgress
@@ -212,6 +234,7 @@ export function ReviewPage() {
           totalCount={totalCount}
           publishing={publishing}
           published={published}
+          disabled={isAnalyzing}
           onPublish={handlePublish}
         />
       )}

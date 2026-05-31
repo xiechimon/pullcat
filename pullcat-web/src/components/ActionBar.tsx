@@ -3,6 +3,7 @@ interface ActionBarProps {
   totalCount: number
   publishing: boolean
   published: boolean
+  disabled?: boolean
   onPublish: () => void
 }
 
@@ -11,6 +12,7 @@ export function ActionBar({
   totalCount,
   publishing,
   published,
+  disabled,
   onPublish,
 }: ActionBarProps) {
   return (
@@ -34,10 +36,10 @@ export function ActionBar({
           ) : (
             <button
               onClick={onPublish}
-              disabled={publishing}
-              className="px-5 py-2 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors border-2 border-[#047857]"
+              disabled={publishing || disabled}
+              className="px-5 py-2 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors border-2 border-[#047857]"
             >
-              {publishing ? '发布中...' : '发布到 PR'}
+              {publishing ? '发布中...' : disabled ? '分析中...' : '发布到 PR'}
             </button>
           )}
         </div>
