@@ -27,7 +27,7 @@ spring:
           github:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
-            scope: read:user,public_repo
+            scope: read:user,repo
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
           github:
@@ -40,10 +40,9 @@ spring:
 pullcat:
   # --- GitHub 配置 ---
   github:
-    # Personal Access Token，需要 repo 权限。
+    # Personal Access Token，可选。OAuth 登录后无需配置，无用户 session 时（webhook）需要。
     # 生成地址：https://github.com/settings/tokens
-    # 私有仓库需要 repo 权限，公开仓库需要 public_repo 权限
-    token: ${GITHUB_TOKEN}
+    token: ${GITHUB_TOKEN:}
 
   # --- LLM 模型配置 ---
   llm:
