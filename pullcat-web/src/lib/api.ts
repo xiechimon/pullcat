@@ -21,8 +21,16 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
   })
   if (!res.ok) {
-    const error = await res.text()
-    throw new Error(error || `HTTP ${res.status}`)
+    const raw = await res.text()
+    let message = raw || `HTTP ${res.status}`
+    try {
+      const parsed = JSON.parse(raw)
+      if (parsed.detail) console.error('[API Error Detail]', parsed.detail)
+      message = parsed.message || parsed.error || message
+    } catch {
+      // not JSON, use raw text
+    }
+    throw new Error(message)
   }
   return res.json()
 }
