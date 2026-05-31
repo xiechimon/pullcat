@@ -6,6 +6,8 @@ import { ReviewPage } from './pages/ReviewPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { HistoryPage } from './pages/HistoryPage'
 import { RepoPage } from './pages/RepoPage'
+import { LoginPage } from './pages/LoginPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/repos/:owner/:repo" element={<RepoPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>
       </ErrorBoundary>
