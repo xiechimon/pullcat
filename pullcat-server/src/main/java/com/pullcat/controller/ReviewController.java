@@ -9,6 +9,10 @@ import com.pullcat.service.analysis.StreamRegistry;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -31,15 +35,28 @@ public class ReviewController {
         this.reviewRepository = reviewRepository;
     }
 
+    private static String extractLogin(OAuth2User principal) {
+        if (principal != null) {
+            return principal.getAttribute("login");
+        }
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof OAuth2AuthenticationToken oauth) {
+            return oauth.getName();
+        }
+        return null;
+    }
+
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> createReview(@RequestBody Map<String, String> body,
+                                                            @AuthenticationPrincipal OAuth2User principal) {
         String prUrl = body.get("prUrl");
         if (prUrl == null || prUrl.isBlank()) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "prUrl is required"));
         }
 
-        ReviewSession session = orchestrator.createSession(prUrl);
+        String login = extractLogin(principal);
+        ReviewSession session = orchestrator.createSession(prUrl, login);
         reviewRepository.save(session);
 
         return ResponseEntity.ok(Map.of(
@@ -53,17 +70,22 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> listReviews(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String repo) {
+            @RequestParam(required = false) String repo,
+            @AuthenticationPrincipal OAuth2User principal) {
 
+        String login = extractLogin(principal);
         List<ReviewSession> reviews;
         long total;
 
         if (repo != null && !repo.isBlank()) {
             reviews = reviewRepository.findByRepo(repo, page, size);
             total = reviewRepository.countByRepo(repo);
+        } else if (login != null) {
+            reviews = reviewRepository.findByLogin(login, page, size);
+            total = reviewRepository.countByLogin(login);
         } else {
-            reviews = reviewRepository.findAll(page, size);
-            total = reviewRepository.count();
+            reviews = reviewRepository.findAnonymous(page, size);
+            total = reviewRepository.countAnonymous();
         }
 
         return ResponseEntity.ok(Map.of(
@@ -74,18 +96,29 @@ public class ReviewController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ReviewSession> getReview(@PathVariable String id) {
+    public ResponseEntity<?> getReview(@PathVariable String id,
+                                       @AuthenticationPrincipal OAuth2User principal) {
         ReviewSession session = reviewRepository.findById(id);
         if (session == null) {
             return ResponseEntity.notFound().build();
+        }
+        String login = extractLogin(principal);
+        if (!isOwner(session, login)) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权访问此审查"));
         }
         return ResponseEntity.ok(session);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteReview(@PathVariable String id) {
-        if (!reviewRepository.exists(id)) {
+    public ResponseEntity<Map<String, Object>> deleteReview(@PathVariable String id,
+                                                            @AuthenticationPrincipal OAuth2User principal) {
+        ReviewSession session = reviewRepository.findById(id);
+        if (session == null) {
             return ResponseEntity.notFound().build();
+        }
+        String login = extractLogin(principal);
+        if (!isOwner(session, login)) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权删除此审查"));
         }
         reviewRepository.delete(id);
         return ResponseEntity.ok(Map.of("deleted", true));
@@ -95,11 +128,16 @@ public class ReviewController {
     public ResponseEntity<Map<String, Object>> submitFeedback(
             @PathVariable String reviewId,
             @PathVariable String issueId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal OAuth2User principal) {
 
         ReviewSession session = reviewRepository.findById(reviewId);
         if (session == null) {
             return ResponseEntity.notFound().build();
+        }
+        String login = extractLogin(principal);
+        if (!isOwner(session, login)) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权操作此审查"));
         }
 
         boolean accepted = Boolean.TRUE.equals(body.get("accepted"));
@@ -122,19 +160,18 @@ public class ReviewController {
     }
 
     @GetMapping(value = "/{id}/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter streamEvents(@PathVariable String id) {
+    public SseEmitter streamEvents(@PathVariable String id,
+                                   @AuthenticationPrincipal OAuth2User principal) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
 
         ReviewSession session = reviewRepository.findById(id);
         if (session == null) {
-            try {
-                emitter.send(SseEmitter.event()
-                        .name("error")
-                        .data(Map.of("message", "Review session not found")));
-                emitter.complete();
-            } catch (IOException e) {
-                emitter.completeWithError(e);
-            }
+            sendErrorAndComplete(emitter, "Review session not found");
+            return emitter;
+        }
+        String login = extractLogin(principal);
+        if (!isOwner(session, login)) {
+            sendErrorAndComplete(emitter, "无权访问此审查");
             return emitter;
         }
 
@@ -186,11 +223,36 @@ public class ReviewController {
     }
 
     @PostMapping("/{id}/publish")
-    public ResponseEntity<Map<String, Object>> publishReview(@PathVariable String id) {
-        ReviewSession session = orchestrator.publishReview(id);
+    public ResponseEntity<?> publishReview(@PathVariable String id,
+                                           @AuthenticationPrincipal OAuth2User principal) {
+        ReviewSession session = reviewRepository.findById(id);
+        if (session == null) {
+            return ResponseEntity.notFound().build();
+        }
+        String login = extractLogin(principal);
+        if (!isOwner(session, login)) {
+            return ResponseEntity.status(403).body(Map.of("error", "无权发布此审查"));
+        }
+        ReviewSession updated = orchestrator.publishReview(id);
         return ResponseEntity.ok(Map.of(
-                "status", session.getStatus().name(),
-                "commentId", session.getPublishedCommentId(),
-                "prUrl", session.getPrUrl()));
+                "status", updated.getStatus().name(),
+                "commentId", updated.getPublishedCommentId(),
+                "prUrl", updated.getPrUrl()));
+    }
+
+    private boolean isOwner(ReviewSession session, String login) {
+        if (session.getUserId() == null) {
+            return login == null;
+        }
+        return session.getUserId().equals(login);
+    }
+
+    private void sendErrorAndComplete(SseEmitter emitter, String message) {
+        try {
+            emitter.send(SseEmitter.event().name("error").data(Map.of("message", message)));
+            emitter.complete();
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
     }
 }
