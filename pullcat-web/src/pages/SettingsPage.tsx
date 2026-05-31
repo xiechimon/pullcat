@@ -4,6 +4,7 @@ import { getCurrentUser } from '../lib/api'
 
 export function SettingsPage() {
   const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string } | null>(null)
+  const [webhookRepo, setWebhookRepo] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -41,8 +42,35 @@ export function SettingsPage() {
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Webhook 设置</h2>
         <p className="text-sm text-gray-500">配置 GitHub Webhook 后，PR 打开或更新时自动触发审查。</p>
+        <div className="space-y-2">
+          <label className="text-xs text-gray-500">你的仓库（owner/repo）</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={webhookRepo}
+              onChange={e => setWebhookRepo(e.target.value)}
+              placeholder="owner/repo"
+              className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <a
+                href={webhookRepo.includes('/') ? `https://github.com/${webhookRepo}/settings/hooks/new` : '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                  webhookRepo.includes('/')
+                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed pointer-events-none'
+                }`}
+              >
+                管理 Webhook →
+              </a>
+          </div>
+        </div>
         <div className="text-sm text-gray-400">
-          Webhook URL: <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">https://your-domain/api/webhooks/github</code>
+          Payload URL: <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">https://your-domain/api/webhooks/github</code>
+        </div>
+        <div className="text-sm text-gray-400">
+          需选择事件类型：<code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">Pull requests</code>
         </div>
       </div>
 
