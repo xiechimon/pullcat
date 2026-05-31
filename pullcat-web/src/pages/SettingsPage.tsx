@@ -78,6 +78,37 @@ export function SettingsPage() {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">通知设置</h2>
         <p className="text-sm text-gray-500">审查完成时发送通知（即将推出）</p>
       </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">自定义规则</h2>
+        <p className="text-sm text-gray-500">为仓库配置自定义检测规则（正则匹配），审查时自动运行。</p>
+        <p className="text-xs text-gray-400">
+          规则管理功能可通过仓库设置页面使用。输入 owner/repo 前往：
+        </p>
+        <RuleQuickNav />
+      </div>
+    </div>
+  )
+}
+
+function RuleQuickNav() {
+  const [input, setInput] = useState('')
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        placeholder="owner/repo"
+        className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm"
+      />
+      <Link
+        to={input.includes('/') ? `/settings/repos/${input}` : '#'}
+        className={`px-3 py-2 text-sm rounded-lg ${input.includes('/') ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-gray-200 text-gray-400 pointer-events-none'}`}
+      >
+        前往
+      </Link>
     </div>
   )
 }
