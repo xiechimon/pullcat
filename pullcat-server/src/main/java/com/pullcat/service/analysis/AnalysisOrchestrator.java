@@ -35,6 +35,8 @@ public class AnalysisOrchestrator {
     private final ChatClient heavyChatClient;
     private final ExecutorService analysisExecutor;
     private final ResultAggregator resultAggregator;
+    private final RuleEngine ruleEngine;
+    private final RuleRepository ruleRepository;
 
     @Value("${pullcat.llm.light-model:deepseek-chat}")
     private String lightModelName;
@@ -49,7 +51,9 @@ public class AnalysisOrchestrator {
                                 @Qualifier("lightChatClient") ChatClient lightChatClient,
                                 @Qualifier("heavyChatClient") ChatClient heavyChatClient,
                                 @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
-                                ResultAggregator resultAggregator) {
+                                ResultAggregator resultAggregator,
+                                RuleEngine ruleEngine,
+                                RuleRepository ruleRepository) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
@@ -58,6 +62,8 @@ public class AnalysisOrchestrator {
         this.heavyChatClient = heavyChatClient;
         this.analysisExecutor = analysisExecutor;
         this.resultAggregator = resultAggregator;
+        this.ruleEngine = ruleEngine;
+        this.ruleRepository = ruleRepository;
     }
 
     /**
@@ -160,6 +166,23 @@ public class AnalysisOrchestrator {
                         failed.setErrorMessage(e.getMessage());
                         session.getAnalyses().put(types.get(i).name().toLowerCase(), failed);
                     }
+                }
+
+                try {
+                    var rules = ruleRepository.findByRepo(parsed.owner(), parsed.repo());
+                    if (!rules.isEmpty()) {
+                        var ruleIssues = ruleEngine.evaluate(prData.getFiles(), rules);
+                        if (!ruleIssues.isEmpty()) {
+                            AnalysisResult ruleResult = new AnalysisResult();
+                            ruleResult.setStatus(AnalysisStatus.COMPLETED);
+                            ruleResult.setModel("rule-engine");
+                            ruleResult.setIssues(ruleIssues);
+                            ruleResult.setContent("Rule engine found " + ruleIssues.size() + " issues from " + rules.size() + " custom rules.");
+                            session.getAnalyses().put("rules", ruleResult);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("Rule engine evaluation skipped: {}", e.getMessage());
                 }
 
                 session.setStatus(SessionStatus.COMPLETED);
