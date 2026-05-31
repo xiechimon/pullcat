@@ -107,7 +107,7 @@
 
 | 服务 | 模型 | 用途 |
 |------|------|------|
-| DeepSeek | deepseek-chat / deepseek-reasoner | 五维分析 |
+| DeepSeek | deepseek-v4-flash | 五维分析 |
 
 ---
 
