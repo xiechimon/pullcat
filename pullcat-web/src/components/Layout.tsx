@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState, useRef } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
 import { getCurrentUser } from '../lib/api'
 
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string }>({ authenticated: false })
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -84,7 +85,17 @@ export function Layout({ children }: LayoutProps) {
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                       设置
                     </Link>
-                    <a href="/logout" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <a
+                      href="/logout"
+                      onClick={async (e) => {
+                        e.preventDefault()
+                        await fetch('/api/logout', { method: 'POST' })
+                        setUser({ authenticated: false })
+                        setMenuOpen(false)
+                        navigate('/login')
+                      }}
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
                       退出
                     </a>
                   </div>
