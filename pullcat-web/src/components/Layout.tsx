@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
+import * as Tooltip from '@radix-ui/react-tooltip'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ThemeToggle } from './ThemeToggle'
 import { getCurrentUser } from '../lib/api'
 
@@ -19,8 +22,6 @@ export function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string }>({ authenticated: false })
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -28,15 +29,8 @@ export function Layout({ children }: LayoutProps) {
     return () => { cancelled = true }
   }, [])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
   return (
+    <Tooltip.Provider delayDuration={500}>
     <div className="min-h-screen font-sans transition-colors duration-300">
       <header className="fixed h-[60px] md:h-[80px] top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-emerald-700/30 flex flex-row items-center justify-between px-4 lg:px-16">
         <div className="flex items-center gap-6">
@@ -62,58 +56,76 @@ export function Layout({ children }: LayoutProps) {
         </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <div ref={menuRef} className="relative">
-            {user.authenticated ? (
-              <>
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="flex items-center gap-2"
+          {user.authenticated ? (
+            <DropdownMenu.Root>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <DropdownMenu.Trigger asChild>
+                    <button className="flex items-center gap-2">
+                      {user.avatarUrl ? (
+                        <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full ring-2 ring-emerald-200" />
+                      ) : (
+                        <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                          {user.login?.[0]?.toUpperCase()}
+                        </span>
+                      )}
+                    </button>
+                  </DropdownMenu.Trigger>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                  <Tooltip.Content
+                    className="px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded shadow-lg z-50"
+                    sideOffset={5}
+                  >
+                    {user.login}
+                    <Tooltip.Arrow className="fill-gray-900 dark:fill-gray-100" />
+                  </Tooltip.Content>
+                </Tooltip.Portal>
+              </Tooltip.Root>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  className="min-w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50"
+                  sideOffset={5}
+                  align="end"
                 >
-                  {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full ring-2 ring-emerald-200" />
-                  ) : (
-                    <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
-                      {user.login?.[0]?.toUpperCase()}
-                    </span>
-                  )}
-                </button>
-                {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
-                    <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 dark:border-gray-700">
-                      {user.login}
-                    </div>
-                    <Link to="/settings" onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 dark:border-gray-700">
+                    {user.login}
+                  </div>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none">
                       设置
                     </Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
                     <a
                       href="/logout"
                       onClick={async (e) => {
                         e.preventDefault()
                         await fetch('/api/logout', { method: 'POST', credentials: 'include' })
                         setUser({ authenticated: false })
-                        setMenuOpen(false)
                         navigate('/login')
                       }}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none"
                     >
                       退出
                     </a>
-                  </div>
-                )}
-              </>
-            ) : (
-              <Link to="/login" className="text-sm font-medium text-emerald-700 hover:underline">
-                登录
-              </Link>
-            )}
-          </div>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          ) : (
+            <Link to="/login" className="text-sm font-medium text-emerald-700 hover:underline">
+              登录
+            </Link>
+          )}
         </div>
       </header>
 
       <main className="pt-[80px] pb-20">
         {children}
       </main>
+      <Toaster richColors position="top-center" />
     </div>
+    </Tooltip.Provider>
   )
 }
