@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { StatusBadge } from '../components/StatusBadge'
 import type { ReviewSession, Severity } from '../types/review'
 import { SEVERITY_BAR_COLORS } from '../types/review'
 import { getRepoStats, getReviews } from '../lib/api'
@@ -9,7 +11,6 @@ export function RepoPage() {
   const [reviews, setReviews] = useState<ReviewSession[]>([])
   const [stats, setStats] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
   const fullName = `${owner}/${repo}`
 
@@ -26,7 +27,7 @@ export function RepoPage() {
       setReviews(r.items)
       setStats(s)
     }).catch(e => {
-      if (!cancelled) setError(e.message)
+      if (!cancelled) toast.error(e.message)
     }).finally(() => {
       if (!cancelled) setLoading(false)
     })
@@ -39,16 +40,6 @@ export function RepoPage() {
       <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse space-y-4">
         <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded" />
         <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="p-6 border border-red-200 bg-red-50 dark:bg-red-950/30 rounded-xl text-red-700 dark:text-red-400">
-          {error}
-        </div>
       </div>
     )
   }
@@ -139,19 +130,5 @@ export function RepoPage() {
         )}
       </div>
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    PUBLISHED: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  }
-  const labels: Record<string, string> = { COMPLETED: '已完成', FAILED: '失败', PUBLISHED: '已发布' }
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ml-3 ${colors[status] || 'bg-gray-100 text-gray-600'}`}>
-      {labels[status] || status}
-    </span>
   )
 }

@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react'
+import {toast} from 'sonner'
 import type {StatsOverview, Severity} from '../types/review'
 import {getStatsOverview} from '../lib/api'
 import {SeverityChart} from '../components/SeverityChart'
@@ -7,7 +8,6 @@ import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 export function StatsPage() {
     const [stats, setStats] = useState<StatsOverview | null>(null)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         let cancelled = false
@@ -16,7 +16,7 @@ export function StatsPage() {
                 if (!cancelled) setStats(s)
             })
             .catch(e => {
-                if (!cancelled) setError(e.message)
+                if (!cancelled) toast.error(e.message)
             })
             .finally(() => {
                 if (!cancelled) setLoading(false)
@@ -30,12 +30,6 @@ export function StatsPage() {
         return <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse">
             <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"/>
             <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"/>
-        </div>
-    }
-    if (error) {
-        return <div className="max-w-5xl mx-auto px-4 py-8">
-            <div
-                className="p-6 border border-red-200 bg-red-50 dark:bg-red-950/30 rounded-xl text-red-700">{error}</div>
         </div>
     }
     if (!stats) return null

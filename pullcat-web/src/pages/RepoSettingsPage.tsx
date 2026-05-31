@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import type { Severity } from '../types/review'
 
 interface Rule {
@@ -19,6 +20,7 @@ export function RepoSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Rule | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const fullName = `${owner}/${repo}`
 
   const fetchRules = () => {
@@ -45,7 +47,6 @@ export function RepoSettingsPage() {
   }
 
   const deleteRule = async (id: string) => {
-    if (!confirm('确定删除此规则？')) return
     await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE', credentials: 'include' })
     fetchRules()
   }
@@ -100,13 +101,21 @@ export function RepoSettingsPage() {
                   <button onClick={() => toggleRule(rule)} className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700">
                     {rule.enabled ? '禁用' : '启用'}
                   </button>
-                  <button onClick={() => rule.id && deleteRule(rule.id)} className="text-xs px-2 py-1 text-red-400 hover:text-red-600">删除</button>
+                  <button onClick={() => rule.id && setDeleteTarget(rule.id)} className="text-xs px-2 py-1 text-red-400 hover:text-red-600">删除</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title="确认删除"
+        description="确定删除此规则？此操作不可撤销。"
+        confirmLabel="删除"
+        onConfirm={() => { if (deleteTarget) deleteRule(deleteTarget) }}
+      />
     </div>
   )
 }

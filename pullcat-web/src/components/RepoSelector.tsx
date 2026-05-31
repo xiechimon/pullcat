@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { toast } from 'sonner'
 import type { Repo } from '../types/review'
 import { getRepos, addRepo, deleteRepo } from '../lib/api'
 
@@ -11,7 +12,6 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
   const [repos, setRepos] = useState<Repo[]>([])
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [error, setError] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -38,9 +38,8 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
       const r = await addRepo(parts[0], parts[1])
       setRepos(prev => [...prev, r])
       setSearch('')
-      setError(null)
     } catch (e) {
-      setError((e as Error).message)
+      toast.error((e as Error).message)
     }
   }
 
@@ -76,9 +75,6 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
             >
               收藏仓库: {search}
             </button>
-          )}
-          {error && (
-            <div className="px-4 py-2 text-xs text-red-500">{error}</div>
           )}
           {filtered.map(r => (
             <div

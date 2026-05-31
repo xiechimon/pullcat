@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ReviewProgress } from '../components/ReviewProgress'
 import { ResultSection } from '../components/ResultSection'
 import { LoadingPlaceholder } from '../components/LoadingPlaceholder'
@@ -29,6 +30,14 @@ export function ReviewPage() {
   )
   const [activeIssueId, setActiveIssueId] = useState<string | null>(null)
   const startedRef = useRef(false)
+
+  useEffect(() => {
+    if (error) toast.error(error)
+  }, [error])
+
+  useEffect(() => {
+    if (publishError) toast.error(publishError)
+  }, [publishError])
 
   useEffect(() => {
     if (navigateState?.reviewId && navigateState?.sseUrl && !startedRef.current) {
@@ -94,7 +103,10 @@ export function ReviewPage() {
 
   const handlePublish = useCallback(async () => {
     if (!currentReviewId) return
-    await publish(currentReviewId, true, selectedIssueIds)
+    const ok = await publish(currentReviewId, true, selectedIssueIds)
+    if (ok) {
+      toast.success('发布成功！')
+    }
   }, [currentReviewId, selectedIssueIds, publish])
 
   const completedTasks = ANALYSIS_TYPES.filter(
@@ -106,14 +118,6 @@ export function ReviewPage() {
 
   return (
     <div className="pb-20">
-      {error && (
-        <div className="content-section">
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {error}
-          </div>
-        </div>
-      )}
-
       {prUrl && (
         <div className="content-section">
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 space-y-2">
@@ -208,7 +212,6 @@ export function ReviewPage() {
           totalCount={totalCount}
           publishing={publishing}
           published={published}
-          publishError={publishError}
           onPublish={handlePublish}
         />
       )}

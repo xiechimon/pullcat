@@ -3,7 +3,6 @@ interface ActionBarProps {
   totalCount: number
   publishing: boolean
   published: boolean
-  publishError: string | null
   onPublish: () => void
 }
 
@@ -12,7 +11,6 @@ export function ActionBar({
   totalCount,
   publishing,
   published,
-  publishError,
   onPublish,
 }: ActionBarProps) {
   return (
@@ -29,9 +27,6 @@ export function ActionBar({
         </div>
 
         <div className="flex items-center gap-3">
-          {publishError && (
-            <span className="text-sm text-red-600">{publishError}</span>
-          )}
           {published ? (
             <span className="text-sm text-[#047857] font-medium">
               发布成功！

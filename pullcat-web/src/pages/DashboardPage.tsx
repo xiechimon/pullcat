@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { StatusBadge } from '../components/StatusBadge'
 import type { StatsOverview, ReviewSession, Severity } from '../types/review'
 import { SEVERITY_BAR_COLORS } from '../types/review'
 import { getStatsOverview, getReviews } from '../lib/api'
@@ -8,7 +10,6 @@ export function DashboardPage() {
   const [stats, setStats] = useState<StatsOverview | null>(null)
   const [recentReviews, setRecentReviews] = useState<ReviewSession[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export function DashboardPage() {
       setStats(s)
       setRecentReviews(r.items)
     }).catch(e => {
-      if (!cancelled) setError(e.message)
+      if (!cancelled) toast.error(e.message)
     }).finally(() => {
       if (!cancelled) setLoading(false)
     })
@@ -40,16 +41,6 @@ export function DashboardPage() {
               <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
             ))}
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="p-6 border border-red-200 bg-red-50 dark:bg-red-950/30 rounded-xl text-red-700 dark:text-red-400">
-          {error}
         </div>
       </div>
     )
@@ -143,27 +134,5 @@ export function DashboardPage() {
         )}
       </div>
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    PUBLISHED: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    ANALYZING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    FETCHING: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-  }
-  const labels: Record<string, string> = {
-    COMPLETED: '已完成',
-    FAILED: '失败',
-    PUBLISHED: '已发布',
-    ANALYZING: '分析中',
-    FETCHING: '获取中',
-  }
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || ''}`}>
-      {labels[status] || status}
-    </span>
   )
 }
