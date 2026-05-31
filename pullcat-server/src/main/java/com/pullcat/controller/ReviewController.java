@@ -187,15 +187,10 @@ public class ReviewController {
 
     @PostMapping("/{id}/publish")
     public ResponseEntity<Map<String, Object>> publishReview(@PathVariable String id) {
-        try {
-            ReviewSession session = orchestrator.publishReview(id);
-            return ResponseEntity.ok(Map.of(
-                    "status", session.getStatus().name(),
-                    "commentId", session.getPublishedCommentId(),
-                    "prUrl", session.getPrUrl()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
-        }
+        ReviewSession session = orchestrator.publishReview(id);
+        return ResponseEntity.ok(Map.of(
+                "status", session.getStatus().name(),
+                "commentId", session.getPublishedCommentId(),
+                "prUrl", session.getPrUrl()));
     }
 }
