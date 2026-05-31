@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { StatusBadge } from '../components/StatusBadge'
@@ -7,10 +7,13 @@ import type { ReviewSession } from '../types/review'
 import { getReviews, deleteReview } from '../lib/api'
 
 export function HistoryPage() {
+  const navigate = useNavigate()
   const [reviews, setReviews] = useState<ReviewSession[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [compareMode, setCompareMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [searchParams, setSearchParams] = useSearchParams()
 
   const page = Number(searchParams.get('page') || '0')
@@ -42,6 +45,34 @@ export function HistoryPage() {
     }
   }
 
+  const toggleCompareMode = () => {
+    if (compareMode) {
+      setCompareMode(false)
+      setSelectedIds(new Set())
+    } else {
+      setCompareMode(true)
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else if (next.size < 2) {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const startCompare = () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 2) {
+      navigate(`/compare?r1=${ids[0]}&r2=${ids[1]}`)
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -58,6 +89,32 @@ export function HistoryPage() {
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">审查历史</h1>
+        <div className="flex items-center gap-2">
+          {compareMode && (
+            <>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                已选 {selectedIds.size}/2
+              </span>
+              <button
+                disabled={selectedIds.size !== 2}
+                onClick={startCompare}
+                className="px-3 py-1.5 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                开始对比
+              </button>
+            </>
+          )}
+          <button
+            onClick={toggleCompareMode}
+            className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+              compareMode
+                ? 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                : 'border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+            }`}
+          >
+            {compareMode ? '取消' : '对比'}
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -93,6 +150,7 @@ export function HistoryPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-750">
                 <tr>
+                  {compareMode && <th className="w-10 px-2 py-3" />}
                   <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">PR 标题</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">仓库</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">时间</th>
@@ -106,6 +164,17 @@ export function HistoryPage() {
                   const issueCount = Object.values(r.analyses).reduce((sum, a) => sum + (a.issues?.length || 0), 0)
                   return (
                     <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                      {compareMode && (
+                        <td className="px-2 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(r.id)}
+                            disabled={!selectedIds.has(r.id) && selectedIds.size >= 2}
+                            onChange={() => toggleSelect(r.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-emerald-500 focus:ring-emerald-400"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3">
                         <Link to={`/review/${r.id}`} className="text-emerald-600 hover:underline font-medium truncate block max-w-xs">
                           {r.prMetadata?.title || r.prUrl}
