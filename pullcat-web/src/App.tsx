@@ -8,6 +8,7 @@ import { HistoryPage } from './pages/HistoryPage'
 import { RepoPage } from './pages/RepoPage'
 import { LoginPage } from './pages/LoginPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { StatsPage } from './pages/StatsPage'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/logout" element={<LoginPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/stats" element={<StatsPage />} />
           </Routes>
         </Layout>
       </ErrorBoundary>

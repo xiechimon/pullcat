@@ -100,3 +100,10 @@ export async function getRepoStats(owner: string, repo: string): Promise<Record<
 export async function getCurrentUser(): Promise<{ authenticated: boolean; login?: string; avatarUrl?: string }> {
   return request('/api/user')
 }
+
+export async function compareReviews(id1: string, id2: string): Promise<Record<string, unknown>> {
+  return request('/api/reviews/compare', {
+    method: 'POST',
+    body: JSON.stringify({ reviewIds: [id1, id2] }),
+  })
+}
