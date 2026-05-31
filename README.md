@@ -23,21 +23,25 @@
 
 ---
 
+## Demo
+
+<p align="center">
+  <a href="【PullCat - 七牛云×XEngineer暑期实训营议题三】https://www.bilibili.com/video/BV1EoVD65ETW?vd_source=ac3f9fd11ce481368546414fcfa6ed77">
+    <img src="https://img.shields.io/badge/📹-Demo%20Video-grey?style=for-the-badge" alt="Demo Video" />
+  </a>
+</p>
+
+> 点击即可查看：[【PullCat - 七牛云×XEngineer暑期实训营议题三】](https://www.bilibili.com/video/BV1EoVD65ETW?vd_source=ac3f9fd11ce481368546414fcfa6ed77)
+> 
+> 
+> 长链：https://www.bilibili.com/video/BV1EoVD65ETW?vd_source=ac3f9fd11ce481368546414fcfa6ed77
+
 ## 它是怎么工作的
 ![img.png](assert/img.png)
 
 
 每个分析维度使用独立的 Prompt，从不同视角审视同一批代码变更。摘要和测试覆盖使用轻量模型降低成本，风险/质量/一致性使用重量模型保证深度。
 
-## Demo
-
-<p align="center">
-  <a href="#">
-    <img src="https://img.shields.io/badge/📹-Demo%20Video-grey?style=for-the-badge" alt="Demo Video" />
-  </a>
-</p>
-
-> **在此处插入 Demo 视频链接或嵌入视频**
 
 ---
 
