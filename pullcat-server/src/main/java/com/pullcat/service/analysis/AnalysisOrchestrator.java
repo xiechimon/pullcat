@@ -194,6 +194,8 @@ public class AnalysisOrchestrator {
                 session.setCompletedAt(Instant.now());
                 reviewRepository.save(session);
 
+                tryAutoPublish(session);
+
                 sample.stop(Timer.builder("reviews_duration_seconds")
                         .description("Duration of PR review analysis")
                         .register(meterRegistry));
@@ -368,6 +370,22 @@ public class AnalysisOrchestrator {
             }
         } catch (Exception e) {
             log.debug("Failed to check rule suggestions: {}", e.getMessage());
+        }
+    }
+
+    private void tryAutoPublish(ReviewSession session) {
+        String fullName = session.getRepositoryFullName();
+        if (fullName == null) return;
+        String[] parts = fullName.split("/", 2);
+        if (parts.length != 2) return;
+
+        if (reviewRepository.isAutoPublishEnabled(parts[0], parts[1])) {
+            try {
+                publishReview(session.getId());
+                log.info("Auto-published review {} to PR {}", session.getId(), session.getPrUrl());
+            } catch (Exception e) {
+                log.error("Auto-publish failed for review {}: {}", session.getId(), e.getMessage());
+            }
         }
     }
 
