@@ -38,14 +38,20 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
       const r = await addRepo(parts[0], parts[1])
       setRepos(prev => [...prev, r])
       setSearch('')
+      toast.success(`已收藏 ${r.fullName}`)
     } catch (e) {
       toast.error((e as Error).message)
     }
   }
 
   const handleDelete = async (owner: string, repo: string) => {
-    await deleteRepo(owner, repo)
-    setRepos(prev => prev.filter(r => r.owner !== owner || r.repo !== repo))
+    try {
+      await deleteRepo(owner, repo)
+      setRepos(prev => prev.filter(r => r.owner !== owner || r.repo !== repo))
+      toast.success(`已移除 ${owner}/${repo}`)
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
   }
 
   return (
