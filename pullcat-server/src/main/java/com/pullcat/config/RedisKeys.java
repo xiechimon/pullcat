@@ -65,4 +65,18 @@ public final class RedisKeys {
      * Rule 建议缓存 key 前缀，格式: rule-suggestions:{owner}/{repo}
      */
     public static final String RULE_SUGGESTIONS_PREFIX = "rule-suggestions:";
+
+    /**
+     * Review 按用户索引前缀，格式: review:user:{login}
+     */
+    public static final String REVIEW_USER_INDEX_PREFIX = "review:user:";
+
+    /**
+     * Review 匿名用户索引
+     */
+    public static final String REVIEW_ANONYMOUS_INDEX = "review:anonymous";
+
+    public static String reviewUserKey(String login) {
+        return REVIEW_USER_INDEX_PREFIX + login;
+    }
 }
