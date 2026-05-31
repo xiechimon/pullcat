@@ -33,7 +33,7 @@ export function SettingsPage() {
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">GitHub Token</h2>
-        <p className="text-sm text-gray-500">Pullcat 使用环境变量中的 GITHUB_TOKEN 访问 GitHub API。如需更换，请在 <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">.env</code> 文件中修改。</p>
+        <p className="text-sm text-gray-500">登录 GitHub 后即无需单独配置 Token。如需在未登录或 webhook 场景使用，请在 <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">.env</code> 文件中配置 GITHUB_TOKEN。</p>
         <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline">
           管理 GitHub Token →
         </a>
