@@ -1,15 +1,54 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getCurrentUser } from '../lib/api'
+
+interface AutoPublishRepo {
+  owner: string
+  repo: string
+  enabled: boolean
+}
 
 export function SettingsPage() {
   const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string } | null>(null)
   const [webhookRepo, setWebhookRepo] = useState('')
+  const [autoRepoInput, setAutoRepoInput] = useState('')
+  const [autoPublishRepos, setAutoPublishRepos] = useState<AutoPublishRepo[]>([])
 
   useEffect(() => {
     let cancelled = false
     getCurrentUser().then(u => { if (!cancelled) setUser(u) }).catch(() => {})
     return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/auto-publish', { credentials: 'include' })
+      .then(r => r.json())
+      .then(setAutoPublishRepos)
+      .catch(() => {})
+  }, [])
+
+  const addAutoPublish = useCallback((ownerRepo: string) => {
+    if (!ownerRepo.includes('/')) return
+    const [owner, repo] = ownerRepo.split('/')
+    fetch(`/api/repos/${owner}/${repo}/auto-publish`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ enabled: true }),
+    })
+      .then(() => {
+        setAutoPublishRepos(prev => {
+          if (prev.some(r => r.owner === owner && r.repo === repo)) return prev
+          return [...prev, { owner, repo, enabled: true }]
+        })
+      })
+  }, [])
+
+  const removeAutoPublish = useCallback((owner: string, repo: string) => {
+    fetch(`/api/repos/${owner}/${repo}/auto-publish`, { method: 'DELETE', credentials: 'include' })
+      .then(() => {
+        setAutoPublishRepos(prev => prev.filter(r => !(r.owner === owner && r.repo === repo)))
+      })
   }, [])
 
   return (
@@ -71,6 +110,51 @@ export function SettingsPage() {
         </div>
         <div className="text-sm text-gray-400">
           需选择事件类型：<code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">Pull requests</code>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">自动发布</h2>
+        <p className="text-sm text-gray-500">开启后，该仓库的 PR 审查完成后自动将结果发布到 PR 评论。</p>
+
+        {autoPublishRepos.length > 0 && (
+          <div className="space-y-2">
+            {autoPublishRepos.map(r => (
+              <div key={`${r.owner}/${r.repo}`} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{r.owner}/{r.repo}</span>
+                </div>
+                <button
+                  onClick={() => removeAutoPublish(r.owner, r.repo)}
+                  className="text-xs text-red-500 hover:text-red-700 px-2 py-1"
+                >
+                  关闭
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+          <p className="text-xs text-gray-400 mb-2">输入 owner/repo 添加自动发布：</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={autoRepoInput}
+              onChange={e => setAutoRepoInput(e.target.value)}
+              placeholder="owner/repo"
+              onKeyDown={e => { if (e.key === 'Enter') { addAutoPublish(autoRepoInput); setAutoRepoInput('') } }}
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <button
+              onClick={() => { addAutoPublish(autoRepoInput); setAutoRepoInput('') }}
+              disabled={!autoRepoInput.includes('/')}
+              className="px-4 py-2 text-sm font-medium bg-emerald-700 hover:bg-emerald-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors whitespace-nowrap"
+            >
+              添加
+            </button>
+          </div>
         </div>
       </div>
 
