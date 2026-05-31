@@ -19,7 +19,7 @@ import java.util.List;
 public class SecurityConfig {
 
     /**
-     * API 链路：不走 OAuth2，只配 CORS。
+     * API 链路：允许 OAuth2 session，但不强制认证。
      */
     @Bean
     @Order(1)
@@ -29,8 +29,7 @@ public class SecurityConfig {
                 .securityMatcher("/api/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .oauth2Login(AbstractHttpConfigurer::disable);
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 

@@ -22,7 +22,10 @@ AI 驱动的 Pull Request Review 助手。输入 GitHub PR 链接，自动获取
 - **Java 17+**
 - **Node.js 20+**（前端开发服务器）
 - **Redis**（默认 localhost:6379，可通过 `REDIS_HOST`/`REDIS_PORT` 配置）
-- **GitHub Personal Access Token**（需要 `repo` 权限，[在此创建](https://github.com/settings/tokens)）
+- **GitHub OAuth App**（登录后免配置 Token，[创建 OAuth App](https://github.com/settings/developers)）
+  - Homepage URL: `http://localhost:5173`
+  - Authorization callback URL: `http://localhost:5173/login/oauth2/code/github`
+- **GitHub Personal Access Token**（可选，无浏览器/webhook 场景使用，需要 `repo` 权限，[在此创建](https://github.com/settings/tokens)）
 - **DeepSeek API Key**（[在此获取](https://platform.deepseek.com/api_keys)）
 
 ## 快速开始
