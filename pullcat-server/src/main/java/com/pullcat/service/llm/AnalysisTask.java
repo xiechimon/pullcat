@@ -1,18 +1,18 @@
 package com.pullcat.service.llm;
 
+import com.pullcat.config.RetryConfig;
 import com.pullcat.model.AnalysisResult;
 import com.pullcat.model.AnalysisStatus;
 import com.pullcat.model.AnalysisType;
 import com.pullcat.model.Issue;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
 
-/**
- * 分析任务抽象基类，封装 LLM 调用、结果解析及错误处理的通用流程。
- */
+@Slf4j
 public abstract class AnalysisTask {
 
     protected final ChatClient chatClient;
@@ -62,7 +62,9 @@ public abstract class AnalysisTask {
             result.setCompletedAt(Instant.now());
 
             return result;
-        }).onErrorResume(e -> {
+        }).retryWhen(RetryConfig.llmRetry())
+          .onErrorResume(e -> {
+            log.warn("Analysis task {} failed after retries: {}", analysisType, e.getMessage());
             result.setStatus(AnalysisStatus.FAILED);
             result.setErrorMessage(e.getMessage());
             result.setCompletedAt(Instant.now());

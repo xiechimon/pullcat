@@ -3,6 +3,8 @@ package com.pullcat.service.analysis;
 import com.pullcat.model.*;
 import com.pullcat.service.github.GitHubApiService;
 import com.pullcat.service.llm.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,6 +39,7 @@ public class AnalysisOrchestrator {
     private final ResultAggregator resultAggregator;
     private final RuleEngine ruleEngine;
     private final RuleRepository ruleRepository;
+    private final MeterRegistry meterRegistry;
 
     @Value("${pullcat.llm.light-model:deepseek-chat}")
     private String lightModelName;
@@ -53,7 +56,8 @@ public class AnalysisOrchestrator {
                                 @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
                                 ResultAggregator resultAggregator,
                                 RuleEngine ruleEngine,
-                                RuleRepository ruleRepository) {
+                                RuleRepository ruleRepository,
+                                MeterRegistry meterRegistry) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
@@ -64,6 +68,7 @@ public class AnalysisOrchestrator {
         this.resultAggregator = resultAggregator;
         this.ruleEngine = ruleEngine;
         this.ruleRepository = ruleRepository;
+        this.meterRegistry = meterRegistry;
     }
 
     /**
@@ -85,15 +90,21 @@ public class AnalysisOrchestrator {
      */
     public void startReviewAsync(ReviewSession session) {
         new Thread(() -> {
+            Timer.Sample sample = Timer.start(meterRegistry);
             try {
                 GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
 
                 PRData prData = gitHubApiService.fetchPRData(parsed).block();
-                session.setPrMetadata(prData.getMetadata());
+                PRMetadata metadata = prData.getMetadata();
+                session.setPrMetadata(metadata);
                 session.setRawDiff(prData.getDiff());
                 session.setStatus(SessionStatus.ANALYZING);
                 session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
                 reviewRepository.save(session);
+
+                GitHubApiService.PRUrl enrichedPrUrl = new GitHubApiService.PRUrl(
+                        parsed.owner(), parsed.repo(), parsed.number(),
+                        metadata.getHeadBranch(), metadata.getHeadBranch());
 
                 StreamContext metaCtx = StreamRegistry.get(session.getId());
                 if (metaCtx != null) {
@@ -118,7 +129,7 @@ public class AnalysisOrchestrator {
                     discussion = gitHubApiService.fetchPRComments(parsed).block();
                     if (discussion == null) discussion = "";
                 } catch (Exception e) {
-                    log.debug("Failed to fetch PR comments: {}", e.getMessage());
+                    log.warn("Failed to fetch PR comments: {}", e.getMessage());
                 }
                 try {
                     List<String> allImports = new ArrayList<>();
@@ -126,10 +137,10 @@ public class AnalysisOrchestrator {
                         allImports.addAll(contextBuilder.extractImports(file));
                     }
                     List<String> resolved = contextBuilder.resolveLocalImports(allImports, prData.getFileTree());
-                    relatedFiles = contextBuilder.buildRelatedFilesSection(parsed, resolved);
+                    relatedFiles = contextBuilder.buildRelatedFilesSection(enrichedPrUrl, resolved);
                     if (relatedFiles == null) relatedFiles = "";
                 } catch (Exception e) {
-                    log.debug("Failed to build related files context: {}", e.getMessage());
+                    log.warn("Failed to build related files context: {}", e.getMessage());
                 }
 
                 final Map<String, String> finalVariables = contextBuilder.buildVariables(
@@ -168,26 +179,30 @@ public class AnalysisOrchestrator {
                     }
                 }
 
-                try {
-                    var rules = ruleRepository.findByRepo(parsed.owner(), parsed.repo());
-                    if (!rules.isEmpty()) {
-                        var ruleIssues = ruleEngine.evaluate(prData.getFiles(), rules);
-                        if (!ruleIssues.isEmpty()) {
-                            AnalysisResult ruleResult = new AnalysisResult();
-                            ruleResult.setStatus(AnalysisStatus.COMPLETED);
-                            ruleResult.setModel("rule-engine");
-                            ruleResult.setIssues(ruleIssues);
-                            ruleResult.setContent("Rule engine found " + ruleIssues.size() + " issues from " + rules.size() + " custom rules.");
-                            session.getAnalyses().put("rules", ruleResult);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.debug("Rule engine evaluation skipped: {}", e.getMessage());
-                }
-
-                session.setStatus(SessionStatus.COMPLETED);
+                long completedCount = session.getAnalyses().values().stream()
+                        .filter(r -> r.getStatus() == AnalysisStatus.COMPLETED)
+                        .count();
+                session.setStatus(completedCount > 0 ? SessionStatus.COMPLETED : SessionStatus.FAILED);
                 session.setCompletedAt(Instant.now());
                 reviewRepository.save(session);
+
+                sample.stop(Timer.builder("reviews_duration_seconds")
+                        .description("Duration of PR review analysis")
+                        .register(meterRegistry));
+                meterRegistry.counter("reviews_total",
+                        "status", session.getStatus().name()).increment();
+
+                for (AnalysisResult analysisResult : session.getAnalyses().values()) {
+                    if (analysisResult.getStatus() == AnalysisStatus.COMPLETED) {
+                        meterRegistry.counter("llm_requests_total",
+                                "model", analysisResult.getModel() != null ? analysisResult.getModel() : "unknown",
+                                "status", "success").increment();
+                    } else {
+                        meterRegistry.counter("llm_requests_total",
+                                "model", "unknown",
+                                "status", "failed").increment();
+                    }
+                }
 
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
@@ -202,6 +217,12 @@ public class AnalysisOrchestrator {
                 log.error("Review failed: {}", e.getMessage(), e);
                 session.setStatus(SessionStatus.FAILED);
                 reviewRepository.save(session);
+
+                sample.stop(Timer.builder("reviews_duration_seconds")
+                        .description("Duration of PR review analysis")
+                        .register(meterRegistry));
+                meterRegistry.counter("reviews_total",
+                        "status", SessionStatus.FAILED.name()).increment();
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
                     try {

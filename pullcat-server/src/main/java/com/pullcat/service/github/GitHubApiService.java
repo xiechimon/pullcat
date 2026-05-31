@@ -2,18 +2,24 @@ package com.pullcat.service.github;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.pullcat.config.GitHubConfig;
+import com.pullcat.config.RetryConfig;
 import com.pullcat.model.FileContent;
 import com.pullcat.model.GitHubFile;
 import com.pullcat.model.PRData;
 import com.pullcat.model.PRMetadata;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,25 +54,27 @@ public class GitHubApiService {
     };
 
     private final WebClient webClient;
+    private final MeterRegistry meterRegistry;
 
-    /**
-     * 构造函数，通过 {@link GitHubConfig} 获取 PAT Token 并初始化 WebClient。
-     */
     @Autowired
-    public GitHubApiService(GitHubConfig config) {
+    public GitHubApiService(GitHubConfig config, MeterRegistry meterRegistry) {
         this(WebClient.builder()
                 .baseUrl("https://api.github.com")
                 .defaultHeader("Authorization", "Bearer " + config.getToken())
                 .defaultHeader("Accept", "application/vnd.github.v3+json")
                 .defaultHeader("User-Agent", "pullcat")
-                .build());
+                .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(
+                        HttpClient.create().responseTimeout(java.time.Duration.ofSeconds(30))))
+                .build(), meterRegistry);
     }
 
-    /**
-     * 内部构造器，用于注入自定义 WebClient（单元测试等场景）。
-     */
     GitHubApiService(WebClient webClient) {
+        this(webClient, null);
+    }
+
+    GitHubApiService(WebClient webClient, MeterRegistry meterRegistry) {
         this.webClient = webClient;
+        this.meterRegistry = meterRegistry;
     }
 
     /**
@@ -96,8 +104,13 @@ public class GitHubApiService {
                 .uri("/repos/{owner}/{repo}/pulls/{number}", prUrl.owner(), prUrl.repo(), prUrl.number())
                 .retrieve()
                 .bodyToMono(JsonNode.class)
+                .retryWhen(RetryConfig.githubRetry())
                 .map(json -> mapToPRMetadata(prUrl, json))
-                .doOnSuccess(meta -> log.debug("GitHub API call: fetchPRMetadata"));
+                .doOnSuccess(meta -> {
+                    recordApiCall("pulls", "success");
+                    log.debug("GitHub API call: fetchPRMetadata");
+                })
+                .doOnError(e -> recordApiCall("pulls", "error"));
     }
 
     PRMetadata mapToPRMetadata(PRUrl prUrl, JsonNode json) {
@@ -156,12 +169,14 @@ public class GitHubApiService {
      * 获取单个文件的原始内容（用于依赖文件获取）。
      */
     public Mono<String> fetchFileContent(PRUrl prUrl, String path) {
+        String ref = prUrl.headRef() != null ? prUrl.headRef() : "main";
         return webClient.get()
                 .uri("/repos/{owner}/{repo}/contents/{path}?ref={ref}",
-                        prUrl.owner(), prUrl.repo(), path, prUrl.ref())
+                        prUrl.owner(), prUrl.repo(), path, ref)
                 .header("Accept", "application/vnd.github.v3.raw")
                 .retrieve()
                 .bodyToMono(String.class)
+                .retryWhen(RetryConfig.githubRetry())
                 .onErrorReturn("");
     }
 
@@ -193,30 +208,33 @@ public class GitHubApiService {
     }
 
     /**
-     * 建议 PR reviewer（简单实现：返回仓库 collaborators）。
+     * 获取 PR 完整数据：先拉取 metadata 获取 head ref，再以正确的 ref 拉取其余数据。
      */
     public Mono<PRData> fetchPRData(PRUrl prUrl) {
-        return Mono.zip(
-                fetchPRMetadata(prUrl),
-                fetchDiff(prUrl),
-                fetchChangedFiles(prUrl),
-                fetchFileTree(prUrl)
-        ).flatMap(tuple -> {
-            PRMetadata metadata = tuple.getT1();
-            String diff = tuple.getT2();
-            List<GitHubFile> changedFiles = tuple.getT3();
-            String fileTree = tuple.getT4();
-            return fetchFileContents(prUrl, changedFiles)
-                    .collectList()
-                    .map(fileContents -> {
-                        PRData prData = new PRData();
-                        prData.setMetadata(metadata);
-                        prData.setDiff(diff);
-                        prData.setFiles(fileContents);
-                        prData.setFileTree(fileTree);
-                        return prData;
+        return fetchPRMetadata(prUrl)
+                .flatMap(metadata -> {
+                    PRUrl enriched = prUrl.withHeadInfo(
+                            metadata.getHeadBranch(), metadata.getHeadBranch());
+                    return Mono.zip(
+                            fetchDiff(enriched),
+                            fetchChangedFiles(enriched),
+                            fetchFileTree(enriched)
+                    ).flatMap(tuple -> {
+                        String diff = tuple.getT1();
+                        List<GitHubFile> changedFiles = tuple.getT2();
+                        String fileTree = tuple.getT3();
+                        return fetchFileContents(enriched, changedFiles)
+                                .collectList()
+                                .map(fileContents -> {
+                                    PRData prData = new PRData();
+                                    prData.setMetadata(metadata);
+                                    prData.setDiff(diff);
+                                    prData.setFiles(fileContents);
+                                    prData.setFileTree(fileTree);
+                                    return prData;
+                                });
                     });
-        });
+                });
     }
 
     /**
@@ -270,13 +288,17 @@ public class GitHubApiService {
     }
 
     private Mono<String> fetchSingleFileContent(PRUrl prUrl, GitHubFile file) {
+        String ref = prUrl.headRef() != null ? prUrl.headRef() : "main";
         return webClient.get()
                 .uri("/repos/{owner}/{repo}/contents/{path}?ref={ref}",
-                        prUrl.owner(), prUrl.repo(), file.getFilename(), prUrl.ref())
+                        prUrl.owner(), prUrl.repo(), file.getFilename(), ref)
                 .header("Accept", "application/vnd.github.v3.raw")
                 .retrieve()
                 .bodyToMono(String.class)
-                .onErrorResume(e -> Mono.just("[Binary or large file - content not fetched]"));
+                .onErrorResume(e -> {
+                    log.warn("Failed to fetch single file content for {}: {}", file.getFilename(), e.getMessage());
+                    return Mono.just("[Binary or large file - content not fetched]");
+                });
     }
 
     /**
@@ -286,9 +308,10 @@ public class GitHubApiService {
      * @return 包含格式化目录树字符串的 {@code Mono<String>}
      */
     public Mono<String> fetchFileTree(PRUrl prUrl) {
+        String ref = prUrl.headRef() != null ? prUrl.headRef() : "main";
         return webClient.get()
                 .uri("/repos/{owner}/{repo}/git/trees/{ref}?recursive=1",
-                        prUrl.owner(), prUrl.repo(), prUrl.headRef())
+                        prUrl.owner(), prUrl.repo(), ref)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
                 .map(json -> {
@@ -361,6 +384,7 @@ public class GitHubApiService {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(JsonNode.class)
+                .retryWhen(RetryConfig.githubRetry())
                 .map(json -> json.path("id").asLong());
     }
 
@@ -404,13 +428,19 @@ public class GitHubApiService {
     /**
      * 解析后的 GitHub PR URL 信息。
      */
-    public record PRUrl(String owner, String repo, int number) {
-        public String ref() {
-            return "heads/" + number;
+    public record PRUrl(String owner, String repo, int number, String headRef, String headSha) {
+        public PRUrl(String owner, String repo, int number) {
+            this(owner, repo, number, null, null);
         }
 
-        public String headRef() {
-            return number > 0 ? String.valueOf(number) : "main";
+        public PRUrl withHeadInfo(String headRef, String headSha) {
+            return new PRUrl(owner, repo, number, headRef, headSha);
+        }
+    }
+
+    private void recordApiCall(String endpoint, String status) {
+        if (meterRegistry != null) {
+            meterRegistry.counter("github_api_calls_total", "endpoint", endpoint, "status", status).increment();
         }
     }
 }
