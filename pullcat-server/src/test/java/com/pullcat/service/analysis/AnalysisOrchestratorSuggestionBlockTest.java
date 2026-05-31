@@ -4,6 +4,7 @@ import com.pullcat.model.Issue;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,7 +13,7 @@ class AnalysisOrchestratorSuggestionBlockTest {
     @Test
     void buildSuggestionBlockFormatsCorrectly() throws Exception {
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null);
 
         Issue issue = new Issue();
         issue.setSeverity(Issue.Severity.HIGH);
@@ -26,7 +27,7 @@ class AnalysisOrchestratorSuggestionBlockTest {
         method.setAccessible(true);
         String result = (String) method.invoke(orchestrator, issue);
 
-        assertThat(result).contains("#### [HIGH] NPE risk - `src/main/Foo.java:42`");
+        assertThat(result).contains("**" + "[HIGH] NPE risk**");
         assertThat(result).contains("Potential null pointer when user is not authenticated");
         assertThat(result).contains("```suggestion");
         assertThat(result).contains("Optional.ofNullable(user).map(User::getName).orElse(\"unknown\")");
@@ -35,7 +36,7 @@ class AnalysisOrchestratorSuggestionBlockTest {
     @Test
     void buildSuggestionBlockHandlesNullLine() throws Exception {
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null, null);
 
         Issue issue = new Issue();
         issue.setSeverity(Issue.Severity.MEDIUM);
@@ -49,15 +50,15 @@ class AnalysisOrchestratorSuggestionBlockTest {
         method.setAccessible(true);
         String result = (String) method.invoke(orchestrator, issue);
 
-        assertThat(result).contains("`src/Util.java:null`");
+        assertThat(result).contains("**" + "[MEDIUM] Missing docs**");
         assertThat(result).contains("```suggestion");
     }
 
     @Test
-    void buildPublishSummaryIncludesSuggestionBlocks() throws Exception {
+    void buildPublishSummaryMentionsInlineFixesInsteadOfEmbeddedBlocks() throws Exception {
         ResultAggregator aggregator = new ResultAggregator();
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
-                null, null, null, null, null, null, null, aggregator, null, null, null);
+                null, null, null, null, null, null, null, aggregator, null, null, null, null);
 
         var session = new com.pullcat.model.ReviewSession();
         session.setId("test-session");
@@ -78,16 +79,19 @@ class AnalysisOrchestratorSuggestionBlockTest {
 
         var riskResult = new com.pullcat.model.AnalysisResult();
         riskResult.setType(com.pullcat.model.AnalysisType.RISK);
-        riskResult.setIssues(java.util.List.of(issue));
+        riskResult.setIssues(List.of(issue));
         session.getAnalyses().put("risk", riskResult);
 
         Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildPublishSummary",
-                com.pullcat.model.ReviewSession.class);
+                List.class, com.pullcat.model.ReviewSession.class);
         method.setAccessible(true);
-        String summary = (String) method.invoke(orchestrator, session);
 
-        assertThat(summary).contains("### Suggested Fixes");
-        assertThat(summary).contains("```suggestion");
-        assertThat(summary).contains("PreparedStatement ps = conn.prepareStatement");
+        List<Issue> merged = aggregator.mergeResults(
+                List.copyOf(session.getAnalyses().values()));
+        String summary = (String) method.invoke(orchestrator, merged, session);
+
+        assertThat(summary).contains("### 修复建议");
+        assertThat(summary).contains("inline");
+        assertThat(summary).contains("一键应用");
     }
 }
