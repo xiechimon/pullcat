@@ -30,6 +30,8 @@ public class ReviewSession {
     private Instant completedAt;
     /** 仓库全名，格式 owner/repo */
     private String repositoryFullName;
+    /** 创建此审查的用户 ID */
+    private String userId;
     /** 原始 unified diff 文本 */
     private String rawDiff;
 }
