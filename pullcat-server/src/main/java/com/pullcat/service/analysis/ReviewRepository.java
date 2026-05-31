@@ -27,6 +27,14 @@ public class ReviewRepository {
             redisTemplate.opsForZSet().add(RedisKeys.reviewRepoKey(parts[0], parts[1]),
                     session.getId(), session.getCreatedAt().toEpochMilli());
         }
+
+        if (session.getUserId() != null) {
+            redisTemplate.opsForZSet().add(RedisKeys.reviewUserKey(session.getUserId()),
+                    session.getId(), session.getCreatedAt().toEpochMilli());
+        } else {
+            redisTemplate.opsForZSet().add(RedisKeys.REVIEW_ANONYMOUS_INDEX,
+                    session.getId(), session.getCreatedAt().toEpochMilli());
+        }
     }
 
     public ReviewSession findById(String id) {
@@ -53,6 +61,30 @@ public class ReviewRepository {
         Set<Object> ids = redisTemplate.opsForZSet().reverseRange(
                 RedisKeys.reviewRepoKey(parts[0], parts[1]), start, end);
         return fetchByIds(ids);
+    }
+
+    public List<ReviewSession> findByLogin(String login, int page, int size) {
+        long start = (long) page * size;
+        long end = start + size - 1;
+        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.reviewUserKey(login), start, end);
+        return fetchByIds(ids);
+    }
+
+    public long countByLogin(String login) {
+        Long s = redisTemplate.opsForZSet().size(RedisKeys.reviewUserKey(login));
+        return s != null ? s : 0;
+    }
+
+    public List<ReviewSession> findAnonymous(int page, int size) {
+        long start = (long) page * size;
+        long end = start + size - 1;
+        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_ANONYMOUS_INDEX, start, end);
+        return fetchByIds(ids);
+    }
+
+    public long countAnonymous() {
+        Long s = redisTemplate.opsForZSet().size(RedisKeys.REVIEW_ANONYMOUS_INDEX);
+        return s != null ? s : 0;
     }
 
     public long count() {
@@ -86,9 +118,16 @@ public class ReviewRepository {
 
     public void delete(String id) {
         ReviewSession session = findById(id);
-        if (session != null && session.getRepositoryFullName() != null) {
-            String[] parts = session.getRepositoryFullName().split("/", 2);
-            redisTemplate.opsForZSet().remove(RedisKeys.reviewRepoKey(parts[0], parts[1]), id);
+        if (session != null) {
+            if (session.getRepositoryFullName() != null) {
+                String[] parts = session.getRepositoryFullName().split("/", 2);
+                redisTemplate.opsForZSet().remove(RedisKeys.reviewRepoKey(parts[0], parts[1]), id);
+            }
+            if (session.getUserId() != null) {
+                redisTemplate.opsForZSet().remove(RedisKeys.reviewUserKey(session.getUserId()), id);
+            } else {
+                redisTemplate.opsForZSet().remove(RedisKeys.REVIEW_ANONYMOUS_INDEX, id);
+            }
         }
         redisTemplate.opsForZSet().remove(RedisKeys.REVIEW_INDEX, id);
         redisTemplate.delete(RedisKeys.reviewKey(id));
