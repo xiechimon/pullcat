@@ -46,3 +46,6 @@ openspec/
 
 # Environment
 .env
+
+# ROADMAP
+ROADMAP.md
