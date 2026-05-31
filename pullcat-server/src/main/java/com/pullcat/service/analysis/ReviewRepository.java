@@ -148,4 +148,12 @@ public class ReviewRepository {
             redisTemplate.delete(RedisKeys.autoPublishKey(owner, repo));
         }
     }
+
+    public List<String> listAutoPublishRepos() {
+        Set<String> keys = redisTemplate.keys(RedisKeys.REPO_AUTO_PUBLISH_PREFIX + "*");
+        if (keys == null) return List.of();
+        return keys.stream()
+                .map(k -> k.substring(RedisKeys.REPO_AUTO_PUBLISH_PREFIX.length()))
+                .toList();
+    }
 }
