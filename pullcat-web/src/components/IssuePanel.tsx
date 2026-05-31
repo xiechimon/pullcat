@@ -143,6 +143,12 @@ export function IssuePanel({
                         {issue.sourceDimensions && issue.sourceDimensions.length > 1 && (
                           <span className="text-[10px] text-purple-500">多源</span>
                         )}
+                        {issue.feedback === 'ACCEPTED' && (
+                          <span className="text-[10px] text-emerald-600" title="已接受">✓</span>
+                        )}
+                        {issue.feedback === 'REJECTED' && (
+                          <span className="text-[10px] text-red-500" title="已拒绝">✗</span>
+                        )}
                       </div>
                       <div className="text-xs text-gray-700 dark:text-gray-300 mt-0.5 truncate">{issue.title}</div>
                       <div className="text-[10px] text-gray-400 mt-0.5">
