@@ -292,6 +292,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
 
     es.addEventListener('all_complete', () => {
       dispatch({ type: 'ANALYSIS_COMPLETE' })
+      toast.success('所有分析已完成！')
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null

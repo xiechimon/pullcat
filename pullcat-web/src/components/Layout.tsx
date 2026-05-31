@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Toaster } from 'sonner'
+import { toast, Toaster } from 'sonner'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ThemeToggle } from './ThemeToggle'
@@ -101,9 +101,15 @@ export function Layout({ children }: LayoutProps) {
                       href="/logout"
                       onClick={async (e) => {
                         e.preventDefault()
-                        await fetch('/api/logout', { method: 'POST', credentials: 'include' })
-                        setUser({ authenticated: false })
-                        navigate('/login')
+                        try {
+                          const res = await fetch('/api/logout', { method: 'POST', credentials: 'include' })
+                          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                          setUser({ authenticated: false })
+                          toast.success('已退出登录')
+                          navigate('/login')
+                        } catch {
+                          toast.error('退出失败')
+                        }
                       }}
                       className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none"
                     >
