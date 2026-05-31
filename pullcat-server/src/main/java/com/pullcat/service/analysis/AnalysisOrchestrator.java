@@ -39,6 +39,7 @@ public class AnalysisOrchestrator {
     private final ResultAggregator resultAggregator;
     private final RuleEngine ruleEngine;
     private final RuleRepository ruleRepository;
+    private final RuleSuggestionService ruleSuggestionService;
     private final MeterRegistry meterRegistry;
 
     @Value("${pullcat.llm.light-model:deepseek-chat}")
@@ -57,6 +58,7 @@ public class AnalysisOrchestrator {
                                 ResultAggregator resultAggregator,
                                 RuleEngine ruleEngine,
                                 RuleRepository ruleRepository,
+                                RuleSuggestionService ruleSuggestionService,
                                 MeterRegistry meterRegistry) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
@@ -68,6 +70,7 @@ public class AnalysisOrchestrator {
         this.resultAggregator = resultAggregator;
         this.ruleEngine = ruleEngine;
         this.ruleRepository = ruleRepository;
+        this.ruleSuggestionService = ruleSuggestionService;
         this.meterRegistry = meterRegistry;
     }
 
@@ -208,6 +211,7 @@ public class AnalysisOrchestrator {
                 if (finalCtx != null) {
                     try {
                         finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+                        checkAndNotifyRuleSuggestions(session, finalCtx);
                         finalCtx.emitter().complete();
                     } catch (IOException | IllegalStateException e) {
                         log.debug("SSE send all_complete error: {}", e.getMessage());
@@ -280,9 +284,20 @@ public class AnalysisOrchestrator {
         }
 
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
-        String summary = buildPublishSummary(session);
 
-        Long commentId = gitHubApiService.publishReview(parsed, summary).block();
+        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
+        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
+
+        String summary = buildPublishSummary(dedupedIssues, session);
+
+        List<GitHubApiService.ReviewComment> comments = dedupedIssues.stream()
+                .filter(i -> i.getSuggestionCode() != null && !i.getSuggestionCode().isBlank())
+                .filter(i -> i.getFile() != null && i.getLine() != null)
+                .map(i -> new GitHubApiService.ReviewComment(
+                        i.getFile(), i.getLine(), buildSuggestionBlock(i)))
+                .toList();
+
+        Long commentId = gitHubApiService.publishReviewWithComments(parsed, summary, comments).block();
         session.setStatus(SessionStatus.PUBLISHED);
         session.setPublishedCommentId(commentId);
         reviewRepository.save(session);
@@ -290,20 +305,17 @@ public class AnalysisOrchestrator {
         return session;
     }
 
-    private String buildPublishSummary(ReviewSession session) {
+    private String buildPublishSummary(List<Issue> dedupedIssues, ReviewSession session) {
         StringBuilder sb = new StringBuilder();
-        sb.append("## AI Code Review\n\n");
+        sb.append("## AI 代码审查\n\n");
 
         AnalysisResult summaryResult = session.getAnalyses().get("summary");
         if (summaryResult != null && summaryResult.getContent() != null) {
-            sb.append("### Summary\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
+            sb.append("### 审查摘要\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
         }
 
-        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
-        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
-
-        sb.append("### Issues Overview (").append(dedupedIssues.size()).append(" unique)\n\n");
-        sb.append("| Severity | File | Line | Title |\n|----------|------|------|-------|\n");
+        sb.append("### 问题概览（").append(dedupedIssues.size()).append(" 个）\n\n");
+        sb.append("| 严重度 | 文件 | 行号 | 问题 |\n|--------|------|------|------|\n");
         for (Issue issue : dedupedIssues) {
             sb.append("| ").append(issue.getSeverity()).append(" | ")
                     .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
@@ -311,30 +323,45 @@ public class AnalysisOrchestrator {
                     .append(issue.getTitle()).append(" |\n");
         }
 
-        List<Issue> issuesWithCode = dedupedIssues.stream()
-                .filter(i -> i.getSuggestionCode() != null && !i.getSuggestionCode().isBlank())
-                .toList();
-        if (!issuesWithCode.isEmpty()) {
-            sb.append("\n### Suggested Fixes\n\n");
-            for (Issue issue : issuesWithCode) {
-                sb.append(buildSuggestionBlock(issue));
-            }
+        long fixCount = dedupedIssues.stream().filter(i -> i.getSuggestionCode() != null
+                && !i.getSuggestionCode().isBlank() && i.getFile() != null && i.getLine() != null).count();
+        if (fixCount > 0) {
+            sb.append("\n### 修复建议（").append(fixCount).append(" 条内联评论）\n\n");
+            sb.append("代码修复建议已作为 inline comment 发布到对应行，可直接在 PR Files Changed 页面查看并一键应用\n\n");
         }
 
-        sb.append("\n---\n*Generated by [pullcat](https://github.com)*");
+        sb.append("\n---\n*由 [pullcat](https://xmon.me) 自动生成*");
         return sb.toString();
     }
 
     String buildSuggestionBlock(Issue issue) {
         StringBuilder sb = new StringBuilder();
-        sb.append("#### [").append(issue.getSeverity()).append("] ")
-                .append(issue.getTitle()).append(" - `")
-                .append(issue.getFile()).append(":").append(issue.getLine()).append("`\n\n");
+        sb.append("**[").append(issue.getSeverity()).append("] ")
+                .append(issue.getTitle()).append("**\n\n");
         sb.append(issue.getDescription()).append("\n\n");
         sb.append("```suggestion\n");
         sb.append(issue.getSuggestionCode());
-        sb.append("\n```\n\n");
+        sb.append("\n```\n");
         return sb.toString();
+    }
+
+    private void checkAndNotifyRuleSuggestions(ReviewSession session, StreamContext ctx) {
+        try {
+            String fullName = session.getRepositoryFullName();
+            if (fullName == null) return;
+            String[] parts = fullName.split("/", 2);
+            if (parts.length != 2) return;
+
+            boolean hasSuggestions = ruleSuggestionService.hasNewSuggestions(parts[0], parts[1]);
+            if (hasSuggestions) {
+                ctx.emitter().send(SseEmitter.event()
+                        .name("rule_suggestion")
+                        .data(Map.of("message", "发现潜在规则建议",
+                                "url", "/settings/repos/" + parts[0] + "/" + parts[1])));
+            }
+        } catch (Exception e) {
+            log.debug("Failed to check rule suggestions: {}", e.getMessage());
+        }
     }
 
     private String extractSummaryText(String content) {
