@@ -1,34 +1,56 @@
 package com.pullcat.config;
 
-import org.springframework.context.annotation.Bean;
+import com.pullcat.service.analysis.RateLimiter;
+import com.pullcat.service.analysis.RateLimiterInterceptor;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.context.annotation.Profile;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.List;
+import java.time.Duration;
 
-/**
- * Web 层配置类，负责注册全局 CORS 过滤器，允许本地前端开发时的跨域请求
- */
 @Configuration
-public class WebConfig {
+@Profile("prod")
+public class WebConfig implements WebMvcConfigurer {
 
-    /**
-     * 配置 CORS 过滤器，允许本地前端开发时的跨域请求。
-     *
-     * @return 配置了允许 localhost 跨域、GET/POST/OPTIONS 方法及凭证传输的 CorsFilter
-     */
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:*"));
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+    @Value("${pullcat.rate-limit.default-max:60}")
+    private int defaultMax;
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+    @Value("${pullcat.rate-limit.default-window-seconds:60}")
+    private int defaultWindowSeconds;
+
+    @Value("${pullcat.rate-limit.review-create-max:10}")
+    private int reviewCreateMax;
+
+    @Value("${pullcat.rate-limit.review-create-window-seconds:60}")
+    private int reviewCreateWindowSeconds;
+
+    @Value("${pullcat.rate-limit.stats-max:30}")
+    private int statsMax;
+
+    @Value("${pullcat.rate-limit.stats-window-seconds:60}")
+    private int statsWindowSeconds;
+
+    private final RateLimiterInterceptor rateLimiterInterceptor;
+
+    public WebConfig(RateLimiter rateLimiter, MeterRegistry meterRegistry) {
+        Counter rejectionCounter = Counter.builder("rate_limit_rejections_total")
+                .description("Total number of rate-limited requests")
+                .register(meterRegistry);
+
+        this.rateLimiterInterceptor = new RateLimiterInterceptor(rateLimiter, rejectionCounter);
+        this.rateLimiterInterceptor.addRule("default", defaultMax, Duration.ofSeconds(defaultWindowSeconds));
+        this.rateLimiterInterceptor.addRule("POST:/api/reviews", reviewCreateMax, Duration.ofSeconds(reviewCreateWindowSeconds));
+        this.rateLimiterInterceptor.addRule("GET:/api/stats", statsMax, Duration.ofSeconds(statsWindowSeconds));
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(rateLimiterInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/user", "/api/reviews/**", "/api/webhooks/**", "/actuator/**");
     }
 }
