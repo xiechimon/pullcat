@@ -33,8 +33,13 @@ export function HistoryPage() {
   const totalPages = Math.max(1, Math.ceil(total / size))
 
   const handleDelete = async (id: string) => {
-    await deleteReview(id)
-    setReviews(prev => prev.filter(r => r.id !== id))
+    try {
+      await deleteReview(id)
+      setReviews(prev => prev.filter(r => r.id !== id))
+      toast.success('已删除')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '删除失败')
+    }
   }
 
   if (loading) {

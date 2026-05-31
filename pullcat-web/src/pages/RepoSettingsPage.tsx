@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import type { Severity } from '../types/review'
 
@@ -61,8 +62,16 @@ export function RepoSettingsPage() {
     const url = rule.id
       ? `/api/repos/${owner}/${repo}/rules/${rule.id}`
       : `/api/repos/${owner}/${repo}/rules`
-    const res = await fetch(url, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
-    if (res.ok) { fetchRules(); setShowForm(false); setEditing(null) }
+    try {
+      const res = await fetch(url, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      fetchRules()
+      setShowForm(false)
+      setEditing(null)
+      toast.success('规则已保存')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '保存规则失败')
+    }
   }
 
   const adoptSuggestion = async (rule: Rule) => {
@@ -97,13 +106,27 @@ export function RepoSettingsPage() {
   }
 
   const toggleRule = async (rule: Rule) => {
-    await fetch(`/api/repos/${owner}/${repo}/rules/${rule.id}/toggle`, { method: 'PUT', credentials: 'include' })
-    fetchRules()
+    try {
+      const res = await fetch(`/api/repos/${owner}/${repo}/rules/${rule.id}/toggle`, { method: 'PUT', credentials: 'include' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      fetchRules()
+      toast.success(rule.enabled ? '规则已禁用' : '规则已启用')
+    } catch (e) {
+      fetchRules()
+      toast.error(e instanceof Error ? e.message : '切换规则失败')
+    }
   }
 
   const deleteRule = async (id: string) => {
-    await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE', credentials: 'include' })
-    fetchRules()
+    try {
+      const res = await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE', credentials: 'include' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      fetchRules()
+      toast.success('规则已删除')
+    } catch (e) {
+      fetchRules()
+      toast.error(e instanceof Error ? e.message : '删除规则失败')
+    }
   }
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
