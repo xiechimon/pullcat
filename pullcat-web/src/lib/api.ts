@@ -96,3 +96,7 @@ export async function getStatsOverview(): Promise<StatsOverview> {
 export async function getRepoStats(owner: string, repo: string): Promise<Record<string, unknown>> {
   return request<Record<string, unknown>>(`/api/repos/${owner}/${repo}/stats`)
 }
+
+export async function getCurrentUser(): Promise<{ authenticated: boolean; login?: string; avatarUrl?: string }> {
+  return request('/api/user')
+}
