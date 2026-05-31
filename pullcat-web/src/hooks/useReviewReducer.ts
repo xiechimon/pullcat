@@ -1,4 +1,5 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 import { createSSEConnection, createReview, getReview } from '../lib/api'
 import type { AnalysisResult, AnalysisStatus, ReviewSession, TaskState } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
@@ -322,7 +323,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     })
 
     es.onerror = () => {
-      // SSE会自动重试，不需要手动处理
+      toast.warning('SSE 连接中断，正在重连...')
     }
   }, [])
 

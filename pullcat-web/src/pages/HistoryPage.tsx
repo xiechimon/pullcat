@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { StatusBadge } from '../components/StatusBadge'
 import type { ReviewSession } from '../types/review'
 import { getReviews, deleteReview } from '../lib/api'
 
@@ -7,7 +10,7 @@ export function HistoryPage() {
   const [reviews, setReviews] = useState<ReviewSession[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
 
   const page = Number(searchParams.get('page') || '0')
@@ -19,19 +22,17 @@ export function HistoryPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
      
-    setError(null)
     getReviews(page, size, repo)
       .then(r => {
         if (!cancelled) { setReviews(r.items); setTotal(r.total); setLoading(false) }
       })
-      .catch(e => { if (!cancelled) { setError(e.message); setLoading(false) } })
+      .catch(e => { if (!cancelled) { toast.error(e.message); setLoading(false) } })
     return () => { cancelled = true }
   }, [page, repo])
 
   const totalPages = Math.max(1, Math.ceil(total / size))
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定删除此审查记录？')) return
     await deleteReview(id)
     setReviews(prev => prev.filter(r => r.id !== id))
   }
@@ -43,16 +44,6 @@ export function HistoryPage() {
           {[...Array(8)].map((_, i) => (
             <div key={i} className="h-14 bg-gray-200 dark:bg-gray-700 rounded-lg" />
           ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="p-6 border border-red-200 bg-red-50 dark:bg-red-950/30 rounded-xl text-red-700 dark:text-red-400">
-          {error}
         </div>
       </div>
     )
@@ -129,9 +120,9 @@ export function HistoryPage() {
                         <StatusBadge status={r.status} />
                       </td>
                       <td className="px-4 py-3 text-gray-500">{issueCount}</td>
-                      <td className="px-4 py-3">
+                       <td className="px-4 py-3">
                         <button
-                          onClick={() => handleDelete(r.id)}
+                          onClick={() => setDeleteTarget(r.id)}
                           className="text-xs text-red-500 hover:text-red-700"
                         >
                           删除
@@ -165,28 +156,14 @@ export function HistoryPage() {
           </div>
         </>
       )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title="确认删除"
+        description="确定删除此审查记录？此操作不可撤销。"
+        confirmLabel="删除"
+        onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget) }}
+      />
     </div>
-  )
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    COMPLETED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    PUBLISHED: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-    ANALYZING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    FETCHING: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
-  }
-  const labels: Record<string, string> = {
-    COMPLETED: '已完成',
-    FAILED: '失败',
-    PUBLISHED: '已发布',
-    ANALYZING: '分析中',
-    FETCHING: '获取中',
-  }
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-600'}`}>
-      {labels[status] || status}
-    </span>
   )
 }
