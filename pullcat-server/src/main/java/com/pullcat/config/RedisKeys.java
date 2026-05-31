@@ -79,4 +79,13 @@ public final class RedisKeys {
     public static String reviewUserKey(String login) {
         return REVIEW_USER_INDEX_PREFIX + login;
     }
+
+    /**
+     * 仓库自动发布开关，格式: repo:auto-publish:{owner}/{repo}
+     */
+    public static final String REPO_AUTO_PUBLISH_PREFIX = "repo:auto-publish:";
+
+    public static String autoPublishKey(String owner, String repo) {
+        return REPO_AUTO_PUBLISH_PREFIX + owner + "/" + repo;
+    }
 }
