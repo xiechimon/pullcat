@@ -10,7 +10,14 @@ import com.pullcat.model.PRMetadata;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -18,8 +25,6 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,17 +60,24 @@ public class GitHubApiService {
 
     private final WebClient webClient;
     private final MeterRegistry meterRegistry;
+    private final GitHubConfig config;
+    private final OAuth2AuthorizedClientService oauth2ClientService;
 
     @Autowired
-    public GitHubApiService(GitHubConfig config, MeterRegistry meterRegistry) {
-        this(WebClient.builder()
+    public GitHubApiService(GitHubConfig config, MeterRegistry meterRegistry,
+                            OAuth2AuthorizedClientService oauth2ClientService) {
+        this.config = config;
+        this.oauth2ClientService = oauth2ClientService;
+        this.webClient = WebClient.builder()
                 .baseUrl("https://api.github.com")
-                .defaultHeader("Authorization", "Bearer " + config.getToken())
                 .defaultHeader("Accept", "application/vnd.github.v3+json")
                 .defaultHeader("User-Agent", "pullcat")
+                .filter(authFilter())
+                .filter(forbiddenHandler())
                 .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(
-                        HttpClient.create().responseTimeout(java.time.Duration.ofSeconds(30))))
-                .build(), meterRegistry);
+                        HttpClient.create().responseTimeout(Duration.ofSeconds(30))))
+                .build();
+        this.meterRegistry = meterRegistry;
     }
 
     GitHubApiService(WebClient webClient) {
@@ -75,6 +87,44 @@ public class GitHubApiService {
     GitHubApiService(WebClient webClient, MeterRegistry meterRegistry) {
         this.webClient = webClient;
         this.meterRegistry = meterRegistry;
+        this.config = null;
+        this.oauth2ClientService = null;
+    }
+
+    private String resolveToken() {
+        if (oauth2ClientService != null) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth instanceof OAuth2AuthenticationToken oauthToken) {
+                OAuth2AuthorizedClient client = oauth2ClientService.loadAuthorizedClient(
+                        oauthToken.getAuthorizedClientRegistrationId(), oauthToken.getName());
+                if (client != null && client.getAccessToken() != null) {
+                    return client.getAccessToken().getTokenValue();
+                }
+            }
+        }
+        return config != null ? config.getToken() : null;
+    }
+
+    private ExchangeFilterFunction authFilter() {
+        return ExchangeFilterFunction.ofRequestProcessor(request -> {
+            String token = resolveToken();
+            if (token != null) {
+                return Mono.just(ClientRequest.from(request)
+                        .headers(h -> h.setBearerAuth(token))
+                        .build());
+            }
+            return Mono.just(request);
+        });
+    }
+
+    private ExchangeFilterFunction forbiddenHandler() {
+        return ExchangeFilterFunction.ofResponseProcessor(response -> {
+            if (response.statusCode() == HttpStatus.FORBIDDEN) {
+                return response.bodyToMono(String.class)
+                        .flatMap(body -> Mono.error(new GitHubForbiddenException(body)));
+            }
+            return Mono.just(response);
+        });
     }
 
     /**
