@@ -324,6 +324,16 @@ export function useReviewReducer(): UseReviewReducerReturn {
       dispatch({ type: 'TASK_RESULT', result: data })
     })
 
+    es.addEventListener('auto_publish', (event) => {
+      const data = JSON.parse((event as MessageEvent).data)
+      toast.success('审查结果已自动发布到 PR！', {
+        action: {
+          label: '查看 PR',
+          onClick: () => window.open(data.prUrl, '_blank'),
+        },
+      })
+    })
+
     es.addEventListener('all_complete', () => {
       dispatch({ type: 'ANALYSIS_COMPLETE' })
       toast.success('所有分析已完成！')
