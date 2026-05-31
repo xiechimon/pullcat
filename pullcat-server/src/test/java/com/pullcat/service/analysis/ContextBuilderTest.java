@@ -20,7 +20,7 @@ class ContextBuilderTest {
     void setUp() {
         var config = new GitHubConfig();
         config.setToken("test-token");
-        var apiService = new GitHubApiService(config);
+        var apiService = new GitHubApiService(config, null);
         var tokenBudget = new TokenBudgetManager();
         builder = new ContextBuilder(apiService, tokenBudget);
     }
