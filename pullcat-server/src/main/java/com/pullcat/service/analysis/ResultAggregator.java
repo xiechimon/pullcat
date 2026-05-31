@@ -82,6 +82,10 @@ public class ResultAggregator {
         if (incoming.getSuggestion() != null && entry.issue.getSuggestion() == null) {
             entry.issue.setSuggestion(incoming.getSuggestion());
         }
+
+        if (incoming.getSuggestionCode() != null && entry.issue.getSuggestionCode() == null) {
+            entry.issue.setSuggestionCode(incoming.getSuggestionCode());
+        }
     }
 
     private Issue resolveMerged(DedupEntry entry) {
