@@ -79,7 +79,7 @@ public class AnalysisOrchestrator {
     /**
      * 创建审查会话，仅解析 URL 并保存初始状态到 Redis，不启动分析。
      */
-    public ReviewSession createSession(String prUrl) {
+    public ReviewSession createSession(String prUrl, String userId) {
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
 
         ReviewSession session = new ReviewSession();
@@ -87,6 +87,7 @@ public class AnalysisOrchestrator {
         session.setPrUrl(prUrl);
         session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
         session.setStatus(SessionStatus.FETCHING);
+        session.setUserId(userId);
         return session;
     }
 

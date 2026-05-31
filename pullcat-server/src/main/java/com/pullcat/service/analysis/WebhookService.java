@@ -15,7 +15,7 @@ public class WebhookService {
     }
 
     public void triggerReview(String prUrl) {
-        ReviewSession session = orchestrator.createSession(prUrl);
+        ReviewSession session = orchestrator.createSession(prUrl, null);
         reviewRepository.save(session);
         orchestrator.startReviewAsync(session);
     }
