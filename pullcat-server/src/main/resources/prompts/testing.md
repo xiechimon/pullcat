@@ -29,6 +29,7 @@
       "title": "测试缺口描述",
       "description": "详述哪些代码缺乏测试覆盖",
       "suggestion": "建议补充的测试",
+      "suggestionCode": "可直接使用的测试代码示例（可选）",
       "confidence": 0.85
     }
   ]

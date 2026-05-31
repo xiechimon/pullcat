@@ -9,6 +9,7 @@ interface IssueCardProps {
   title: string
   description: string
   suggestion: string
+  suggestionCode?: string | null
   confidence: number
   selected: boolean
   onToggle: (id: string) => void
@@ -23,7 +24,7 @@ const SEVERITY_LABELS: Record<Severity, string> = {
 }
 
 export function IssueCard({
-  id, severity, file, line, title, description, suggestion, confidence, selected, onToggle,
+  id, severity, file, line, title, description, suggestion, suggestionCode, confidence, selected, onToggle,
 }: IssueCardProps) {
   return (
     <div className={`border rounded-lg p-4 transition-colors ${SEVERITY_BG[severity]} ${selected ? 'ring-2 ring-amber-400' : ''}`}>
@@ -65,6 +66,23 @@ export function IssueCard({
             >
               <span className="font-medium">建议：</span>
               {suggestion}
+            </div>
+          )}
+          {suggestionCode && (
+            <div className="mt-2">
+              <p className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                 AI 生成的修复建议，请人工确认后应用
+              </p>
+              <pre
+                className="text-sm rounded p-2 border overflow-x-auto"
+                style={{
+                  color: 'var(--color-text)',
+                  backgroundColor: 'var(--color-bg)',
+                  borderColor: 'var(--color-border)',
+                }}
+              >
+                <code>{suggestionCode}</code>
+              </pre>
             </div>
           )}
         </div>

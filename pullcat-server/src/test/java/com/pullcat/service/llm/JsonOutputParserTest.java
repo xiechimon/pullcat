@@ -101,4 +101,54 @@ class JsonOutputParserTest {
 
         assertThat(result).isEqualTo("{\"a\":1}");
     }
+
+    @Test
+    void parseIssuesWithSuggestionCode() {
+        String response = """
+                {
+                  "summary": "test",
+                  "issues": [
+                    {
+                      "severity": "HIGH",
+                      "file": "src/App.java",
+                      "line": 10,
+                      "title": "Use try-with-resources",
+                      "description": "Resource not properly closed",
+                      "suggestion": "Use try-with-resources to auto-close",
+                      "suggestionCode": "try (var stream = Files.lines(path)) {\\n    return stream.toList();\\n}",
+                      "confidence": 0.9
+                    }
+                  ]
+                }""";
+
+        List<Issue> issues = JsonOutputParser.parseIssues(response);
+
+        assertThat(issues).hasSize(1);
+        Issue issue = issues.get(0);
+        assertThat(issue.getSuggestionCode()).isEqualTo("try (var stream = Files.lines(path)) {\n    return stream.toList();\n}");
+    }
+
+    @Test
+    void parseIssuesWithoutSuggestionCode() {
+        String response = """
+                {
+                  "summary": "test",
+                  "issues": [
+                    {
+                      "severity": "MEDIUM",
+                      "file": "src/Foo.java",
+                      "line": 5,
+                      "title": "Missing validation",
+                      "description": "Input not validated",
+                      "suggestion": "Add input validation",
+                      "confidence": 0.8
+                    }
+                  ]
+                }""";
+
+        List<Issue> issues = JsonOutputParser.parseIssues(response);
+
+        assertThat(issues).hasSize(1);
+        assertThat(issues.get(0).getSuggestionCode()).isNull();
+    }
 }

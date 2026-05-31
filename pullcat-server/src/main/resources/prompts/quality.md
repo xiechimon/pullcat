@@ -32,6 +32,7 @@
       "title": "问题简述",
       "description": "详述为何这是一个质量问题",
       "suggestion": "改进建议",
+      "suggestionCode": "可直接替换的修复代码（可选，必须是可直接替换问题代码的完整片段）",
       "confidence": 0.85
     }
   ]

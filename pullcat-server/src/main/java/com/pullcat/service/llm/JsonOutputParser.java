@@ -107,6 +107,7 @@ public final class JsonOutputParser {
         if (confidence instanceof Number) {
             issue.setConfidence(((Number) confidence).doubleValue());
         }
+        issue.setSuggestionCode((String) map.get("suggestionCode"));
         return issue;
     }
 }

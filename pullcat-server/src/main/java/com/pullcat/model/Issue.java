@@ -37,6 +37,8 @@ public class Issue {
     private String feedback;
     /** 用户反馈原因 */
     private String feedbackReason;
+    /** AI 生成的修复代码片段，可为 null */
+    private String suggestionCode;
 
     public Issue(String id, Severity severity, String file, Integer line, String title,
                  String description, String suggestion, Double confidence) {
