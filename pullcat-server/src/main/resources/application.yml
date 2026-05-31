@@ -52,6 +52,23 @@ pullcat:
     # 重量模型：用于风险、质量、一致性等深度分析
     heavy-model: deepseek-v4-flash
 
+  # --- 限流配置 ---
+  rate-limit:
+    # 全局默认：60 请求/分钟
+    default-max: 60
+    default-window-seconds: 60
+    # 审查创建：100 请求/分钟 (放宽以便本地测试)
+    review-create-max: 100
+    review-create-window-seconds: 60
+    # 统计查询：30 请求/分钟
+    stats-max: 30
+    stats-window-seconds: 60
+
+  # --- 超时配置 ---
+  timeout:
+    github-seconds: 30
+    llm-seconds: 120
+
 
 # --- 服务器配置 ---
 server:
@@ -61,3 +78,17 @@ server:
 logging:
   level:
     org.apache.catalina.connector.CoyoteAdapter: WARN
+
+# --- Actuator 配置 ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
