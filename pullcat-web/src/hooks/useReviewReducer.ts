@@ -1,6 +1,6 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
-import { createSSEConnection, createReview, getReview } from '../lib/api'
+import { createSSEConnection, createReview, getReview, submitFeedback as apiSubmitFeedback } from '../lib/api'
 import type { AnalysisResult, AnalysisStatus, ReviewSession, TaskState } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
@@ -31,6 +31,7 @@ type Action =
   | { type: 'TASK_RESULT'; result: AnalysisResult }
   | { type: 'ANALYSIS_COMPLETE' }
   | { type: 'TOGGLE_ISSUE'; issueId: string }
+  | { type: 'FEEDBACK_ISSUE'; issueId: string; feedback: string; feedbackReason: string | null }
   | { type: 'SSE_CONNECT'; reviewId: string }
   | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number; diff: string }
   | { type: 'LOAD_REVIEW'; session: ReviewSession }
@@ -113,6 +114,27 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
                 issues: result.issues.map((issue) =>
                   issue.id === action.issueId
                     ? { ...issue, selected: !issue.selected }
+                    : issue
+                ),
+              },
+            ]
+          })
+        ) as Record<string, AnalysisResult | null>,
+      }
+
+    case 'FEEDBACK_ISSUE':
+      return {
+        ...state,
+        results: Object.fromEntries(
+          Object.entries(state.results).map(([key, result]) => {
+            if (!result?.issues) return [key, result]
+            return [
+              key,
+              {
+                ...result,
+                issues: result.issues.map((issue) =>
+                  issue.id === action.issueId
+                    ? { ...issue, feedback: action.feedback, feedbackReason: action.feedbackReason }
                     : issue
                 ),
               },
@@ -245,6 +267,7 @@ interface UseReviewReducerReturn {
   resumeReview: (reviewId: string, sseUrl: string) => void
   loadReview: (reviewId: string) => Promise<void>
   toggleIssue: (issueId: string) => void
+  submitFeedback: (reviewId: string, issueId: string, accepted: boolean, reason?: string) => Promise<void>
   dismissRuleSuggestion: () => void
 }
 
@@ -387,6 +410,20 @@ export function useReviewReducer(): UseReviewReducerReturn {
     dispatch({ type: 'TOGGLE_ISSUE', issueId })
   }, [])
 
+  const submitFeedback = useCallback(async (reviewId: string, issueId: string, accepted: boolean, reason?: string) => {
+    try {
+      await apiSubmitFeedback(reviewId, issueId, accepted, reason)
+      dispatch({
+        type: 'FEEDBACK_ISSUE',
+        issueId,
+        feedback: accepted ? 'ACCEPTED' : 'REJECTED',
+        feedbackReason: reason || null,
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '反馈提交失败')
+    }
+  }, [])
+
   const dismissRuleSuggestion = useCallback(() => {
     dispatch({ type: 'RULE_SUGGESTION', url: '' })
   }, [])
@@ -420,6 +457,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     resumeReview,
     loadReview,
     toggleIssue,
+    submitFeedback,
     dismissRuleSuggestion,
   }
 }
