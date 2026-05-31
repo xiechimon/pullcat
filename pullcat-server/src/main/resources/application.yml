@@ -19,6 +19,20 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+  # --- OAuth2 登录配置 ---
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope: read:user
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          github:
+            user-name-attribute: login
+
 # =============================================================================
 # pullcat 自定义配置
 # =============================================================================
@@ -42,3 +56,8 @@ pullcat:
 # --- 服务器配置 ---
 server:
   port: 8080
+
+# 静默 SSE 断连时的 Broken pipe 日志噪音
+logging:
+  level:
+    org.apache.catalina.connector.CoyoteAdapter: WARN
