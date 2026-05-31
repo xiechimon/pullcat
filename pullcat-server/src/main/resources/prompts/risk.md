@@ -41,6 +41,7 @@
       "title": "问题简述",
       "description": "风险详细说明",
       "suggestion": "修复或缓解建议",
+      "suggestionCode": "可直接替换的修复代码（可选，必须是可直接替换问题代码的完整片段）",
       "confidence": 0.85
     }
   ]

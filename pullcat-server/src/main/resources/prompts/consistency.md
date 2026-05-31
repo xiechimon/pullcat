@@ -29,6 +29,7 @@
       "title": "问题简述",
       "description": "详述不一致之处及其影响",
       "suggestion": "如何与现有模式对齐",
+      "suggestionCode": "可直接替换的修复代码（可选，必须是可直接替换问题代码的完整片段）",
       "confidence": 0.85
     }
   ]
