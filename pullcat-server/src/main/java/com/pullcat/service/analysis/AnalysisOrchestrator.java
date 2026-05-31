@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -92,7 +94,9 @@ public class AnalysisOrchestrator {
      * 异步执行完整的 PR 审查流程，通过 SSE 实时推送进度。
      */
     public void startReviewAsync(ReviewSession session) {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
         new Thread(() -> {
+            SecurityContextHolder.setContext(securityContext);
             Timer.Sample sample = Timer.start(meterRegistry);
             try {
                 GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
@@ -234,6 +238,8 @@ public class AnalysisOrchestrator {
                         finalCtx.emitter().complete();
                     } catch (IOException | IllegalStateException ignored) {}
                 }
+            } finally {
+                SecurityContextHolder.clearContext();
             }
         }, "review-" + session.getId()).start();
     }
