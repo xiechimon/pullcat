@@ -8,14 +8,36 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
+import java.util.Objects;
 
+/**
+ * 全局异常处理器，统一将各类异常转换为结构化的 HTTP 响应。
+ * <p>
+ * 使用 {@link RestControllerAdvice} 拦截 Controller 层抛出的异常，
+ * 避免异常直接暴露给客户端，同时提供可读的中文错误提示。
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /**
+     * 处理 GitHub API 返回 403 Forbidden 的场景。
+     * <p>
+     * 根据异常消息中的关键字区分具体原因并返回对应的中文指引：
+     * <ul>
+     *   <li>次级限流（secondary rate limit）—— 提示用户等待后重试</li>
+     *   <li>OAuth App 访问限制 —— 指引用户在组织设置中批准应用或切换 Token</li>
+     *   <li>Personal Access Token 无仓库权限 —— 指引用户检查 Token 类型及权限配置</li>
+     *   <li>其他 403 错误 —— 提示检查 public_repo 权限</li>
+     * </ul>
+     *
+     * @param ex GitHubForbiddenException，其 message 为 GitHub API 返回的错误详情
+     * @return 403 响应，包含 error/message/detail 三个字段的 Map
+     */
     @ExceptionHandler(GitHubForbiddenException.class)
     public ResponseEntity<Map<String, Object>> handleGitHubForbidden(GitHubForbiddenException ex) {
         log.warn("GitHub API 403: {}", ex.getMessage());
@@ -43,15 +65,40 @@ public class GlobalExceptionHandler {
                 .body(Map.of(
                         "error", "GitHub API 权限不足",
                         "message", message,
-                        "detail", detail));
+                        "detail", Objects.requireNonNull(detail)));
     }
 
+    /**
+     * 处理客户端断开 SSE 长连接时抛出的异步请求不可用异常。
+     * <p>
+     * 返回 void 以避免 Spring 在尝试写响应时再次抛出
+     * {@link org.springframework.http.converter.HttpMessageNotWritableException}。
+     *
+     * @param ex AsyncRequestNotUsableException，通常因客户端主动断开连接触发
+     */
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public void handleAsyncRequestNotUsableException(AsyncRequestNotUsableException ex) {
         log.debug("客户端已断开 SSE 连接: {}", ex.getMessage());
-        // 直接返回 void，避免抛出 HttpMessageNotWritableException
     }
 
+    /**
+     * 处理请求不存在的静态资源（如 /favicon.ico）时 Spring 抛出的异常。
+     *
+     * @return 404 空响应体
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Void> handleNoResourceFound() {
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * 兜底异常处理，捕获所有未被上述处理器匹配的异常。
+     * <p>
+     * 记录完整堆栈日志，返回 500 响应并携带异常消息（避免将敏感堆栈信息暴露给客户端）。
+     *
+     * @param ex 未被其他处理器捕获的异常
+     * @return 500 响应，包含 error 和 message 字段的 Map
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         log.error("Unhandled exception", ex);
