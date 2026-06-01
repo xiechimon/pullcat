@@ -1,20 +1,20 @@
-<p align="center">
+<p style="text-align: center;">
   <img src="pullcat-web/public/cat.png" width="120" alt="pullcat logo" />
 </p>
 
-<h1 align="center">Pullcat</h1>
+<h1 style="text-align: center;">Pullcat</h1>
 
-<p align="center">
+<p style="text-align: center;">
   <strong>AI 驱动的代码评审助手，让每次 Pull Request Review 都高效、全面、零遗漏。</strong>
 </p>
 
-<p align="center">
+<p style="text-align: center;">
   <a href="https://xmon.me">
     <img src="https://img.shields.io/badge/🔗-xmon.me-4D6BFE?style=for-the-badge" alt="xmon.me" />
   </a>
 </p>
 
-<p align="center">
+<p style="text-align: center;">
   <img src="https://img.shields.io/badge/Java-17+-orange" alt="Java 17+">
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen" alt="Spring Boot">
   <img src="https://img.shields.io/badge/React-19-blue" alt="React 19">
@@ -25,7 +25,7 @@
 
 ## Demo
 
-<p align="center">
+<p style="text-align: center;">
   <a href="【PullCat - 七牛云×XEngineer暑期实训营议题三】https://www.bilibili.com/video/BV1EoVD65ETW?vd_source=ac3f9fd11ce481368546414fcfa6ed77">
     <img src="https://img.shields.io/badge/📹-Demo%20Video-grey?style=for-the-badge" alt="Demo Video" />
   </a>
@@ -47,21 +47,21 @@
 
 ## 功能亮点
 
-| 功能 | 说明 |
-|------|------|
-| 🔍 **五维分析** | 变更总结、风险检测、代码质量、一致性、测试覆盖——五个独立 Prompt 并行分析 |
-| 🧠 **双模型策略** | 轻量/重量模型按需分流，平衡分析深度与成本 |
-| 📡 **实时进度** | Server-Sent Events 流式推送，分析过程全程可见 |
-| ✅ **人工审核** | AI 生成问题列表，用户勾选确认后发布，控制误报 |
-| 📝 **Suggestion Diff** | 附带可应用的代码修复建议，发布为 GitHub suggestion block |
-| 🔧 **自定义规则** | 仓库级别正则规则引擎，补充团队特定约定 |
-| 💡 **AI 规则建议** | 从历史 Review 数据中自动提炼高频问题，生成规则建议 |
-| 🔄 **对比审查** | 两次 Review 结果 Diff，追踪新增/修复/遗留问题 |
-| 🪝 **Webhook 自动审查** | PR 打开或更新时自动触发分析 |
-| 🔐 **OAuth 登录** | GitHub 登录后免配 Token，OAuth token 直接调用 API |
-| 📊 **统计分析** | 仪表盘、历史记录、严重度分布图表 |
-| 🌓 **深色模式** | Light / Dark 主题切换 |
-| 🩺 **运维就绪** | Prometheus 指标、Health Check、请求限流、重试机制 |
+| 功能                     | 说明                                        |
+|------------------------|-------------------------------------------|
+| 🔍 **五维分析**            | 变更总结、风险检测、代码质量、一致性、测试覆盖——五个独立 Prompt 并行分析 |
+| 🧠 **双模型策略**           | 轻量/重量模型按需分流，平衡分析深度与成本                     |
+| 📡 **实时进度**            | Server-Sent Events 流式推送，分析过程全程可见          |
+| ✅ **人工审核**             | AI 生成问题列表，用户勾选确认后发布，控制误报                  |
+| 📝 **Suggestion Diff** | 附带可应用的代码修复建议，发布为 GitHub suggestion block  |
+| 🔧 **自定义规则**           | 仓库级别正则规则引擎，补充团队特定约定                       |
+| 💡 **AI 规则建议**         | 从历史 Review 数据中自动提炼高频问题，生成规则建议             |
+| 🔄 **对比审查**            | 两次 Review 结果 Diff，追踪新增/修复/遗留问题            |
+| 🪝 **Webhook 自动审查**    | PR 打开或更新时自动触发分析                           |
+| 🔐 **OAuth 登录**        | GitHub 登录后免配 Token，OAuth token 直接调用 API   |
+| 📊 **统计分析**            | 仪表盘、历史记录、严重度分布图表                          |
+| 🌓 **深色模式**            | Light / Dark 主题切换                         |
+| 🩺 **运维就绪**            | Prometheus 指标、Health Check、请求限流、重试机制      |
 
 ### 原创功能部分
 以下为核心原创设计，未直接依赖任何第三方库：
@@ -80,33 +80,33 @@
 
 ### 后端 (Spring Boot 3.3.5 / Java 17)
 
-| 依赖 | 用途 | 类型 |
-|------|------|:--:|
-| Spring Boot Web | REST API + SSE 流式推送 | 框架 |
-| Spring Boot WebFlux | GitHub API 响应式调用 (WebClient) | 框架 |
-| Spring AI (OpenAI) | 对接 DeepSeek LLM，统一 ChatClient 接口 | SDK |
-| Spring Boot Data Redis | 审查会话缓存、限流计数 | 基础设施 |
-| Spring Boot OAuth2 Client | GitHub OAuth 登录 | 基础设施 |
-| Spring Boot Actuator + Micrometer Prometheus | 健康检查、指标暴露 | 运维 |
-| Meemaw `spring-dotenv` | `.env` 文件加载 | 工具 |
-| Lombok | 减少样板代码 | 工具 |
+| 依赖                                           | 用途                               |  类型  |
+|----------------------------------------------|----------------------------------|:----:|
+| Spring Boot Web                              | REST API + SSE 流式推送              |  框架  |
+| Spring Boot WebFlux                          | GitHub API 响应式调用 (WebClient)     |  框架  |
+| Spring AI (OpenAI)                           | 对接 DeepSeek LLM，统一 ChatClient 接口 | SDK  |
+| Spring Boot Data Redis                       | 审查会话缓存、限流计数                      | 基础设施 |
+| Spring Boot OAuth2 Client                    | GitHub OAuth 登录                  | 基础设施 |
+| Spring Boot Actuator + Micrometer Prometheus | 健康检查、指标暴露                        |  运维  |
+| Meemaw `spring-dotenv`                       | `.env` 文件加载                      |  工具  |
+| Lombok                                       | 减少样板代码                           |  工具  |
 
 ### 前端 (React 19 / Vite 8 / TypeScript 6)
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| React + ReactDOM | ^19 | UI 框架 |
-| React Router | ^7 | 客户端路由 |
-| Tailwind CSS | ^4 | 原子化 CSS，深色模式 |
-| Recharts | ^3 | 严重度饼图、问题类型柱状图 |
-| react-markdown + remark-gfm | ^10 / ^4 | LLM 输出的 Markdown 渲染 |
-| Radix UI (Dialog/Dropdown/Tooltip) | ^1-^2 | 无样式无障碍基础组件 |
-| Sonner | ^2 | Toast 通知 |
+| 依赖                                 | 版本       | 用途                  |
+|------------------------------------|----------|---------------------|
+| React + ReactDOM                   | ^19      | UI 框架               |
+| React Router                       | ^7       | 客户端路由               |
+| Tailwind CSS                       | ^4       | 原子化 CSS，深色模式        |
+| Recharts                           | ^3       | 严重度饼图、问题类型柱状图       |
+| react-markdown + remark-gfm        | ^10 / ^4 | LLM 输出的 Markdown 渲染 |
+| Radix UI (Dialog/Dropdown/Tooltip) | ^1-^2    | 无样式无障碍基础组件          |
+| Sonner                             | ^2       | Toast 通知            |
 
 ### AI 服务
 
-| 服务 | 模型 | 用途 |
-|------|------|------|
+| 服务       | 模型                | 用途   |
+|----------|-------------------|------|
 | DeepSeek | deepseek-v4-flash | 五维分析 |
 
 ---
@@ -158,13 +158,13 @@ cd pullcat-web && npm install && npm run dev
 
 ## 分析维度
 
-| 维度 | 模型 | 检查项 |
-|------|:--:|--------|
-| 📝 变更总结 | Light | PR 核心改动概括，按逻辑模块组织叙述 |
-| 🔴 风险检测 | Heavy | 安全漏洞、并发问题、NPE、资源泄漏 |
-| 🟡 代码质量 | Heavy | 反模式、复杂度、重复代码、缺失校验 |
+| 维度       |  模型   | 检查项                  |
+|----------|:-----:|----------------------|
+| 📝 变更总结  | Light | PR 核心改动概括，按逻辑模块组织叙述  |
+| 🔴 风险检测  | Heavy | 安全漏洞、并发问题、NPE、资源泄漏   |
+| 🟡 代码质量  | Heavy | 反模式、复杂度、重复代码、缺失校验    |
 | 🔵 一致性分析 | Heavy | 命名风格、错误处理、架构模式、不完整重构 |
-| 🟢 测试覆盖 | Light | 测试缺口、边界条件、关键路径覆盖 |
+| 🟢 测试覆盖  | Light | 测试缺口、边界条件、关键路径覆盖     |
 
 Prompt 模板位于 `pullcat-server/src/main/resources/prompts/`。
 
@@ -198,14 +198,14 @@ pullcat/
 
 ## 配置参考
 
-| 属性 | 说明 | 默认值 |
-|------|------|--------|
-| `DEEPSEEK_API_KEY` | DeepSeek API Key | - |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App 凭据 | - |
-| `GITHUB_TOKEN` | GitHub PAT（可选，登录后无需配置） | 空 |
-| `REDIS_HOST` / `REDIS_PORT` | Redis 连接 | `localhost:6379` |
-| `pullcat.llm.light-model` | 轻量模型 | `deepseek-v4-flash` |
-| `pullcat.llm.heavy-model` | 重量模型 | `deepseek-v4-flash` |
+| 属性                                          | 说明                     | 默认值                 |
+|---------------------------------------------|------------------------|---------------------|
+| `DEEPSEEK_API_KEY`                          | DeepSeek API Key       | -                   |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App 凭据    | -                   |
+| `GITHUB_TOKEN`                              | GitHub PAT（可选，登录后无需配置） | 空                   |
+| `REDIS_HOST` / `REDIS_PORT`                 | Redis 连接               | `localhost:6379`    |
+| `pullcat.llm.light-model`                   | 轻量模型                   | `deepseek-v4-flash` |
+| `pullcat.llm.heavy-model`                   | 重量模型                   | `deepseek-v4-flash` |
 
 ---
 
