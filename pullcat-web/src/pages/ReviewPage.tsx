@@ -9,7 +9,7 @@ import { DiffViewer } from '../components/DiffViewer'
 import { IssuePanel } from '../components/IssuePanel'
 import { useReviewReducer } from '../hooks/useReviewReducer'
 import { usePublish } from '../hooks/usePublish'
-import { ANALYSIS_TYPES } from '../types/review'
+import { ANALYSIS_TYPES, TASK_LABELS } from '../types/review'
 import type { AnalysisType, Severity } from '../types/review'
 
 interface NavigateState {
@@ -38,6 +38,19 @@ export function ReviewPage() {
   useEffect(() => {
     if (publishError) toast.error(publishError)
   }, [publishError])
+
+  const toastedFailures = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    for (const [type, result] of Object.entries(results)) {
+      if (!result) continue
+      const key = `${type}:${result.status}`
+      if (result.status === 'FAILED' && !toastedFailures.current.has(key)) {
+        toastedFailures.current.add(key)
+        toast.error(`${TASK_LABELS[type] ?? type} 分析失败：${result.errorMessage || '未知错误'}`)
+      }
+    }
+  }, [results])
 
   useEffect(() => {
     if (navigateState?.reviewId && navigateState?.sseUrl && !startedRef.current) {

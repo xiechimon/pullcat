@@ -40,7 +40,7 @@ export function StatsPage() {
     }))
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">数据统计</h1>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -49,9 +49,9 @@ export function StatsPage() {
                     {label: '发现问题总数', value: stats.totalIssues},
                     {label: '覆盖仓库数', value: stats.repoCount},
                     {label: '平均问题数', value: stats.avgIssuesPerReview.toFixed(1)},
-                ].map(c => (
+                ].map((c, i) => (
                     <div key={c.label}
-                         className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                         className={`p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-up ${['delay-75','delay-150','delay-200','delay-250'][i]}`}>
                         <div className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</div>
                         <div className="text-sm text-gray-500 mt-1">{c.label}</div>
                     </div>

@@ -21,9 +21,18 @@ interface StatusBadgeProps {
   asDot?: boolean
 }
 
+const ACTIVE_STATUSES = new Set(['ANALYZING', 'FETCHING'])
+
 export function StatusBadge({ status }: StatusBadgeProps) {
+  const isActive = ACTIVE_STATUSES.has(status)
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[status] || 'bg-gray-100 text-gray-600'}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[status] || 'bg-gray-100 text-gray-600'}`}>
+      {isActive && (
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-current" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-current" />
+        </span>
+      )}
       {STATUS_LABELS[status] || status}
     </span>
   )

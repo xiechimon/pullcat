@@ -97,7 +97,7 @@ export function DiffViewer({ diff, issues, activeIssueId, onIssueClick, fileName
   const section = sections[selectedFile]
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-slate-900 animate-fade-up">
       {sections.length > 1 && (
         <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto bg-gray-50 dark:bg-gray-800">
           {sections.map((s, i) => (

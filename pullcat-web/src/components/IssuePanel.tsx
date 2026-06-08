@@ -64,7 +64,7 @@ export function IssuePanel({
   const selectedCount = issues.filter(i => i.selected).length
 
   return (
-    <div className="flex flex-col h-full border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="flex flex-col h-full border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-slate-900 overflow-hidden animate-scale-in">
       <div className="p-3 border-b border-gray-200 dark:border-gray-700 space-y-2">
         <input
           type="text"

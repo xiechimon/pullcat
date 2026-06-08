@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }
 
       return (
-        <div className="flex items-center justify-center min-h-[400px] p-8">
+        <div className="flex items-center justify-center min-h-[400px] p-8 animate-scale-in">
           <div className="text-center max-w-md">
             <div className="text-4xl mb-4 text-gray-300 dark:text-gray-600">!</div>
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">

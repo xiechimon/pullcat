@@ -54,7 +54,7 @@ export function RepoPage() {
   const maxSeverity = Math.max(...Object.values(severityDist), 1)
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
@@ -75,8 +75,8 @@ export function RepoPage() {
           { label: '审查次数', value: stats?.totalReviews ?? 0 },
           { label: '发现问题', value: stats?.totalIssues ?? 0 },
           { label: '平均问题数', value: (stats?.avgIssuesPerReview ?? 0).toFixed(1) },
-        ].map(c => (
-          <div key={c.label} className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        ].map((c, i) => (
+          <div key={c.label} className={`p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-up ${['delay-75','delay-150','delay-200'][i]}`}>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{c.label}</div>
           </div>
@@ -91,7 +91,7 @@ export function RepoPage() {
               <span className="w-16 text-sm text-gray-600 dark:text-gray-400">{s}</span>
               <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full"
+                  className="h-full rounded-full transition-[width] duration-700 ease-out"
                   style={{
                     width: `${maxSeverity > 0 ? ((severityDist[s] || 0) / maxSeverity) * 100 : 0}%`,
                     backgroundColor: SEVERITY_BAR_COLORS[s],
