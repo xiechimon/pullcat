@@ -87,3 +87,59 @@ body {
   animation: breathing-light 2s infinite ease-in-out;
   border-width: 1px;
 }
+
+/* ── Entrance keyframes ──────────────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes action-bar-in {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60%  { transform: translateX(-4px); }
+  40%, 80%  { transform: translateX(4px); }
+}
+@keyframes dropdown-in {
+  from { opacity: 0; transform: scaleY(0.92) translateY(-4px); }
+  to   { opacity: 1; transform: scaleY(1) translateY(0); }
+}
+
+/* ── Animation utilities ─────────────────────────────────────────────── */
+.animate-fade-up      { animation: fade-up      0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-in      { animation: fade-in      0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-scale-in     { animation: scale-in     0.22s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-action-bar-in{ animation: action-bar-in 0.3s  cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-shake        { animation: shake        0.32s cubic-bezier(0.22, 1, 0.36, 1); }
+.animate-dropdown-in  { animation: dropdown-in  0.18s cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: top; }
+
+/* ── Stagger delays ──────────────────────────────────────────────────── */
+.delay-75  { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-350 { animation-delay: 350ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* ── Reduced-motion override ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-fade-in, .animate-scale-in,
+  .animate-action-bar-in, .animate-shake, .animate-dropdown-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
