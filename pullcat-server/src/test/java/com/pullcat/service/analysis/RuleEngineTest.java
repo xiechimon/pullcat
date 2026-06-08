@@ -1,8 +1,10 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.FileContent;
-import com.pullcat.model.Issue;
-import com.pullcat.model.Rule;
+import com.pullcat.common.enums.RuleType;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.FileContentRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dao.entity.RuleDO;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -15,18 +17,18 @@ class RuleEngineTest {
 
     @Test
     void codePatternRuleMatchesContent() {
-        Rule rule = createRule("missing-null-check", Rule.RuleType.CODE_PATTERN,
-                "user\\.getName\\(\\)", Issue.Severity.HIGH,
+        RuleDO rule = createRule("missing-null-check", RuleType.CODE_PATTERN,
+                "user\\.getName\\(\\)", Severity.HIGH,
                 "Missing null check", "Add null check before calling getName()");
 
-        FileContent file = new FileContent("src/UserService.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/UserService.java",
                 "public String getDisplay() {\n    return user.getName();\n}", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).hasSize(1);
-        Issue issue = issues.get(0);
-        assertThat(issue.getSeverity()).isEqualTo(Issue.Severity.HIGH);
+        IssueRespDTO issue = issues.get(0);
+        assertThat(issue.getSeverity()).isEqualTo(Severity.HIGH);
         assertThat(issue.getFile()).isEqualTo("src/UserService.java");
         assertThat(issue.getLine()).isEqualTo(2);
         assertThat(issue.getTitle()).isEqualTo("missing-null-check");
@@ -36,28 +38,28 @@ class RuleEngineTest {
 
     @Test
     void codePatternRuleNoMatch() {
-        Rule rule = createRule("sql-injection", Rule.RuleType.CODE_PATTERN,
-                "Statement\\.executeQuery", Issue.Severity.CRITICAL,
+        RuleDO rule = createRule("sql-injection", RuleType.CODE_PATTERN,
+                "Statement\\.executeQuery", Severity.CRITICAL,
                 "SQL injection", "Use PreparedStatement");
 
-        FileContent file = new FileContent("src/UserService.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/UserService.java",
                 "ps.executeQuery();\nreturn result;", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).isEmpty();
     }
 
     @Test
     void filePathMatchRule() {
-        Rule rule = createRule("no-test-files", Rule.RuleType.FILE_PATH_MATCH,
-                "src/test/", Issue.Severity.LOW,
+        RuleDO rule = createRule("no-test-files", RuleType.FILE_PATH_MATCH,
+                "src/test/", Severity.LOW,
                 "Test directory change", "Verify test changes");
 
-        FileContent file = new FileContent("src/test/UserServiceTest.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/test/UserServiceTest.java",
                 "class UserServiceTest {}", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).hasSize(1);
         assertThat(issues.get(0).getFile()).isEqualTo("src/test/UserServiceTest.java");
@@ -65,55 +67,55 @@ class RuleEngineTest {
 
     @Test
     void forbiddenApiRule() {
-        Rule rule = createRule("no-system-exit", Rule.RuleType.FORBIDDEN_API,
-                "System\\.exit", Issue.Severity.CRITICAL,
+        RuleDO rule = createRule("no-system-exit", RuleType.FORBIDDEN_API,
+                "System\\.exit", Severity.CRITICAL,
                 "System.exit call", "Use exception handling instead");
 
-        FileContent file = new FileContent("src/App.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/App.java",
                 "if (error) {\n    System.exit(1);\n}", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0).getSeverity()).isEqualTo(Issue.Severity.CRITICAL);
+        assertThat(issues.get(0).getSeverity()).isEqualTo(Severity.CRITICAL);
     }
 
     @Test
     void disabledRuleIsSkipped() {
-        Rule rule = createRule("check", Rule.RuleType.CODE_PATTERN,
-                ".*", Issue.Severity.HIGH, "Check", "Fix");
+        RuleDO rule = createRule("check", RuleType.CODE_PATTERN,
+                ".*", Severity.HIGH, "Check", "Fix");
         rule.setEnabled(false);
 
-        FileContent file = new FileContent("src/App.java", "anything", "");
+        FileContentRespDTO file = new FileContentRespDTO("src/App.java", "anything", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).isEmpty();
     }
 
     @Test
     void excludedFileIsSkipped() {
-        Rule rule = createRule("check", Rule.RuleType.CODE_PATTERN,
-                ".*", Issue.Severity.HIGH, "Check", "Fix");
+        RuleDO rule = createRule("check", RuleType.CODE_PATTERN,
+                ".*", Severity.HIGH, "Check", "Fix");
 
-        FileContent file = new FileContent("src/App.java", "anything", "");
+        FileContentRespDTO file = new FileContentRespDTO("src/App.java", "anything", "");
         file.setExcluded(true);
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).isEmpty();
     }
 
     @Test
     void multipleMatchesInSameFile() {
-        Rule rule = createRule("println", Rule.RuleType.CODE_PATTERN,
-                "System\\.out\\.println", Issue.Severity.LOW,
+        RuleDO rule = createRule("println", RuleType.CODE_PATTERN,
+                "System\\.out\\.println", Severity.LOW,
                 "Avoid println", "Use logger instead");
 
-        FileContent file = new FileContent("src/Debug.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/Debug.java",
                 "System.out.println(\"a\");\nint x = 1;\nSystem.out.println(\"b\");", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).hasSize(2);
         assertThat(issues.get(0).getLine()).isEqualTo(1);
@@ -122,34 +124,34 @@ class RuleEngineTest {
 
     @Test
     void nullFileContentIsSkipped() {
-        Rule rule = createRule("check", Rule.RuleType.CODE_PATTERN,
-                ".*", Issue.Severity.HIGH, "Check", "Fix");
+        RuleDO rule = createRule("check", RuleType.CODE_PATTERN,
+                ".*", Severity.HIGH, "Check", "Fix");
 
-        FileContent file = new FileContent("src/App.java", null, "");
+        FileContentRespDTO file = new FileContentRespDTO("src/App.java", null, "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule));
 
         assertThat(issues).isEmpty();
     }
 
     @Test
     void multipleRulesAgainstSameFile() {
-        Rule rule1 = createRule("rule1", Rule.RuleType.CODE_PATTERN,
-                "TODO", Issue.Severity.LOW, "TODO found", "Remove TODO");
-        Rule rule2 = createRule("rule2", Rule.RuleType.CODE_PATTERN,
-                "FIXME", Issue.Severity.MEDIUM, "FIXME found", "Fix the issue");
+        RuleDO rule1 = createRule("rule1", RuleType.CODE_PATTERN,
+                "TODO", Severity.LOW, "TODO found", "Remove TODO");
+        RuleDO rule2 = createRule("rule2", RuleType.CODE_PATTERN,
+                "FIXME", Severity.MEDIUM, "FIXME found", "Fix the issue");
 
-        FileContent file = new FileContent("src/App.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/App.java",
                 "// TODO implement\n// FIXME bug here", "");
 
-        List<Issue> issues = ruleEngine.evaluate(List.of(file), List.of(rule1, rule2));
+        List<IssueRespDTO> issues = ruleEngine.evaluate(List.of(file), List.of(rule1, rule2));
 
         assertThat(issues).hasSize(2);
     }
 
-    private static Rule createRule(String name, Rule.RuleType type, String pattern,
-                                   Issue.Severity severity, String message, String suggestion) {
-        Rule rule = new Rule();
+    private static RuleDO createRule(String name, RuleType type, String pattern,
+                                   Severity severity, String message, String suggestion) {
+        RuleDO rule = new RuleDO();
         rule.setName(name);
         rule.setType(type);
         rule.setPattern(pattern);

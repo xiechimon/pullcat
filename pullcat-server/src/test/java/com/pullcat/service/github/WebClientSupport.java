@@ -1,4 +1,4 @@
-package com.pullcat.service.github;
+package com.pullcat.remote;
 
 import org.springframework.web.reactive.function.client.WebClient;
 

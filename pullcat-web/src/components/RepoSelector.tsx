@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
-import type { Repo } from '../types/review'
+import type { RepoRespDTO } from '../types/review'
 import { getRepos, addRepo, deleteRepo } from '../lib/api'
 
 interface RepoSelectorProps {
@@ -9,7 +9,7 @@ interface RepoSelectorProps {
 }
 
 export function RepoSelector({ value, onChange }: RepoSelectorProps) {
-  const [repos, setRepos] = useState<Repo[]>([])
+  const [repos, setRepos] = useState<RepoRespDTO[]>([])
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const ref = useRef<HTMLDivElement>(null)

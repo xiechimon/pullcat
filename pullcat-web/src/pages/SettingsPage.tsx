@@ -1,18 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { getCurrentUser } from '../lib/api'
-
-interface AutoPublishRepo {
-  owner: string
-  repo: string
-  enabled: boolean
-}
+import { disableAutoPublish, getAutoPublishRepos, getCurrentUser, setAutoPublish } from '../lib/api'
+import type { AutoPublishRepoRespDTO, CurrentUserRespDTO } from '../types/review'
 
 export function SettingsPage() {
-  const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string } | null>(null)
+  const [user, setUser] = useState<CurrentUserRespDTO | null>(null)
   const [webhookRepo, setWebhookRepo] = useState('')
   const [autoRepoInput, setAutoRepoInput] = useState('')
-  const [autoPublishRepos, setAutoPublishRepos] = useState<AutoPublishRepo[]>([])
+  const [autoPublishRepos, setAutoPublishRepos] = useState<AutoPublishRepoRespDTO[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -21,8 +16,7 @@ export function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    fetch('/api/auto-publish', { credentials: 'include' })
-      .then(r => r.json())
+    getAutoPublishRepos()
       .then(setAutoPublishRepos)
       .catch(() => {})
   }, [])
@@ -30,12 +24,7 @@ export function SettingsPage() {
   const addAutoPublish = useCallback((ownerRepo: string) => {
     if (!ownerRepo.includes('/')) return
     const [owner, repo] = ownerRepo.split('/')
-    fetch(`/api/repos/${owner}/${repo}/auto-publish`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ enabled: true }),
-    })
+    setAutoPublish(owner, repo, true)
       .then(() => {
         setAutoPublishRepos(prev => {
           if (prev.some(r => r.owner === owner && r.repo === repo)) return prev
@@ -45,7 +34,7 @@ export function SettingsPage() {
   }, [])
 
   const removeAutoPublish = useCallback((owner: string, repo: string) => {
-    fetch(`/api/repos/${owner}/${repo}/auto-publish`, { method: 'DELETE', credentials: 'include' })
+    disableAutoPublish(owner, repo)
       .then(() => {
         setAutoPublishRepos(prev => prev.filter(r => !(r.owner === owner && r.repo === repo)))
       })

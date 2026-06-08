@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.FileContent;
+import com.pullcat.dto.resp.FileContentRespDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -48,15 +48,15 @@ public class TokenBudgetManager {
     /**
      * 当内容超出 Token 预算时按文件粒度分块，每块包含头部信息。
      */
-    public List<List<FileContent>> chunkFiles(String headerInfo, List<FileContent> files) {
-        List<List<FileContent>> chunks = new ArrayList<>();
+    public List<List<FileContentRespDTO>> chunkFiles(String headerInfo, List<FileContentRespDTO> files) {
+        List<List<FileContentRespDTO>> chunks = new ArrayList<>();
         int headerTokens = estimateTokens(headerInfo);
         int remainingBudget = maxTokens - headerTokens;
 
-        List<FileContent> currentChunk = new ArrayList<>();
+        List<FileContentRespDTO> currentChunk = new ArrayList<>();
         int currentTokens = 0;
 
-        for (FileContent file : files) {
+        for (FileContentRespDTO file : files) {
             if (file.isExcluded()) continue;
             int fileTokens = estimateTokens(file.getContent()) + estimateTokens(file.getDiff());
 

@@ -172,26 +172,29 @@ Prompt 模板位于 `pullcat-server/src/main/resources/prompts/`。
 
 ## 项目结构
 
-```
+```text
 pullcat/
-├── pullcat-web/              React 19 + Vite + Tailwind CSS
+├── pullcat-web/                      React 19 + Vite + Tailwind CSS
 │   └── src/
-│       ├── pages/            9 个页面（首页/审查/仪表盘/历史/统计/设置/规则）
-│       ├── components/       14 个组件（Diff查看器/Issue面板/进度/图表）
-│       ├── hooks/            状态管理（SSE Review/发布/主题）
-│       ├── lib/api.ts        REST API 客户端
-│       └── types/review.ts   TypeScript 类型定义
-├── pullcat-server/           Spring Boot 3 + Spring AI
+│       ├── pages/                    页面层
+│       ├── components/               通用组件与业务组件
+│       ├── hooks/                    SSE、主题、发布等状态管理
+│       ├── lib/api.ts                REST API 客户端
+│       └── types/review.ts           前端类型定义
+├── pullcat-server/                   Spring Boot 3 + Spring AI
 │   └── src/main/java/com/pullcat/
-│       ├── controller/       7 个 REST Controller + SSE
-│       ├── service/
-│       │   ├── analysis/     编排/上下文/聚合/统计/规则/限流
-│       │   ├── github/       GitHub API 集成
-│       │   └── llm/          5 个分析策略实现
-│       ├── model/            17 个领域模型
-│       ├── config/           安全/Redis/重试/CORS/指标
-│       └── resources/prompts/ 5 个 Prompt 模板
-└── .env.example              环境变量模板
+│       ├── common/                   公共协议、异常、结果对象、常量
+│       ├── config/                   安全、Redis、CORS、重试、指标配置
+│       ├── controller/               REST Controller 与 SSE 入口
+│       ├── dao/entity/               持久化对象
+│       ├── dto/req                   请求 DTO
+│       ├── dto/resp                  响应 DTO
+│       ├── remote/                   GitHub API 调用与第三方 DTO
+│       ├── service/analysis/         编排、上下文、规则、统计、存储访问
+│       ├── service/llm/              五维分析任务实现
+│       └── toolkit/                  工具类
+├── AGENTS.md                         仓库协作与提交流程约束
+└── .env.example                      环境变量模板
 ```
 
 ---

@@ -1,10 +1,14 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.convention.exception.ClientException;
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.common.convention.result.Results;
+import com.pullcat.common.enums.CommonErrorCodeEnum;
+import com.pullcat.dto.req.CompareReviewsReqDTO;
+import com.pullcat.dto.resp.CompareReviewsRespDTO;
 import com.pullcat.service.analysis.CompareService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -17,12 +21,11 @@ public class CompareController {
     }
 
     @PostMapping("/reviews/compare")
-    public ResponseEntity<Map<String, Object>> compare(@RequestBody Map<String, Object> body) {
-        @SuppressWarnings("unchecked")
-        var ids = (java.util.List<String>) body.get("reviewIds");
+    public ResponseEntity<Result<CompareReviewsRespDTO>> compare(@RequestBody CompareReviewsReqDTO requestParam) {
+        var ids = requestParam.getReviewIds();
         if (ids == null || ids.size() != 2) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Provide exactly 2 reviewIds"));
+            throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "必须提供 2 个 reviewIds");
         }
-        return ResponseEntity.ok(compareService.compare(ids.get(0), ids.get(1)));
+        return ResponseEntity.ok(Results.success(compareService.compare(ids.get(0), ids.get(1))));
     }
 }

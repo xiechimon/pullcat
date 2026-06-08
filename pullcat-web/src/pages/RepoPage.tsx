@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { StatusBadge } from '../components/StatusBadge'
-import type { ReviewSession, Severity } from '../types/review'
+import type { RepoStatsRespDTO, ReviewSessionRespDTO, Severity } from '../types/review'
 import { SEVERITY_BAR_COLORS } from '../types/review'
 import { getRepoStats, getReviews } from '../lib/api'
 
 export function RepoPage() {
   const { owner, repo } = useParams<{ owner: string; repo: string }>()
-  const [reviews, setReviews] = useState<ReviewSession[]>([])
-  const [stats, setStats] = useState<Record<string, unknown> | null>(null)
+  const [reviews, setReviews] = useState<ReviewSessionRespDTO[]>([])
+  const [stats, setStats] = useState<RepoStatsRespDTO | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
   const fullName = `${owner}/${repo}`
@@ -44,7 +44,13 @@ export function RepoPage() {
     )
   }
 
-  const severityDist = (stats?.severityDistribution as Record<string, number>) || {}
+  const severityDist: Record<Severity, number> = stats?.severityDistribution ?? {
+    CRITICAL: 0,
+    HIGH: 0,
+    MEDIUM: 0,
+    LOW: 0,
+    INFO: 0,
+  }
   const maxSeverity = Math.max(...Object.values(severityDist), 1)
 
   return (
@@ -53,7 +59,7 @@ export function RepoPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {(stats?.totalReviews as number) ?? 0} 次审查 · {(stats?.totalIssues as number) ?? 0} 个问题
+            {stats?.totalReviews ?? 0} 次审查 · {stats?.totalIssues ?? 0} 个问题
           </p>
         </div>
         <button
@@ -66,9 +72,9 @@ export function RepoPage() {
 
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: '审查次数', value: (stats?.totalReviews as number) ?? 0 },
-          { label: '发现问题', value: (stats?.totalIssues as number) ?? 0 },
-          { label: '平均问题数', value: ((stats?.avgIssuesPerReview as number) ?? 0).toFixed(1) },
+          { label: '审查次数', value: stats?.totalReviews ?? 0 },
+          { label: '发现问题', value: stats?.totalIssues ?? 0 },
+          { label: '平均问题数', value: (stats?.avgIssuesPerReview ?? 0).toFixed(1) },
         ].map(c => (
           <div key={c.label} className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</div>

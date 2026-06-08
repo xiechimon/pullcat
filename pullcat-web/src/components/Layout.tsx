@@ -5,7 +5,8 @@ import { toast, Toaster } from 'sonner'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { ThemeToggle } from './ThemeToggle'
-import { getCurrentUser } from '../lib/api'
+import { getCurrentUser, logout } from '../lib/api'
+import type { CurrentUserRespDTO } from '../types/review'
 
 interface LayoutProps {
   children: ReactNode
@@ -21,7 +22,7 @@ const NAV_ITEMS = [
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [user, setUser] = useState<{ authenticated: boolean; login?: string; avatarUrl?: string }>({ authenticated: false })
+  const [user, setUser] = useState<CurrentUserRespDTO>({ authenticated: false })
 
   useEffect(() => {
     let cancelled = false
@@ -102,8 +103,7 @@ export function Layout({ children }: LayoutProps) {
                       onClick={async (e) => {
                         e.preventDefault()
                         try {
-                          const res = await fetch('/api/logout', { method: 'POST', credentials: 'include' })
-                          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                          await logout()
                           setUser({ authenticated: false })
                           toast.success('已退出登录')
                           navigate('/login')

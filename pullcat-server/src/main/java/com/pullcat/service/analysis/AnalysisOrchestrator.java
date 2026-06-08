@@ -1,7 +1,23 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.*;
-import com.pullcat.service.github.GitHubApiService;
+import com.pullcat.common.enums.AnalysisStatus;
+import com.pullcat.common.enums.AnalysisType;
+import com.pullcat.common.enums.SessionStatus;
+import com.pullcat.dao.entity.RuleDO;
+import com.pullcat.dto.req.PublishReqDTO;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.dto.resp.FileContentRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dto.resp.PRDataRespDTO;
+import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
+import com.pullcat.dto.resp.SseAutoPublishRespDTO;
+import com.pullcat.dto.resp.SseCompletionRespDTO;
+import com.pullcat.dto.resp.SseMessageRespDTO;
+import com.pullcat.dto.resp.SsePrInfoRespDTO;
+import com.pullcat.dto.resp.SseRuleSuggestionRespDTO;
+import com.pullcat.dto.resp.SseTaskProgressRespDTO;
+import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.llm.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -79,10 +95,10 @@ public class AnalysisOrchestrator {
     /**
      * 创建审查会话，仅解析 URL 并保存初始状态到 Redis，不启动分析。
      */
-    public ReviewSession createSession(String prUrl, String userId) {
+    public ReviewSessionRespDTO createSession(String prUrl, String userId) {
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
 
-        ReviewSession session = new ReviewSession();
+        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
         session.setId(UUID.randomUUID().toString());
         session.setPrUrl(prUrl);
         session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
@@ -94,7 +110,7 @@ public class AnalysisOrchestrator {
     /**
      * 异步执行完整的 PR 审查流程，通过 SSE 实时推送进度。
      */
-    public void startReviewAsync(ReviewSession session) {
+    public void startReviewAsync(ReviewSessionRespDTO session) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         new Thread(() -> {
             SecurityContextHolder.setContext(securityContext);
@@ -102,8 +118,8 @@ public class AnalysisOrchestrator {
             try {
                 GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
 
-                PRData prData = gitHubApiService.fetchPRData(parsed).block();
-                PRMetadata metadata = prData.getMetadata();
+                PRDataRespDTO prData = gitHubApiService.fetchPRData(parsed).block();
+                PRMetadataRespDTO metadata = prData.getMetadata();
                 session.setPrMetadata(metadata);
                 session.setRawDiff(prData.getDiff());
                 session.setStatus(SessionStatus.ANALYZING);
@@ -117,12 +133,13 @@ public class AnalysisOrchestrator {
                 StreamContext metaCtx = StreamRegistry.get(session.getId());
                 if (metaCtx != null) {
                     try {
+                        SsePrInfoRespDTO prInfo = new SsePrInfoRespDTO();
+                        prInfo.setPrUrl(session.getPrUrl());
+                        prInfo.setMetadata(prData.getMetadata());
+                        prInfo.setDiff(prData.getDiff() != null ? prData.getDiff() : "");
                         metaCtx.emitter().send(SseEmitter.event()
                                 .name("pr_info")
-                                .data(Map.of(
-                                        "prUrl", session.getPrUrl(),
-                                        "metadata", prData.getMetadata(),
-                                        "diff", prData.getDiff() != null ? prData.getDiff() : "")));
+                                .data(prInfo));
                     } catch (IOException | IllegalStateException e) {
                         log.debug("SSE send pr_info error: {}", e.getMessage());
                     }
@@ -141,7 +158,7 @@ public class AnalysisOrchestrator {
                 }
                 try {
                     List<String> allImports = new ArrayList<>();
-                    for (FileContent file : prData.getFiles()) {
+                    for (FileContentRespDTO file : prData.getFiles()) {
                         allImports.addAll(contextBuilder.extractImports(file));
                     }
                     List<String> resolved = contextBuilder.resolveLocalImports(allImports, prData.getFileTree());
@@ -159,12 +176,12 @@ public class AnalysisOrchestrator {
                         AnalysisType.SUMMARY, AnalysisType.RISK, AnalysisType.QUALITY,
                         AnalysisType.CONSISTENCY, AnalysisType.TESTING);
 
-                List<CompletableFuture<AnalysisResult>> futures = types.stream()
+                List<CompletableFuture<AnalysisResultRespDTO>> futures = types.stream()
                         .map(type -> CompletableFuture
                                 .supplyAsync(() -> executeTask(type, finalVariables, session.getId()), analysisExecutor)
                                 .exceptionally(ex -> {
                                     log.error("Task {} failed unexpectedly: {}", type, ex.getMessage());
-                                    AnalysisResult failed = new AnalysisResult(type);
+                                    AnalysisResultRespDTO failed = new AnalysisResultRespDTO(type);
                                     failed.setStatus(AnalysisStatus.FAILED);
                                     failed.setErrorMessage(ex.getMessage());
                                     failed.setCompletedAt(Instant.now());
@@ -176,11 +193,11 @@ public class AnalysisOrchestrator {
 
                 for (int i = 0; i < types.size(); i++) {
                     try {
-                        AnalysisResult result = futures.get(i).get();
+                        AnalysisResultRespDTO result = futures.get(i).get();
                         session.getAnalyses().put(types.get(i).name().toLowerCase(), result);
                     } catch (Exception e) {
                         log.error("Failed to get result for {}: {}", types.get(i), e.getMessage());
-                        AnalysisResult failed = new AnalysisResult(types.get(i));
+                        AnalysisResultRespDTO failed = new AnalysisResultRespDTO(types.get(i));
                         failed.setStatus(AnalysisStatus.FAILED);
                         failed.setErrorMessage(e.getMessage());
                         session.getAnalyses().put(types.get(i).name().toLowerCase(), failed);
@@ -202,7 +219,7 @@ public class AnalysisOrchestrator {
                 meterRegistry.counter("reviews_total",
                         "status", session.getStatus().name()).increment();
 
-                for (AnalysisResult analysisResult : session.getAnalyses().values()) {
+                for (AnalysisResultRespDTO analysisResult : session.getAnalyses().values()) {
                     if (analysisResult.getStatus() == AnalysisStatus.COMPLETED) {
                         meterRegistry.counter("llm_requests_total",
                                 "model", analysisResult.getModel() != null ? analysisResult.getModel() : "unknown",
@@ -220,9 +237,10 @@ public class AnalysisOrchestrator {
                         if (autoPublished) {
                             finalCtx.emitter().send(SseEmitter.event()
                                     .name("auto_publish")
-                                    .data(Map.of("prUrl", session.getPrUrl())));
+                                    .data(new SseAutoPublishRespDTO(session.getPrUrl())));
                         }
-                        finalCtx.emitter().send(SseEmitter.event().name("all_complete").data(Map.of("status", "completed")));
+                        finalCtx.emitter().send(SseEmitter.event().name("all_complete")
+                                .data(new SseCompletionRespDTO("completed")));
                         checkAndNotifyRuleSuggestions(session, finalCtx);
                         finalCtx.emitter().complete();
                     } catch (IOException | IllegalStateException e) {
@@ -242,7 +260,8 @@ public class AnalysisOrchestrator {
                 StreamContext finalCtx = StreamRegistry.get(session.getId());
                 if (finalCtx != null) {
                     try {
-                        finalCtx.emitter().send(SseEmitter.event().name("review_error").data(Map.of("message", e.getMessage())));
+                        finalCtx.emitter().send(SseEmitter.event().name("review_error")
+                                .data(new SseMessageRespDTO(e.getMessage())));
                         finalCtx.emitter().complete();
                     } catch (IOException | IllegalStateException ignored) {}
                 }
@@ -252,7 +271,7 @@ public class AnalysisOrchestrator {
         }, "review-" + session.getId()).start();
     }
 
-    private AnalysisResult executeTask(AnalysisType type, Map<String, String> variables, String sessionId) {
+    private AnalysisResultRespDTO executeTask(AnalysisType type, Map<String, String> variables, String sessionId) {
         AnalysisTask task = createTask(type);
         String template = promptLoader.loadTemplate(type.getTemplateName());
         String prompt = promptLoader.populateTemplate(template, variables);
@@ -262,7 +281,7 @@ public class AnalysisOrchestrator {
             emitProgress(ctx, type.name().toLowerCase(), "running", task.getResult().getModel());
         }
 
-        AnalysisResult result = task.execute(prompt).block();
+        AnalysisResultRespDTO result = task.execute(prompt).block();
 
         if (ctx != null) {
             emitProgress(ctx, type.name().toLowerCase(), result.getStatus().name(), result.getModel());
@@ -278,11 +297,14 @@ public class AnalysisOrchestrator {
 
     private void emitProgress(StreamContext ctx, String taskName, String status, String model) {
         try {
+            SseTaskProgressRespDTO progress = new SseTaskProgressRespDTO();
+            progress.setTask(taskName);
+            progress.setStatus(status);
+            progress.setModel(model != null ? model : "");
+            progress.setTimestamp(Instant.now().toString());
             ctx.emitter().send(SseEmitter.event()
                     .name("task_progress")
-                    .data(Map.of("task", taskName, "status", status,
-                            "model", model != null ? model : "",
-                            "timestamp", Instant.now().toString())));
+                    .data(progress));
         } catch (IOException | IllegalStateException e) {
             log.debug("SSE send progress error for {}: {}", taskName, e.getMessage());
         }
@@ -291,18 +313,26 @@ public class AnalysisOrchestrator {
     /**
      * 将审查结果发布到 GitHub PR。
      */
-    public ReviewSession publishReview(String reviewId) {
-        ReviewSession session = reviewRepository.findById(reviewId);
+    public ReviewSessionRespDTO publishReview(String reviewId, PublishReqDTO requestParam) {
+        ReviewSessionRespDTO session = reviewRepository.findById(reviewId);
         if (session == null) {
             throw new IllegalArgumentException("Review session not found: " + reviewId);
         }
 
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
 
-        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
-        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
+        List<AnalysisResultRespDTO> allResults = new ArrayList<>(session.getAnalyses().values());
+        List<IssueRespDTO> dedupedIssues = resultAggregator.mergeResults(allResults);
+        if (requestParam.getSelectedIssueIds() != null && !requestParam.getSelectedIssueIds().isEmpty()) {
+            dedupedIssues = dedupedIssues.stream()
+                    .filter(issue -> requestParam.getSelectedIssueIds().contains(issue.getId()))
+                    .toList();
+        }
 
         String summary = buildPublishSummary(dedupedIssues, session);
+        if (!requestParam.isIncludeSummary()) {
+            summary = buildIssuesOnlySummary(dedupedIssues);
+        }
 
         List<GitHubApiService.ReviewComment> comments = dedupedIssues.stream()
                 .filter(i -> i.getSuggestionCode() != null && !i.getSuggestionCode().isBlank())
@@ -319,18 +349,33 @@ public class AnalysisOrchestrator {
         return session;
     }
 
-    private String buildPublishSummary(List<Issue> dedupedIssues, ReviewSession session) {
+    private String buildIssuesOnlySummary(List<IssueRespDTO> dedupedIssues) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("## AI 代码审查\n\n");
+        sb.append("### 问题概览（").append(dedupedIssues.size()).append(" 个）\n\n");
+        sb.append("| 严重度 | 文件 | 行号 | 问题 |\n|--------|------|------|------|\n");
+        for (IssueRespDTO issue : dedupedIssues) {
+            sb.append("| ").append(issue.getSeverity()).append(" | ")
+                    .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
+                    .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
+                    .append(issue.getTitle()).append(" |\n");
+        }
+        sb.append("\n---\n*由 [pullcat](https://xmon.me) 自动生成*");
+        return sb.toString();
+    }
+
+    private String buildPublishSummary(List<IssueRespDTO> dedupedIssues, ReviewSessionRespDTO session) {
         StringBuilder sb = new StringBuilder();
         sb.append("## AI 代码审查\n\n");
 
-        AnalysisResult summaryResult = session.getAnalyses().get("summary");
+        AnalysisResultRespDTO summaryResult = session.getAnalyses().get("summary");
         if (summaryResult != null && summaryResult.getContent() != null) {
             sb.append("### 审查摘要\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
         }
 
         sb.append("### 问题概览（").append(dedupedIssues.size()).append(" 个）\n\n");
         sb.append("| 严重度 | 文件 | 行号 | 问题 |\n|--------|------|------|------|\n");
-        for (Issue issue : dedupedIssues) {
+        for (IssueRespDTO issue : dedupedIssues) {
             sb.append("| ").append(issue.getSeverity()).append(" | ")
                     .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
                     .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
@@ -348,7 +393,7 @@ public class AnalysisOrchestrator {
         return sb.toString();
     }
 
-    String buildSuggestionBlock(Issue issue) {
+    String buildSuggestionBlock(IssueRespDTO issue) {
         StringBuilder sb = new StringBuilder();
         sb.append("**[").append(issue.getSeverity()).append("] ")
                 .append(issue.getTitle()).append("**\n\n");
@@ -359,7 +404,7 @@ public class AnalysisOrchestrator {
         return sb.toString();
     }
 
-    private void checkAndNotifyRuleSuggestions(ReviewSession session, StreamContext ctx) {
+    private void checkAndNotifyRuleSuggestions(ReviewSessionRespDTO session, StreamContext ctx) {
         try {
             String fullName = session.getRepositoryFullName();
             if (fullName == null) return;
@@ -368,17 +413,19 @@ public class AnalysisOrchestrator {
 
             boolean hasSuggestions = ruleSuggestionService.hasNewSuggestions(parts[0], parts[1]);
             if (hasSuggestions) {
+                SseRuleSuggestionRespDTO suggestion = new SseRuleSuggestionRespDTO();
+                suggestion.setMessage("发现潜在规则建议");
+                suggestion.setUrl("/settings/repos/" + parts[0] + "/" + parts[1]);
                 ctx.emitter().send(SseEmitter.event()
                         .name("rule_suggestion")
-                        .data(Map.of("message", "发现潜在规则建议",
-                                "url", "/settings/repos/" + parts[0] + "/" + parts[1])));
+                        .data(suggestion));
             }
         } catch (Exception e) {
             log.debug("Failed to check rule suggestions: {}", e.getMessage());
         }
     }
 
-    private boolean tryAutoPublish(ReviewSession session) {
+    private boolean tryAutoPublish(ReviewSessionRespDTO session) {
         String fullName = session.getRepositoryFullName();
         if (fullName == null) return false;
         String[] parts = fullName.split("/", 2);
@@ -396,10 +443,10 @@ public class AnalysisOrchestrator {
         return false;
     }
 
-    private void publishAutoReview(ReviewSession session) {
+    private void publishAutoReview(ReviewSessionRespDTO session) {
         GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
-        List<AnalysisResult> allResults = new ArrayList<>(session.getAnalyses().values());
-        List<Issue> dedupedIssues = resultAggregator.mergeResults(allResults);
+        List<AnalysisResultRespDTO> allResults = new ArrayList<>(session.getAnalyses().values());
+        List<IssueRespDTO> dedupedIssues = resultAggregator.mergeResults(allResults);
         String summary = buildPublishSummary(dedupedIssues, session);
         gitHubApiService.publishReview(parsed, summary).block();
         session.setStatus(SessionStatus.PUBLISHED);
@@ -408,7 +455,7 @@ public class AnalysisOrchestrator {
 
     private String extractSummaryText(String content) {
         try {
-            String json = com.pullcat.service.llm.JsonOutputParser.extractJson(content);
+            String json = com.pullcat.toolkit.JsonOutputParser.extractJson(content);
             var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
             return node.has("summary") ? node.get("summary").asText("") : content;
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 package com.pullcat.service.llm;
 
-import com.pullcat.model.AnalysisType;
+import com.pullcat.common.enums.AnalysisType;
 import org.springframework.ai.chat.client.ChatClient;
 
 /**

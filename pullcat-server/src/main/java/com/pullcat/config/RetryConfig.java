@@ -1,6 +1,6 @@
 package com.pullcat.config;
 
-import com.pullcat.service.github.GitHubForbiddenException;
+import com.pullcat.common.convention.exception.GitHubForbiddenException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.util.retry.Retry;
 

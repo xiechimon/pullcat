@@ -1,11 +1,14 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.convention.exception.ClientException;
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.dto.req.CompareReviewsReqDTO;
+import com.pullcat.dto.resp.CompareReviewsRespDTO;
 import com.pullcat.service.analysis.CompareService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -18,22 +21,29 @@ class CompareControllerTest {
 
     @Test
     void compareWithTwoIds() {
-        Map<String, Object> expected = Map.of("newCount", 3, "fixedCount", 1);
+        CompareReviewsRespDTO expected = new CompareReviewsRespDTO();
+        expected.setNewCount(3);
+        expected.setFixedCount(1);
         when(compareService.compare("r1", "r2")).thenReturn(expected);
 
-        ResponseEntity<Map<String, Object>> response = controller.compare(
-                Map.of("reviewIds", List.of("r1", "r2")));
+        CompareReviewsReqDTO requestParam = new CompareReviewsReqDTO();
+        requestParam.setReviewIds(List.of("r1", "r2"));
+
+        ResponseEntity<Result<CompareReviewsRespDTO>> response = controller.compare(
+                requestParam);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("newCount", 3);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData().getNewCount()).isEqualTo(3);
     }
 
     @Test
     void compareWithInvalidInput() {
-        ResponseEntity<Map<String, Object>> response = controller.compare(
-                Map.of("reviewIds", List.of("only-one")));
+        CompareReviewsReqDTO requestParam = new CompareReviewsReqDTO();
+        requestParam.setReviewIds(List.of("only-one"));
 
-        assertThat(response.getStatusCode().value()).isEqualTo(400);
-        assertThat(response.getBody()).containsKey("error");
+        assertThat(controller.compare(requestParam))
+                .isInstanceOf(ClientException.class);
     }
 }

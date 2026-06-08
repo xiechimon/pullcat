@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.FileContent;
+import com.pullcat.dto.resp.FileContentRespDTO;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -30,12 +30,12 @@ class TokenBudgetManagerTest {
 
     @Test
     void chunkFilesWithinBudget() {
-        List<FileContent> files = List.of(
-                new FileContent("a.java", "short", ""),
-                new FileContent("b.java", "also short", "")
+        List<FileContentRespDTO> files = List.of(
+                new FileContentRespDTO("a.java", "short", ""),
+                new FileContentRespDTO("b.java", "also short", "")
         );
 
-        List<List<FileContent>> chunks = manager.chunkFiles("header", files);
+        List<List<FileContentRespDTO>> chunks = manager.chunkFiles("header", files);
 
         assertThat(chunks).hasSize(1);
         assertThat(chunks.get(0)).hasSize(2);
@@ -45,25 +45,25 @@ class TokenBudgetManagerTest {
     void chunkFilesExceedsBudget() {
         String bigContent = "x".repeat(3000);
 
-        List<FileContent> files = List.of(
-                new FileContent("a.java", bigContent, ""),
-                new FileContent("b.java", bigContent, ""),
-                new FileContent("c.java", bigContent, "")
+        List<FileContentRespDTO> files = List.of(
+                new FileContentRespDTO("a.java", bigContent, ""),
+                new FileContentRespDTO("b.java", bigContent, ""),
+                new FileContentRespDTO("c.java", bigContent, "")
         );
 
-        List<List<FileContent>> chunks = manager.chunkFiles("header", files);
+        List<List<FileContentRespDTO>> chunks = manager.chunkFiles("header", files);
 
         assertThat(chunks).hasSize(3);
     }
 
     @Test
     void chunkFilesExcludesFlagged() {
-        FileContent excluded = new FileContent("img.png", "binary", "");
+        FileContentRespDTO excluded = new FileContentRespDTO("img.png", "binary", "");
         excluded.setExcluded(true);
 
-        List<FileContent> files = List.of(excluded, new FileContent("a.java", "code", ""));
+        List<FileContentRespDTO> files = List.of(excluded, new FileContentRespDTO("a.java", "code", ""));
 
-        List<List<FileContent>> chunks = manager.chunkFiles("header", files);
+        List<List<FileContentRespDTO>> chunks = manager.chunkFiles("header", files);
 
         assertThat(chunks).hasSize(1);
         assertThat(chunks.get(0)).hasSize(1);
@@ -72,7 +72,7 @@ class TokenBudgetManagerTest {
 
     @Test
     void chunkFilesEmpty() {
-        List<List<FileContent>> chunks = manager.chunkFiles("header", new ArrayList<>());
+        List<List<FileContentRespDTO>> chunks = manager.chunkFiles("header", new ArrayList<>());
         assertThat(chunks).isEmpty();
     }
 }

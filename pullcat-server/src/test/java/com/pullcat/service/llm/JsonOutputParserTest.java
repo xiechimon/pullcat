@@ -1,6 +1,8 @@
 package com.pullcat.service.llm;
 
-import com.pullcat.model.Issue;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.toolkit.JsonOutputParser;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -27,11 +29,11 @@ class JsonOutputParserTest {
                   ]
                 }""";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).hasSize(1);
-        Issue issue = issues.get(0);
-        assertThat(issue.getSeverity()).isEqualTo(Issue.Severity.CRITICAL);
+        IssueRespDTO issue = issues.get(0);
+        assertThat(issue.getSeverity()).isEqualTo(Severity.CRITICAL);
         assertThat(issue.getFile()).isEqualTo("src/Foo.java");
         assertThat(issue.getLine()).isEqualTo(42);
         assertThat(issue.getTitle()).isEqualTo("NPE risk");
@@ -44,7 +46,7 @@ class JsonOutputParserTest {
     void parseIssuesEmptyArray() {
         String response = "{\"summary\": \"ok\", \"issues\": []}";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).isEmpty();
     }
@@ -53,14 +55,14 @@ class JsonOutputParserTest {
     void parseIssuesNoIssuesKey() {
         String response = "{\"summary\": \"just a summary\"}";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).isEmpty();
     }
 
     @Test
     void parseIssuesMalformedJson() {
-        List<Issue> issues = JsonOutputParser.parseIssues("not json at all");
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues("not json at all");
 
         assertThat(issues).isEmpty();
     }
@@ -72,10 +74,10 @@ class JsonOutputParserTest {
                 {"issues": [{"severity": "LOW", "title": "minor"}]}
                 ```""";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).hasSize(1);
-        assertThat(issues.get(0).getSeverity()).isEqualTo(Issue.Severity.LOW);
+        assertThat(issues.get(0).getSeverity()).isEqualTo(Severity.LOW);
     }
 
     @Test
@@ -83,9 +85,9 @@ class JsonOutputParserTest {
         String response = """
                 {"issues": [{"severity": "UNKNOWN", "title": "test"}]}""";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
-        assertThat(issues.get(0).getSeverity()).isEqualTo(Issue.Severity.INFO);
+        assertThat(issues.get(0).getSeverity()).isEqualTo(Severity.INFO);
     }
 
     @Test
@@ -121,10 +123,10 @@ class JsonOutputParserTest {
                   ]
                 }""";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).hasSize(1);
-        Issue issue = issues.get(0);
+        IssueRespDTO issue = issues.get(0);
         assertThat(issue.getSuggestionCode()).isEqualTo("try (var stream = Files.lines(path)) {\n    return stream.toList();\n}");
     }
 
@@ -146,7 +148,7 @@ class JsonOutputParserTest {
                   ]
                 }""";
 
-        List<Issue> issues = JsonOutputParser.parseIssues(response);
+        List<IssueRespDTO> issues = JsonOutputParser.parseIssues(response);
 
         assertThat(issues).hasSize(1);
         assertThat(issues.get(0).getSuggestionCode()).isNull();

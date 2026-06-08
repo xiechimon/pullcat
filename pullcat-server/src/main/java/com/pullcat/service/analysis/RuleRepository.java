@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.Rule;
+import com.pullcat.dao.entity.RuleDO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -21,22 +21,22 @@ public class RuleRepository {
         return KEY_PREFIX + owner + "/" + repo;
     }
 
-    public void save(Rule rule) {
+    public void save(RuleDO rule) {
         redisTemplate.opsForHash().put(baseKey(rule.getRepoOwner(), rule.getRepoName()), rule.getId(), rule);
     }
 
-    public List<Rule> findByRepo(String owner, String repo) {
+    public List<RuleDO> findByRepo(String owner, String repo) {
         Map<Object, Object> entries = redisTemplate.opsForHash().entries(baseKey(owner, repo));
-        List<Rule> rules = new ArrayList<>();
+        List<RuleDO> rules = new ArrayList<>();
         for (Object obj : entries.values()) {
-            if (obj instanceof Rule) rules.add((Rule) obj);
+            if (obj instanceof RuleDO) rules.add((RuleDO) obj);
         }
         return rules;
     }
 
-    public Optional<Rule> findById(String owner, String repo, String ruleId) {
+    public Optional<RuleDO> findById(String owner, String repo, String ruleId) {
         Object obj = redisTemplate.opsForHash().get(baseKey(owner, repo), ruleId);
-        return obj instanceof Rule ? Optional.of((Rule) obj) : Optional.empty();
+        return obj instanceof RuleDO ? Optional.of((RuleDO) obj) : Optional.empty();
     }
 
     public void delete(String owner, String repo, String ruleId) {

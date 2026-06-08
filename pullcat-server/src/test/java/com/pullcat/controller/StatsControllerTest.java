@@ -1,10 +1,11 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.dto.resp.RepoStatsRespDTO;
+import com.pullcat.dto.resp.StatsOverviewRespDTO;
 import com.pullcat.service.analysis.StatsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -17,23 +18,31 @@ class StatsControllerTest {
 
     @Test
     void getOverview() {
-        Map<String, Object> expected = Map.of("totalReviews", 10, "totalIssues", 50);
+        StatsOverviewRespDTO expected = new StatsOverviewRespDTO();
+        expected.setTotalReviews(10);
+        expected.setTotalIssues(50);
         when(statsService.getOverview()).thenReturn(expected);
 
-        ResponseEntity<Map<String, Object>> response = controller.getOverview();
+        ResponseEntity<Result<StatsOverviewRespDTO>> response = controller.getOverview();
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("totalReviews", 10);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData().getTotalReviews()).isEqualTo(10);
     }
 
     @Test
     void getRepoStats() {
-        Map<String, Object> expected = Map.of("totalReviews", 5, "repoFullName", "owner/repo");
+        RepoStatsRespDTO expected = new RepoStatsRespDTO();
+        expected.setTotalReviews(5);
+        expected.setRepoFullName("owner/repo");
         when(statsService.getRepoStats("owner", "repo")).thenReturn(expected);
 
-        ResponseEntity<Map<String, Object>> response = controller.getRepoStats("owner", "repo");
+        ResponseEntity<Result<RepoStatsRespDTO>> response = controller.getRepoStats("owner", "repo");
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("totalReviews", 5);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData().getTotalReviews()).isEqualTo(5);
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createSSEConnection, createReview } from '../lib/api'
-import type { AnalysisResult, AnalysisStatus, TaskState } from '../types/review'
+import type { AnalysisResultRespDTO, AnalysisStatus, TaskStateRespDTO } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
 interface UseReviewReturn {
@@ -8,13 +8,13 @@ interface UseReviewReturn {
   error: string | null
   loading: boolean
   isAnalyzing: boolean
-  tasks: TaskState[]
-  results: Record<string, AnalysisResult | null>
+  tasks: TaskStateRespDTO[]
+  results: Record<string, AnalysisResultRespDTO | null>
   startReview: (prUrl: string) => Promise<void>
   resumeReview: (reviewId: string, sseUrl: string) => void
 }
 
-function createInitialTasks(): TaskState[] {
+function createInitialTasks(): TaskStateRespDTO[] {
   return ANALYSIS_TYPES.map((name) => ({
     name,
     label: TASK_LABELS[name],
@@ -30,8 +30,8 @@ export function useReview(): UseReviewReturn {
   const [loading, setLoading] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [tasks, setTasks] = useState<TaskState[]>(createInitialTasks())
-  const [results, setResults] = useState<Record<string, AnalysisResult | null>>({})
+  const [tasks, setTasks] = useState<TaskStateRespDTO[]>(createInitialTasks())
+  const [results, setResults] = useState<Record<string, AnalysisResultRespDTO | null>>({})
   const eventSourceRef = useRef<EventSource | null>(null)
 
   const connectSSE = useCallback((sseUrl: string) => {
@@ -69,7 +69,7 @@ export function useReview(): UseReviewReturn {
     })
 
     es.addEventListener('task_result', (event) => {
-      const data = JSON.parse((event as MessageEvent).data) as AnalysisResult
+      const data = JSON.parse((event as MessageEvent).data) as AnalysisResultRespDTO
       setResults((prev) => ({
         ...prev,
         [data.type.toLowerCase()]: data,

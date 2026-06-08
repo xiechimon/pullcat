@@ -39,13 +39,12 @@ bin/
 Thumbs.db
 ehthumbs.db
 
-# OpenCode / OpenSpec
+# workflow
 .opencode/
 .opsx/
-openspec/
+.codegraph
+.codex
+.claude
 
 # Environment
 .env
-
-# ROADMAP
-ROADMAP.md

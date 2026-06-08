@@ -1,7 +1,7 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.config.RedisKeys;
-import com.pullcat.model.Repo;
+import com.pullcat.common.constant.RedisKeys;
+import com.pullcat.dao.entity.RepoDO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -18,23 +18,23 @@ public class RepoRepository {
         this.redisTemplate = redisTemplate;
     }
 
-    public void save(Repo repo) {
+    public void save(RepoDO repo) {
         redisTemplate.opsForValue().set(RedisKeys.repoKey(repo.getFullName()), repo);
         redisTemplate.opsForSet().add(RedisKeys.REPO_INDEX, repo.getFullName());
     }
 
-    public Repo findById(String fullName) {
+    public RepoDO findById(String fullName) {
         Object obj = redisTemplate.opsForValue().get(RedisKeys.repoKey(fullName));
-        return obj instanceof Repo ? (Repo) obj : null;
+        return obj instanceof RepoDO ? (RepoDO) obj : null;
     }
 
-    public List<Repo> findAll() {
+    public List<RepoDO> findAll() {
         Set<Object> members = redisTemplate.opsForSet().members(RedisKeys.REPO_INDEX);
-        List<Repo> repos = new ArrayList<>();
+        List<RepoDO> repos = new ArrayList<>();
         if (members != null) {
             for (Object member : members) {
                 String fullName = member.toString();
-                Repo repo = findById(fullName);
+                RepoDO repo = findById(fullName);
                 if (repo != null) {
                     repos.add(repo);
                 }

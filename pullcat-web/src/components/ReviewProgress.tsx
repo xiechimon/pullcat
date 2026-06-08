@@ -1,8 +1,8 @@
-import type { TaskState, AnalysisType, AnalysisResult, Severity } from '../types/review'
+import type { TaskStateRespDTO, AnalysisType, AnalysisResultRespDTO, Severity } from '../types/review'
 
 interface AnalysisTaskCardProps {
-  task: TaskState
-  result?: AnalysisResult | null
+  task: TaskStateRespDTO
+  result?: AnalysisResultRespDTO | null
   isActive: boolean
   onClick: () => void
 }
@@ -15,14 +15,14 @@ const SEVERITY_WEIGHT: Record<Severity, number> = {
   INFO: 1,
 }
 
-function getHighestSeverity(result?: AnalysisResult | null): Severity | null {
+function getHighestSeverity(result?: AnalysisResultRespDTO | null): Severity | null {
   if (!result || !result.issues || result.issues.length === 0) return null
   return result.issues.reduce((max, issue) => {
     return SEVERITY_WEIGHT[issue.severity] > SEVERITY_WEIGHT[max] ? issue.severity : max
   }, result.issues[0].severity)
 }
 
-function getTaskStyle(task: TaskState, result?: AnalysisResult | null, isActive: boolean = false) {
+function getTaskStyle(task: TaskStateRespDTO, result?: AnalysisResultRespDTO | null, isActive: boolean = false) {
   if (task.status === 'PENDING') {
     return {
       icon: <span className="animate-pulse">○</span>,
@@ -130,8 +130,8 @@ function AnalysisTaskCard({ task, result, isActive, onClick }: AnalysisTaskCardP
 }
 
 interface ReviewProgressProps {
-  tasks: TaskState[]
-  results?: Record<string, AnalysisResult | null>
+  tasks: TaskStateRespDTO[]
+  results?: Record<string, AnalysisResultRespDTO | null>
   activeTaskType: AnalysisType | null
   onTaskSelect: (type: AnalysisType) => void
 }

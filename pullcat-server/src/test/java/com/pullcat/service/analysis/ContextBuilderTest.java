@@ -1,9 +1,9 @@
 package com.pullcat.service.analysis;
 
 import com.pullcat.config.GitHubConfig;
-import com.pullcat.model.FileContent;
-import com.pullcat.model.PRMetadata;
-import com.pullcat.service.github.GitHubApiService;
+import com.pullcat.dto.resp.FileContentRespDTO;
+import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.remote.GitHubApiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ class ContextBuilderTest {
 
     @Test
     void buildPRInfo() {
-        PRMetadata meta = new PRMetadata();
+        PRMetadataRespDTO meta = new PRMetadataRespDTO();
         meta.setTitle("Fix login bug");
         meta.setDescription("Fix the login issue #42");
         meta.setHeadBranch("feature/login");
@@ -65,7 +65,7 @@ class ContextBuilderTest {
 
     @Test
     void buildChangedFilesSection() {
-        FileContent file = new FileContent("src/Foo.java", "public class Foo {}", "@@ -1 +1 @@\n+new line");
+        FileContentRespDTO file = new FileContentRespDTO("src/Foo.java", "public class Foo {}", "@@ -1 +1 @@\n+new line");
 
         String result = builder.buildChangedFilesSection(List.of(file));
 
@@ -76,7 +76,7 @@ class ContextBuilderTest {
 
     @Test
     void buildChangedFilesSectionExcludesFlaggedFiles() {
-        FileContent excluded = new FileContent("image.png", "binary", "");
+        FileContentRespDTO excluded = new FileContentRespDTO("image.png", "binary", "");
         excluded.setExcluded(true);
 
         String result = builder.buildChangedFilesSection(List.of(excluded));
@@ -86,7 +86,7 @@ class ContextBuilderTest {
 
     @Test
     void buildVariables() {
-        PRMetadata meta = new PRMetadata();
+        PRMetadataRespDTO meta = new PRMetadataRespDTO();
         meta.setTitle("Test");
         meta.setDescription("");
         meta.setHeadBranch("main");
@@ -99,7 +99,7 @@ class ContextBuilderTest {
 
     @Test
     void buildVariablesWithDiscussionAndRelatedFiles() {
-        PRMetadata meta = new PRMetadata();
+        PRMetadataRespDTO meta = new PRMetadataRespDTO();
         meta.setTitle("Test");
         meta.setDescription("");
         meta.setHeadBranch("main");
@@ -133,7 +133,7 @@ class ContextBuilderTest {
 
     @Test
     void extractImportsJava() {
-        FileContent file = new FileContent("src/Foo.java",
+        FileContentRespDTO file = new FileContentRespDTO("src/Foo.java",
                 "import java.util.List;\nimport com.example.Utils;\n\npublic class Foo {}\n", "");
 
         List<String> imports = builder.extractImports(file);
@@ -142,7 +142,7 @@ class ContextBuilderTest {
 
     @Test
     void extractImportsTypeScript() {
-        FileContent file = new FileContent("src/bar.ts",
+        FileContentRespDTO file = new FileContentRespDTO("src/bar.ts",
                 "import React from 'react';\nimport { useRef } from 'react';\nimport { Utils } from './utils';\nconst _ = require('lodash');\n", "");
 
         List<String> imports = builder.extractImports(file);
@@ -151,7 +151,7 @@ class ContextBuilderTest {
 
     @Test
     void extractImportsPython() {
-        FileContent file = new FileContent("src/main.py",
+        FileContentRespDTO file = new FileContentRespDTO("src/main.py",
                 "import os\nfrom collections import defaultdict\nfrom .helpers import parse\n\n", "");
 
         List<String> imports = builder.extractImports(file);
@@ -160,7 +160,7 @@ class ContextBuilderTest {
 
     @Test
     void extractImportsNullContent() {
-        FileContent file = new FileContent("src/empty.java", null, "");
+        FileContentRespDTO file = new FileContentRespDTO("src/empty.java", null, "");
         List<String> imports = builder.extractImports(file);
         assertThat(imports).isEmpty();
     }
@@ -206,7 +206,7 @@ class ContextBuilderTest {
     @Test
     void truncationInChangedFiles() {
         String longContent = "Line " + "x".repeat(14900) + "\n";
-        FileContent file = new FileContent("src/Big.java", longContent, "");
+        FileContentRespDTO file = new FileContentRespDTO("src/Big.java", longContent, "");
 
         String result = builder.buildChangedFilesSection(List.of(file));
 
@@ -226,7 +226,7 @@ class ContextBuilderTest {
 
     @Test
     void buildVariablesIncludesAllFiveKeys() {
-        PRMetadata meta = new PRMetadata();
+        PRMetadataRespDTO meta = new PRMetadataRespDTO();
         meta.setTitle("T");
         meta.setDescription("");
         meta.setHeadBranch("a");

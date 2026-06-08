@@ -1,8 +1,10 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.Issue;
-import com.pullcat.model.ReviewSession;
-import com.pullcat.model.Rule;
+import com.pullcat.common.enums.RuleType;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
+import com.pullcat.dao.entity.RuleDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,25 +37,25 @@ public class RuleSuggestionService {
         this.redisTemplate = redisTemplate;
     }
 
-    public List<Rule> suggestRules(String owner, String repo) {
+    public List<RuleDO> suggestRules(String owner, String repo) {
         String cacheKey = CACHE_PREFIX + owner + "/" + repo;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached instanceof List) {
             @SuppressWarnings("unchecked")
-            List<Rule> cachedList = (List<Rule>) cached;
+            List<RuleDO> cachedList = (List<RuleDO>) cached;
             return cachedList;
         }
 
-        List<ReviewSession> sessions = reviewRepository.findByRepo(owner + "/" + repo, 0, 10);
+        List<ReviewSessionRespDTO> sessions = reviewRepository.findByRepo(owner + "/" + repo, 0, 10);
         if (sessions.size() < 2) {
             return Collections.emptyList();
         }
 
         Map<String, FrequencyEntry> freqMap = new LinkedHashMap<>();
-        for (ReviewSession session : sessions) {
+        for (ReviewSessionRespDTO session : sessions) {
             for (var result : session.getAnalyses().values()) {
                 if (result.getIssues() == null) continue;
-                for (Issue issue : result.getIssues()) {
+                for (IssueRespDTO issue : result.getIssues()) {
                     String key = issue.getTitle() != null ? issue.getTitle().trim() : "";
                     if (key.isEmpty()) continue;
                     freqMap.computeIfAbsent(key, FrequencyEntry::new).increment(result.getType().name(), issue);
@@ -80,7 +82,7 @@ public class RuleSuggestionService {
                     .call()
                     .content();
 
-            List<Rule> suggestions = parseSuggestions(response);
+            List<RuleDO> suggestions = parseSuggestions(response);
 
             redisTemplate.opsForValue().set(cacheKey, suggestions, CACHE_TTL);
             return suggestions;
@@ -92,12 +94,12 @@ public class RuleSuggestionService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Rule> getSuggestions(String owner, String repo) {
-        List<Rule> aiRules = suggestRules(owner, repo);
+    public List<RuleDO> getSuggestions(String owner, String repo) {
+        List<RuleDO> aiRules = suggestRules(owner, repo);
 
-        List<Rule> existingRules = ruleRepository.findByRepo(owner, repo);
+        List<RuleDO> existingRules = ruleRepository.findByRepo(owner, repo);
         Set<String> existingNames = existingRules.stream()
-                .map(Rule::getName)
+                .map(RuleDO::getName)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -107,7 +109,7 @@ public class RuleSuggestionService {
     }
 
     public boolean hasNewSuggestions(String owner, String repo) {
-        List<Rule> suggestions = getSuggestions(owner, repo);
+        List<RuleDO> suggestions = getSuggestions(owner, repo);
         return !suggestions.isEmpty();
     }
 
@@ -130,9 +132,9 @@ public class RuleSuggestionService {
         return sb.toString();
     }
 
-    private List<Rule> parseSuggestions(String response) {
+    private List<RuleDO> parseSuggestions(String response) {
         try {
-            String json = com.pullcat.service.llm.JsonOutputParser.extractJson(response);
+            String json = com.pullcat.toolkit.JsonOutputParser.extractJson(response);
             if (!json.trim().startsWith("[")) {
                 json = "[" + json + "]";
             }
@@ -142,19 +144,19 @@ public class RuleSuggestionService {
                     .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
             var nodes = mapper.readTree(json);
-            List<Rule> rules = new ArrayList<>();
+            List<RuleDO> rules = new ArrayList<>();
             for (var node : nodes) {
-                Rule rule = new Rule();
+                RuleDO rule = new RuleDO();
                 rule.setId(UUID.randomUUID().toString());
-                rule.setType(Rule.RuleType.CODE_PATTERN);
+                rule.setType(RuleType.CODE_PATTERN);
                 String typeStr = node.has("type") ? node.get("type").asText() : "CODE_PATTERN";
-                try { rule.setType(Rule.RuleType.valueOf(typeStr)); } catch (IllegalArgumentException ignored) {}
+                try { rule.setType(RuleType.valueOf(typeStr)); } catch (IllegalArgumentException ignored) {}
                 rule.setPattern(node.has("pattern") ? node.get("pattern").asText() : "");
                 rule.setName(node.has("name") ? node.get("name").asText() : "");
                 rule.setMessage(node.has("message") ? node.get("message").asText() : "");
                 rule.setSuggestion(node.has("suggestion") ? node.get("suggestion").asText() : "");
                 String severityStr = node.has("severity") ? node.get("severity").asText() : "MEDIUM";
-                try { rule.setSeverity(Issue.Severity.valueOf(severityStr.toUpperCase())); } catch (IllegalArgumentException e) { rule.setSeverity(Issue.Severity.MEDIUM); }
+                try { rule.setSeverity(Severity.valueOf(severityStr.toUpperCase())); } catch (IllegalArgumentException e) { rule.setSeverity(Severity.MEDIUM); }
                 rule.setEnabled(true);
                 rules.add(rule);
             }
@@ -172,14 +174,14 @@ public class RuleSuggestionService {
     private static class FrequencyEntry {
         final String issueTitle;
         int count;
-        Issue sampleIssue;
+        IssueRespDTO sampleIssue;
 
         FrequencyEntry(String title) {
             this.issueTitle = title;
             this.count = 0;
         }
 
-        void increment(String dimension, Issue issue) {
+        void increment(String dimension, IssueRespDTO issue) {
             count++;
             if (sampleIssue == null || issue.getDescription() != null) {
                 sampleIssue = issue;

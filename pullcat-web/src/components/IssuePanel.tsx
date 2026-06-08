@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
-import type { Issue, Severity } from '../types/review'
+import type { IssueRespDTO, Severity } from '../types/review'
 import { SEVERITY_COLORS } from '../types/review'
 
 interface IssuePanelProps {
-  issues: Issue[]
+  issues: IssueRespDTO[]
   activeIssueId?: string | null
   onToggle: (issueId: string) => void
   onSelectAll: () => void
@@ -36,7 +36,7 @@ export function IssuePanel({
   const groups = useMemo(() => {
     if (groupMode === 'none') return [{ key: 'all', label: '全部', issues: filtered }]
 
-    const map = new Map<string, Issue[]>()
+    const map = new Map<string, IssueRespDTO[]>()
     for (const issue of filtered) {
       const key = groupMode === 'severity' ? issue.severity : (issue.file || '未知文件')
       const existing = map.get(key) || []

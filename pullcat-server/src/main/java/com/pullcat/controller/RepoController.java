@@ -1,12 +1,18 @@
 package com.pullcat.controller;
 
-import com.pullcat.model.Repo;
+import com.pullcat.common.convention.exception.ClientException;
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.common.convention.result.Results;
+import com.pullcat.common.enums.CommonErrorCodeEnum;
+import com.pullcat.dao.entity.RepoDO;
+import com.pullcat.dto.req.CreateRepoReqDTO;
+import com.pullcat.dto.resp.DeletedRespDTO;
+import com.pullcat.dto.resp.RepoRespDTO;
 import com.pullcat.service.analysis.RepoRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/repos")
@@ -19,39 +25,53 @@ public class RepoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Repo>> listRepos() {
-        return ResponseEntity.ok(repoRepository.findAll());
+    public ResponseEntity<Result<List<RepoRespDTO>>> listRepos() {
+        return ResponseEntity.ok(Results.success(repoRepository.findAll().stream().map(this::toRepoRespDTO).toList()));
     }
 
     @PostMapping
-    public ResponseEntity<Repo> addRepo(@RequestBody Map<String, String> body) {
-        String owner = body.get("owner");
-        String repo = body.get("repo");
+    public ResponseEntity<Result<RepoRespDTO>> addRepo(@RequestBody CreateRepoReqDTO requestParam) {
+        String owner = requestParam.getOwner();
+        String repo = requestParam.getRepo();
         if (owner == null || repo == null) {
-            return ResponseEntity.badRequest().build();
+            throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "owner 和 repo 不能为空");
         }
 
-        Repo r = new Repo(owner, repo);
-        if (body.containsKey("description")) r.setDescription(body.get("description"));
+        RepoDO r = new RepoDO(owner, repo);
+        if (requestParam.getDescription() != null) {
+            r.setDescription(requestParam.getDescription());
+        }
         repoRepository.save(r);
-        return ResponseEntity.ok(r);
+        return ResponseEntity.ok(Results.success(toRepoRespDTO(r)));
     }
 
     @DeleteMapping("/{owner}/{repo}")
-    public ResponseEntity<Map<String, Object>> removeRepo(@PathVariable String owner, @PathVariable String repo) {
+    public ResponseEntity<Result<DeletedRespDTO>> removeRepo(@PathVariable String owner, @PathVariable String repo) {
         if (!repoRepository.exists(owner, repo)) {
-            return ResponseEntity.notFound().build();
+            throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
         repoRepository.delete(owner, repo);
-        return ResponseEntity.ok(Map.of("deleted", true));
+        return ResponseEntity.ok(Results.success(new DeletedRespDTO(true)));
     }
 
     @GetMapping("/{owner}/{repo}")
-    public ResponseEntity<Repo> getRepo(@PathVariable String owner, @PathVariable String repo) {
-        Repo r = repoRepository.findById(owner + "/" + repo);
+    public ResponseEntity<Result<RepoRespDTO>> getRepo(@PathVariable String owner, @PathVariable String repo) {
+        RepoDO r = repoRepository.findById(owner + "/" + repo);
         if (r == null) {
-            return ResponseEntity.notFound().build();
+            throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
-        return ResponseEntity.ok(r);
+        return ResponseEntity.ok(Results.success(toRepoRespDTO(r)));
+    }
+
+    private RepoRespDTO toRepoRespDTO(RepoDO repoDO) {
+        RepoRespDTO response = new RepoRespDTO();
+        response.setOwner(repoDO.getOwner());
+        response.setRepo(repoDO.getRepo());
+        response.setFullName(repoDO.getFullName());
+        response.setDescription(repoDO.getDescription());
+        response.setStars(repoDO.getStars());
+        response.setLanguage(repoDO.getLanguage());
+        response.setAddedAt(repoDO.getAddedAt() == null ? null : repoDO.getAddedAt().toString());
+        return response;
     }
 }

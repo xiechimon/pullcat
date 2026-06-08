@@ -3,7 +3,7 @@ export type SessionStatus = 'FETCHING' | 'ANALYZING' | 'COMPLETED' | 'FAILED' | 
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO'
 export type AnalysisType = 'summary' | 'risk' | 'quality' | 'consistency' | 'testing'
 
-export interface Issue {
+export interface IssueRespDTO {
   id: string
   severity: Severity
   file: string | null
@@ -19,19 +19,19 @@ export interface Issue {
   suggestionCode?: string | null
 }
 
-export interface AnalysisResult {
+export interface AnalysisResultRespDTO {
   type: AnalysisType
   status: AnalysisStatus
   model: string
   content: string
-  issues: Issue[]
+  issues: IssueRespDTO[]
   tokensUsed: number
   startedAt: string | null
   completedAt: string | null
   errorMessage: string | null
 }
 
-export interface PRMetadata {
+export interface PRMetadataRespDTO {
   title: string
   description: string
   owner: string
@@ -44,12 +44,12 @@ export interface PRMetadata {
   deletions: number
 }
 
-export interface ReviewSession {
+export interface ReviewSessionRespDTO {
   id: string
   prUrl: string
   status: SessionStatus
-  prMetadata: PRMetadata | null
-  analyses: Record<string, AnalysisResult>
+  prMetadata: PRMetadataRespDTO | null
+  analyses: Record<string, AnalysisResultRespDTO>
   createdAt: string
   completedAt: string | null
   publishedCommentId: number | null
@@ -57,7 +57,7 @@ export interface ReviewSession {
   rawDiff: string | null
 }
 
-export interface Repo {
+export interface RepoRespDTO {
   owner: string
   repo: string
   fullName: string
@@ -67,14 +67,55 @@ export interface Repo {
   addedAt: string
 }
 
-export interface ReviewListResponse {
-  items: ReviewSession[]
+export interface ReviewListRespDTO {
+  items: ReviewSessionRespDTO[]
   total: number
   page: number
   size: number
 }
 
-export interface StatsOverview {
+export interface CreateReviewRespDTO {
+  reviewId: string
+  status: string
+  sseUrl: string
+}
+
+export interface PublishReviewRespDTO {
+  status: string
+  commentId: number
+  prUrl: string
+}
+
+export interface DeletedRespDTO {
+  deleted: boolean
+}
+
+export interface StatusRespDTO {
+  status: string
+}
+
+export interface AutoPublishRepoRespDTO {
+  owner: string
+  repo: string
+  enabled: boolean
+}
+
+export interface BooleanStatusRespDTO {
+  enabled: boolean
+}
+
+export interface RuleRespDTO {
+  id?: string
+  name: string
+  type: 'FILE_PATH_MATCH' | 'CODE_PATTERN' | 'FORBIDDEN_API'
+  pattern: string
+  severity: Severity
+  message: string
+  suggestion: string
+  enabled: boolean
+}
+
+export interface StatsOverviewRespDTO {
   totalReviews: number
   totalIssues: number
   repoCount: number
@@ -83,7 +124,37 @@ export interface StatsOverview {
   commonIssueTypes: { type: string; count: number }[]
 }
 
-export interface TaskState {
+export interface RepoStatsRespDTO {
+  totalReviews: number
+  totalIssues: number
+  avgIssuesPerReview: number
+  severityDistribution: Record<Severity, number>
+  repoFullName: string
+}
+
+export interface CurrentUserRespDTO {
+  authenticated: boolean
+  login?: string
+  avatarUrl?: string
+  name?: string
+}
+
+export interface ReviewRefRespDTO {
+  id: string
+  prUrl: string
+}
+
+export interface CompareReviewsRespDTO {
+  review1: ReviewRefRespDTO
+  review2: ReviewRefRespDTO
+  newCount: number
+  fixedCount: number
+  persistentCount: number
+  totalIssues1: number
+  totalIssues2: number
+}
+
+export interface TaskStateRespDTO {
   name: string
   label: string
   status: AnalysisStatus
@@ -92,7 +163,7 @@ export interface TaskState {
   completedAt: string | null
 }
 
-export interface SSEEvent {
+export interface SseEventRespDTO {
   type: string
   data: unknown
 }

@@ -1,8 +1,11 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.AnalysisResult;
-import com.pullcat.model.Issue;
-import com.pullcat.model.ReviewSession;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.dto.resp.CommonIssueTypeRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dto.resp.RepoStatsRespDTO;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
+import com.pullcat.dto.resp.StatsOverviewRespDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -19,8 +22,8 @@ public class StatsService {
         this.reviewRepository = reviewRepository;
     }
 
-    public Map<String, Object> getOverview() {
-        List<ReviewSession> all = reviewRepository.findAllReviews();
+    public StatsOverviewRespDTO getOverview() {
+        List<ReviewSessionRespDTO> all = reviewRepository.findAllReviews();
 
         int totalReviews = all.size();
         int totalIssues = 0;
@@ -34,14 +37,14 @@ public class StatsService {
         Map<String, Integer> issueTypeCounts = new HashMap<>();
         java.util.Set<String> repos = new java.util.HashSet<>();
 
-        for (ReviewSession session : all) {
+        for (ReviewSessionRespDTO session : all) {
             if (session.getRepositoryFullName() != null) {
                 repos.add(session.getRepositoryFullName());
             }
-            for (AnalysisResult result : session.getAnalyses().values()) {
+            for (AnalysisResultRespDTO result : session.getAnalyses().values()) {
                 if (result.getIssues() != null) {
                     totalIssues += result.getIssues().size();
-                    for (Issue issue : result.getIssues()) {
+                    for (IssueRespDTO issue : result.getIssues()) {
                         if (issue.getSeverity() != null) {
                             severityCounts.merge(issue.getSeverity().name(), 1, Integer::sum);
                         }
@@ -54,27 +57,25 @@ public class StatsService {
             }
         }
 
-        Map<String, Object> overview = new LinkedHashMap<>();
-        overview.put("totalReviews", totalReviews);
-        overview.put("totalIssues", totalIssues);
-        overview.put("repoCount", repos.size());
-        overview.put("avgIssuesPerReview", totalReviews > 0 ? (double) totalIssues / totalReviews : 0);
-        overview.put("severityDistribution", severityCounts);
-
         List<Map.Entry<String, Integer>> topTypes = issueTypeCounts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(10)
                 .toList();
-        overview.put("commonIssueTypes", topTypes.stream()
-                .map(e -> Map.of("type", e.getKey(), "count", e.getValue()))
+        StatsOverviewRespDTO overview = new StatsOverviewRespDTO();
+        overview.setTotalReviews(totalReviews);
+        overview.setTotalIssues(totalIssues);
+        overview.setRepoCount(repos.size());
+        overview.setAvgIssuesPerReview(totalReviews > 0 ? (double) totalIssues / totalReviews : 0);
+        overview.setSeverityDistribution(severityCounts);
+        overview.setCommonIssueTypes(topTypes.stream()
+                .map(e -> new CommonIssueTypeRespDTO(e.getKey(), e.getValue()))
                 .toList());
-
         return overview;
     }
 
-    public Map<String, Object> getRepoStats(String owner, String repo) {
+    public RepoStatsRespDTO getRepoStats(String owner, String repo) {
         String fullName = owner + "/" + repo;
-        List<ReviewSession> repoReviews = reviewRepository.findByRepo(fullName, 0, Integer.MAX_VALUE);
+        List<ReviewSessionRespDTO> repoReviews = reviewRepository.findByRepo(fullName, 0, Integer.MAX_VALUE);
 
         int totalReviews = repoReviews.size();
         int totalIssues = 0;
@@ -85,11 +86,11 @@ public class StatsService {
         severityCounts.put("LOW", 0);
         severityCounts.put("INFO", 0);
 
-        for (ReviewSession session : repoReviews) {
-            for (AnalysisResult result : session.getAnalyses().values()) {
+        for (ReviewSessionRespDTO session : repoReviews) {
+            for (AnalysisResultRespDTO result : session.getAnalyses().values()) {
                 if (result.getIssues() != null) {
                     totalIssues += result.getIssues().size();
-                    for (Issue issue : result.getIssues()) {
+                    for (IssueRespDTO issue : result.getIssues()) {
                         if (issue.getSeverity() != null) {
                             severityCounts.merge(issue.getSeverity().name(), 1, Integer::sum);
                         }
@@ -98,13 +99,12 @@ public class StatsService {
             }
         }
 
-        Map<String, Object> stats = new LinkedHashMap<>();
-        stats.put("totalReviews", totalReviews);
-        stats.put("totalIssues", totalIssues);
-        stats.put("avgIssuesPerReview", totalReviews > 0 ? (double) totalIssues / totalReviews : 0);
-        stats.put("severityDistribution", severityCounts);
-        stats.put("repoFullName", fullName);
-
+        RepoStatsRespDTO stats = new RepoStatsRespDTO();
+        stats.setTotalReviews(totalReviews);
+        stats.setTotalIssues(totalIssues);
+        stats.setAvgIssuesPerReview(totalReviews > 0 ? (double) totalIssues / totalReviews : 0);
+        stats.setSeverityDistribution(severityCounts);
+        stats.setRepoFullName(fullName);
         return stats;
     }
 
