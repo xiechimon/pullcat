@@ -67,7 +67,7 @@ export function IssueCard({
   }
 
   return (
-    <div className={`border rounded-lg p-4 transition-colors ${SEVERITY_BG[severity]} ${selected ? 'ring-2 ring-amber-400' : ''} ${getBorderClass()}`}> 
+    <div className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md ${SEVERITY_BG[severity]} ${selected ? 'ring-2 ring-amber-400' : ''} ${getBorderClass()}`}> 
       <div className="flex items-start gap-3">
         <input
           type="checkbox"
@@ -129,7 +129,7 @@ export function IssueCard({
       </div>
 
       {onFeedback && !hasFeedback && (
-        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-200 animate-fade-in dark:border-gray-700">
           <button
             onClick={handleAccept}
             className="text-xs px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"

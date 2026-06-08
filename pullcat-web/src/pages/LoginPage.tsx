@@ -1,6 +1,6 @@
 export function LoginPage() {
   return (
-    <div className="max-w-md mx-auto px-4 py-16 text-center">
+    <div className="max-w-md mx-auto px-4 py-16 text-center animate-scale-in">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">登录 Pullcat</h1>
       <p className="text-gray-500 dark:text-gray-400 mb-8">使用 GitHub 账号登录以开始使用</p>
       <a

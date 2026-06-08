@@ -51,7 +51,7 @@ export function DashboardPage() {
   const maxSeverity = Math.max(...Object.values(severityDist), 1)
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">仪表盘</h1>
         <button
@@ -68,8 +68,8 @@ export function DashboardPage() {
           { label: '发现问题总数', value: totalIssues },
           { label: '覆盖仓库数', value: stats?.repoCount ?? 0 },
           { label: '平均问题数', value: ((stats?.avgIssuesPerReview ?? 0)).toFixed(1) },
-        ].map(card => (
-          <div key={card.label} className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        ].map((card, i) => (
+          <div key={card.label} className={`p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-up ${['delay-75','delay-150','delay-200','delay-250'][i]}`}>
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{card.label}</div>
           </div>
@@ -84,7 +84,7 @@ export function DashboardPage() {
               <span className="w-16 text-sm text-gray-600 dark:text-gray-400">{s}</span>
               <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full transition-all"
+                  className="h-full rounded-full transition-[width] duration-700 ease-out"
                   style={{
                     width: `${maxSeverity > 0 ? ((severityDist[s] || 0) / maxSeverity) * 100 : 0}%`,
                     backgroundColor: SEVERITY_BAR_COLORS[s],

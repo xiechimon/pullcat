@@ -41,10 +41,10 @@ export function SettingsPage() {
   }, [])
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">设置</h1>
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white animate-fade-up">设置</h1>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-75">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">个人设置</h2>
         {user?.authenticated ? (
           <div className="flex items-center gap-3">
@@ -59,7 +59,7 @@ export function SettingsPage() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-100">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">GitHub Token</h2>
         <p className="text-sm text-gray-500">登录 GitHub 后即无需单独配置 Token。如需在未登录或 webhook 场景使用，请在 <code className="px-1 bg-gray-100 dark:bg-gray-700 rounded">.env</code> 文件中配置 GITHUB_TOKEN。</p>
         <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline">
@@ -67,7 +67,7 @@ export function SettingsPage() {
         </a>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-150">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Webhook 设置</h2>
         <p className="text-sm text-gray-500">配置 GitHub Webhook 后，PR 打开或更新时自动触发审查。</p>
         <div className="space-y-2">
@@ -102,7 +102,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-200">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">自动发布</h2>
         <p className="text-sm text-gray-500">开启后，该仓库的 PR 审查完成后自动将结果发布到 PR 评论。</p>
 
@@ -147,12 +147,12 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-250">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">通知设置</h2>
         <p className="text-sm text-gray-500">审查完成时发送通知（即将推出）</p>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4 animate-fade-up delay-300">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">自定义规则</h2>
         <p className="text-sm text-gray-500">为仓库配置自定义检测规则，审查时自动运行（即将推出）</p>
       </div>

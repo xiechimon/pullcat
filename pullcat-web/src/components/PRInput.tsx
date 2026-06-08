@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface PRInputProps {
   onSubmit: (prUrl: string) => void
@@ -9,20 +10,18 @@ const PR_URL_PATTERN = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+(\/.*
 
 export function PRInput({ onSubmit, loading }: PRInputProps) {
   const [url, setUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = url.trim()
     if (!trimmed) {
-      setError('请输入 GitHub PR 链接')
+      toast.error('请输入 GitHub PR 链接')
       return
     }
     if (!PR_URL_PATTERN.test(trimmed)) {
-      setError('无效的 GitHub PR 链接，格式应为：https://github.com/owner/repo/pull/number')
+      toast.error('无效的 GitHub PR 链接，格式应为：https://github.com/owner/repo/pull/number')
       return
     }
-    setError(null)
     onSubmit(trimmed)
   }
 
@@ -37,7 +36,7 @@ export function PRInput({ onSubmit, loading }: PRInputProps) {
             id="pr-url"
             type="text"
             value={url}
-            onChange={(e) => { setUrl(e.target.value); setError(null) }}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="粘贴 GitHub PR 链接，例如 https://github.com/owner/repo/pull/123"
             className="flex-1 px-4 py-3 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[#047857] focus:border-transparent"
             style={{
@@ -50,7 +49,7 @@ export function PRInput({ onSubmit, loading }: PRInputProps) {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-3 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-80 text-white font-medium rounded-lg transition-colors whitespace-nowrap border-2 border-[#047857] flex items-center justify-center gap-2 min-w-[120px]"
+            className="px-6 py-3 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-80 text-white font-medium rounded-lg transition-colors active:scale-[0.97] whitespace-nowrap border-2 border-[#047857] flex items-center justify-center gap-2 min-w-[120px]"
           >
             {loading ? (
               <>
@@ -65,7 +64,6 @@ export function PRInput({ onSubmit, loading }: PRInputProps) {
             )}
           </button>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     </form>
   )

@@ -21,7 +21,7 @@ export function ResultSection({ type, result, onIssueToggle, onFeedback }: Resul
 
   return (
     <div
-      className="rounded-lg overflow-hidden"
+      className="rounded-lg overflow-hidden animate-fade-up"
       style={{
         backgroundColor: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
@@ -77,8 +77,9 @@ export function ResultSection({ type, result, onIssueToggle, onFeedback }: Resul
             )}
           </div>
         ) : result.status === 'FAILED' ? (
-          <div className="text-sm text-red-600">
-            分析失败：{result.errorMessage || '未知错误'}
+          <div className="flex items-center gap-1.5 text-sm text-red-500 dark:text-red-400">
+            <span aria-hidden>✕</span>
+            <span>分析失败</span>
           </div>
         ) : null}
       </div>

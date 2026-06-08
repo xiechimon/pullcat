@@ -1,7 +1,8 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { toast } from 'sonner'
 import { HomePage } from '../pages/HomePage'
 
 function renderHomePage() {
@@ -27,14 +28,12 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: /审查|review/i })).toBeInTheDocument()
   })
 
-  it('validates invalid URL', async () => {
+  it('validates invalid URL', () => {
+    const toastSpy = vi.spyOn(toast, 'error')
     renderHomePage()
     const input = screen.getByPlaceholderText(/github\.com.*pull/)
     fireEvent.change(input, { target: { value: 'not-a-valid-url' } })
     fireEvent.click(screen.getByRole('button', { name: /审查|review/i }))
-
-    await waitFor(() => {
-      expect(screen.queryByText(/无效|invalid|请输入/)).toBeInTheDocument()
-    })
+    expect(toastSpy).toHaveBeenCalledWith(expect.stringMatching(/无效|invalid|请输入/i))
   })
 })

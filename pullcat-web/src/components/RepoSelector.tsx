@@ -73,7 +73,7 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
         }}
       />
       {open && (
-        <div className="absolute top-full mt-1 w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto animate-dropdown-in">
           {filtered.length === 0 && search.includes('/') && (
             <button
               onClick={handleAdd}

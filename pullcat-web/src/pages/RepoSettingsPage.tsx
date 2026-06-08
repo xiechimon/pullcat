@@ -127,7 +127,7 @@ export function RepoSettingsPage() {
   const pendingSuggestions = suggestions.filter(s => !addedIds.has(s.id!))
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{fullName}</h1>

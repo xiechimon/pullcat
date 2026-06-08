@@ -21,7 +21,7 @@ export function SeverityChart({distribution, size = 160}: SeverityChartProps) {
     const total = data.reduce((sum, d) => sum + d.value, 0)
 
     return (
-        <div className="relative" style={{width: size, height: size}}>
+        <div className="relative animate-fade-in" style={{width: size, height: size}}>
             <ResponsiveContainer>
                 <PieChart>
                     <Pie data={data} cx="50%" cy="50%" innerRadius={size * 0.35} outerRadius={size * 0.45}

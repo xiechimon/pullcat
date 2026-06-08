@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { compareReviews } from '../lib/api'
 import type { CompareReviewsRespDTO } from '../types/review'
 
@@ -10,7 +11,6 @@ export function ComparePage() {
 
   const [data, setData] = useState<CompareReviewsRespDTO | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!r1 || !r2) return
@@ -18,7 +18,6 @@ export function ComparePage() {
     let cancelled = false
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
-    setError(null)
 
     compareReviews(r1, r2)
       .then((result) => {
@@ -28,7 +27,7 @@ export function ComparePage() {
       })
       .catch((e) => {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : '对比失败')
+        toast.error(e instanceof Error ? e.message : '对比失败，请返回重试')
         setLoading(false)
       })
 
@@ -58,7 +57,7 @@ export function ComparePage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48" />
           <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 animate-fade-up delay-150">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
             ))}
@@ -68,28 +67,13 @@ export function ComparePage() {
     )
   }
 
-  if (error) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">对比失败</h1>
-        <p className="text-red-600 dark:text-red-400 mb-6">{error}</p>
-        <Link
-          to="/history"
-          className="inline-block px-4 py-2 text-emerald-600 hover:underline"
-        >
-          返回审查历史
-        </Link>
-      </div>
-    )
-  }
-
   if (!data) return null
 
   const issueDelta = (data.totalIssues2 ?? 0) - (data.totalIssues1 ?? 0)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Review 对比</h1>
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white animate-fade-up">Review 对比</h1>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
@@ -125,7 +109,7 @@ export function ComparePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 animate-fade-up delay-150">
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-l-4 border-l-red-500 p-4">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">新引入的问题</div>
           <div className="text-3xl font-bold text-red-600 dark:text-red-400">

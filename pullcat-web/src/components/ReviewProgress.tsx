@@ -151,14 +151,15 @@ export function ReviewProgress({ tasks, results = {}, activeTaskType, onTaskSele
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {tasks.map((task) => (
-          <AnalysisTaskCard
-            key={task.name}
-            task={task}
-            result={results[task.name]}
-            isActive={activeTaskType === task.name}
-            onClick={() => onTaskSelect(task.name as AnalysisType)}
-          />
+        {tasks.map((task, i) => (
+          <div key={task.name} className="animate-fade-up" style={{ animationDelay: `${i * 60}ms` }}>
+            <AnalysisTaskCard
+              task={task}
+              result={results[task.name]}
+              isActive={activeTaskType === task.name}
+              onClick={() => onTaskSelect(task.name as AnalysisType)}
+            />
+          </div>
         ))}
       </div>
     </div>
