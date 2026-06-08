@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import type { AnalysisResult, AnalysisType } from '../types/review'
+import type { AnalysisResultRespDTO, AnalysisType } from '../types/review'
 import { TASK_LABELS } from '../types/review'
 import { IssueCard } from './IssueCard'
 import { MarkdownRenderer } from './MarkdownRenderer'
 
 interface ResultSectionProps {
   type: AnalysisType
-  result: AnalysisResult
+  result: AnalysisResultRespDTO
   onIssueToggle: (issueId: string) => void
   onFeedback?: (issueId: string, accepted: boolean, reason?: string) => void
 }

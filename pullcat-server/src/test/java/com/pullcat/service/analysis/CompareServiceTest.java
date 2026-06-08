@@ -1,6 +1,16 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.*;
+import com.pullcat.common.enums.AnalysisStatus;
+import com.pullcat.common.enums.AnalysisType;
+import com.pullcat.common.enums.SessionStatus;
+import com.pullcat.dao.entity.RuleDO;
+import com.pullcat.dto.req.PublishReqDTO;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.dto.resp.FileContentRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dto.resp.PRDataRespDTO;
+import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,11 +27,11 @@ class CompareServiceTest {
 
     @Test
     void compareTwoReviewsWithNewAndFixedIssues() {
-        ReviewSession r1 = createSession("r1", "https://github.com/a/b/pull/1",
+        ReviewSessionRespDTO r1 = createSession("r1", "https://github.com/a/b/pull/1",
                 createIssue("src/Foo.java", 10, "NPE risk"),
                 createIssue("src/Bar.java", 20, "Missing validation"));
 
-        ReviewSession r2 = createSession("r2", "https://github.com/a/b/pull/2",
+        ReviewSessionRespDTO r2 = createSession("r2", "https://github.com/a/b/pull/2",
                 createIssue("src/Foo.java", 10, "NPE risk"),
                 createIssue("src/Baz.java", 30, "SQL injection"));
 
@@ -49,7 +59,7 @@ class CompareServiceTest {
 
     @Test
     void compareIdenticalReviews() {
-        ReviewSession session = createSession("r1", "https://github.com/a/b/pull/1",
+        ReviewSessionRespDTO session = createSession("r1", "https://github.com/a/b/pull/1",
                 createIssue("src/Foo.java", 10, "Same issue"));
 
         when(reviewRepository.findById("r1")).thenReturn(session);
@@ -62,12 +72,12 @@ class CompareServiceTest {
         assertThat(result.get("persistentCount")).isEqualTo(1);
     }
 
-    private ReviewSession createSession(String id, String prUrl, Issue... issues) {
-        ReviewSession session = new ReviewSession();
+    private ReviewSessionRespDTO createSession(String id, String prUrl, IssueRespDTO... issues) {
+        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
         session.setId(id);
         session.setPrUrl(prUrl);
 
-        AnalysisResult result = new AnalysisResult();
+        AnalysisResultRespDTO result = new AnalysisResultRespDTO();
         result.setType(AnalysisType.RISK);
         result.setIssues(List.of(issues));
         session.getAnalyses().put("risk", result);
@@ -75,8 +85,8 @@ class CompareServiceTest {
         return session;
     }
 
-    private Issue createIssue(String file, int line, String title) {
-        Issue issue = new Issue();
+    private IssueRespDTO createIssue(String file, int line, String title) {
+        IssueRespDTO issue = new IssueRespDTO();
         issue.setFile(file);
         issue.setLine(line);
         issue.setTitle(title);

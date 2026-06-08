@@ -1,8 +1,8 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.FileContent;
-import com.pullcat.model.PRMetadata;
-import com.pullcat.service.github.GitHubApiService;
+import com.pullcat.dto.resp.FileContentRespDTO;
+import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.remote.GitHubApiService;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -25,7 +25,7 @@ public class ContextBuilder {
         this.tokenBudgetManager = tokenBudgetManager;
     }
 
-    public String buildPRInfo(PRMetadata meta) {
+    public String buildPRInfo(PRMetadataRespDTO meta) {
         return String.format("""
                         ## PR 信息
                         标题: %s
@@ -49,11 +49,11 @@ public class ContextBuilder {
         return "## 项目结构\n```\n" + fileTree + "\n```\n";
     }
 
-    public String buildChangedFilesSection(List<FileContent> files) {
+    public String buildChangedFilesSection(List<FileContentRespDTO> files) {
         StringBuilder sb = new StringBuilder();
         sb.append("## 变更文件\n\n");
 
-        for (FileContent file : files) {
+        for (FileContentRespDTO file : files) {
             if (file.isExcluded()) continue;
             sb.append("### 文件: ").append(file.getPath()).append("\n\n");
 
@@ -74,11 +74,11 @@ public class ContextBuilder {
         return sb.toString();
     }
 
-    public Map<String, String> buildVariables(PRMetadata meta, String fileTree, List<FileContent> files) {
+    public Map<String, String> buildVariables(PRMetadataRespDTO meta, String fileTree, List<FileContentRespDTO> files) {
         return buildVariables(meta, fileTree, files, "", "");
     }
 
-    public Map<String, String> buildVariables(PRMetadata meta, String fileTree, List<FileContent> files,
+    public Map<String, String> buildVariables(PRMetadataRespDTO meta, String fileTree, List<FileContentRespDTO> files,
                                               String discussion, String relatedFiles) {
         Map<String, String> vars = new LinkedHashMap<>();
         vars.put("pr_info", buildPRInfo(meta));
@@ -89,7 +89,7 @@ public class ContextBuilder {
         return vars;
     }
 
-    public List<String> extractImports(FileContent file) {
+    public List<String> extractImports(FileContentRespDTO file) {
         String lang = detectLanguage(file.getPath());
         String content = file.getContent();
         if (content == null) return Collections.emptyList();

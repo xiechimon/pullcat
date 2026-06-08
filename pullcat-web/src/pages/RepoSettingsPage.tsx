@@ -2,46 +2,44 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
-import type { Severity } from '../types/review'
-
-interface Rule {
-  id?: string
-  name: string
-  type: 'FILE_PATH_MATCH' | 'CODE_PATTERN' | 'FORBIDDEN_API'
-  pattern: string
-  severity: Severity
-  message: string
-  suggestion: string
-  enabled: boolean
-}
+import {
+  createRule as createRuleApi,
+  deleteRule as deleteRuleApi,
+  getRules,
+  getRuleSuggestions,
+  toggleRule as toggleRuleApi,
+  updateRule as updateRuleApi,
+} from '../lib/api'
+import type { RuleRespDTO, Severity } from '../types/review'
 
 type Tab = 'rules' | 'suggestions'
 
 export function RepoSettingsPage() {
   const { owner, repo } = useParams<{ owner: string; repo: string }>()
-  const [rules, setRules] = useState<Rule[]>([])
+  const [rules, setRules] = useState<RuleRespDTO[]>([])
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState<Rule | null>(null)
+  const [editing, setEditing] = useState<RuleRespDTO | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<Tab>('rules')
-  const [suggestions, setSuggestions] = useState<Rule[]>([])
+  const [suggestions, setSuggestions] = useState<RuleRespDTO[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
   const fullName = `${owner}/${repo}`
 
   const fetchRules = () => {
-    fetch(`/api/repos/${owner}/${repo}/rules`, { credentials: 'include' })
-      .then(r => r.json()).then(setRules)
+    if (!owner || !repo) return
+    getRules(owner, repo)
+      .then(setRules)
       .catch(() => {})
       .finally(() => setLoading(false))
   }
 
   const fetchSuggestions = () => {
+    if (!owner || !repo) return
     setSuggestionsLoading(true)
-    fetch(`/api/repos/${owner}/${repo}/rules/suggestions`, { credentials: 'include' })
-      .then(r => r.json())
-      .then((data: Rule[]) => {
+    getRuleSuggestions(owner, repo)
+      .then((data) => {
         setSuggestions(data)
         setAddedIds(new Set())
       })
@@ -57,14 +55,14 @@ export function RepoSettingsPage() {
     }
   }, [activeTab])
 
-  const saveRule = async (rule: Rule) => {
-    const method = rule.id ? 'PUT' : 'POST'
-    const url = rule.id
-      ? `/api/repos/${owner}/${repo}/rules/${rule.id}`
-      : `/api/repos/${owner}/${repo}/rules`
+  const saveRule = async (rule: RuleRespDTO) => {
     try {
-      const res = await fetch(url, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!owner || !repo) return
+      if (rule.id) {
+        await updateRuleApi(owner, repo, rule.id, rule)
+      } else {
+        await createRuleApi(owner, repo, rule)
+      }
       fetchRules()
       setShowForm(false)
       setEditing(null)
@@ -74,14 +72,10 @@ export function RepoSettingsPage() {
     }
   }
 
-  const adoptSuggestion = async (rule: Rule) => {
-    const res = await fetch(`/api/repos/${owner}/${repo}/rules`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...rule, id: undefined }),
-    })
-    if (res.ok) {
+  const adoptSuggestion = async (rule: RuleRespDTO) => {
+    if (!owner || !repo) return
+    const created = await createRuleApi(owner, repo, { ...rule, id: undefined })
+    if (created) {
       setAddedIds(prev => new Set(prev).add(rule.id!))
       fetchRules()
     }
@@ -91,13 +85,9 @@ export function RepoSettingsPage() {
     suggestions
       .filter(s => !addedIds.has(s.id!))
       .forEach(s => {
-        fetch(`/api/repos/${owner}/${repo}/rules`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...s, id: undefined }),
-        }).then(res => {
-          if (res.ok) {
+        if (!owner || !repo) return
+        createRuleApi(owner, repo, { ...s, id: undefined }).then(created => {
+          if (created) {
             setAddedIds(prev => new Set(prev).add(s.id!))
             fetchRules()
           }
@@ -105,10 +95,10 @@ export function RepoSettingsPage() {
       })
   }
 
-  const toggleRule = async (rule: Rule) => {
+  const toggleRule = async (rule: RuleRespDTO) => {
     try {
-      const res = await fetch(`/api/repos/${owner}/${repo}/rules/${rule.id}/toggle`, { method: 'PUT', credentials: 'include' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!owner || !repo || !rule.id) return
+      await toggleRuleApi(owner, repo, rule.id)
       fetchRules()
       toast.success(rule.enabled ? '规则已禁用' : '规则已启用')
     } catch (e) {
@@ -119,8 +109,8 @@ export function RepoSettingsPage() {
 
   const deleteRule = async (id: string) => {
     try {
-      const res = await fetch(`/api/repos/${owner}/${repo}/rules/${id}`, { method: 'DELETE', credentials: 'include' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!owner || !repo) return
+      await deleteRuleApi(owner, repo, id)
       fetchRules()
       toast.success('规则已删除')
     } catch (e) {
@@ -304,8 +294,8 @@ export function RepoSettingsPage() {
   )
 }
 
-function RuleForm({ rule, onSave, onCancel }: { rule: Rule | null; onSave: (r: Rule) => void; onCancel: () => void }) {
-  const [form, setForm] = useState<Rule>(rule || {
+function RuleForm({ rule, onSave, onCancel }: { rule: RuleRespDTO | null; onSave: (r: RuleRespDTO) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<RuleRespDTO>(rule || {
     name: '', type: 'CODE_PATTERN', pattern: '', severity: 'MEDIUM', message: '', suggestion: '', enabled: true,
   })
 
@@ -313,7 +303,7 @@ function RuleForm({ rule, onSave, onCancel }: { rule: Rule | null; onSave: (r: R
     <div className="bg-white dark:bg-slate-800 rounded-xl border border-emerald-300 dark:border-emerald-700 p-6 space-y-3">
       <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" placeholder="规则名称" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
       <div className="flex gap-2">
-        <select className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as Rule['type'] })}>
+        <select className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleRespDTO['type'] })}>
           <option value="CODE_PATTERN">代码匹配</option>
           <option value="FORBIDDEN_API">禁用 API</option>
           <option value="FILE_PATH_MATCH">文件路径匹配</option>

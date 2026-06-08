@@ -1,10 +1,12 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.dto.req.WebhookEventReqDTO;
+import com.pullcat.dto.req.WebhookPullRequestReqDTO;
+import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.analysis.WebhookService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -17,48 +19,58 @@ class WebhookControllerTest {
 
     @Test
     void handlePrOpenedEvent() {
-        Map<String, Object> payload = Map.of(
-                "action", "opened",
-                "pull_request", Map.of("html_url", "https://github.com/owner/repo/pull/1")
-        );
+        WebhookEventReqDTO payload = createPayload("opened", "https://github.com/owner/repo/pull/1");
 
-        ResponseEntity<Map<String, Object>> response = controller.handleGitHubWebhook("pull_request", payload);
+        ResponseEntity<Result<WebhookRespDTO>> response = controller.handleGitHubWebhook("pull_request", payload);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("status", "review_triggered");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData().getStatus()).isEqualTo("review_triggered");
         verify(webhookService).triggerReview("https://github.com/owner/repo/pull/1");
     }
 
     @Test
     void handlePrSynchronizeEvent() {
-        Map<String, Object> payload = Map.of(
-                "action", "synchronize",
-                "pull_request", Map.of("html_url", "https://github.com/owner/repo/pull/2")
-        );
+        WebhookEventReqDTO payload = createPayload("synchronize", "https://github.com/owner/repo/pull/2");
 
-        ResponseEntity<Map<String, Object>> response = controller.handleGitHubWebhook("pull_request", payload);
+        ResponseEntity<Result<WebhookRespDTO>> response = controller.handleGitHubWebhook("pull_request", payload);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("status", "review_triggered");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData().getStatus()).isEqualTo("review_triggered");
     }
 
     @Test
     void handleNonPrEvent() {
-        ResponseEntity<Map<String, Object>> response = controller.handleGitHubWebhook("push", Map.of());
+        ResponseEntity<Result<WebhookRespDTO>> response = controller.handleGitHubWebhook("push", new WebhookEventReqDTO());
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("status", "ignored");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData().getStatus()).isEqualTo("ignored");
         verifyNoInteractions(webhookService);
     }
 
     @Test
     void handlePrClosedEvent() {
-        Map<String, Object> payload = Map.of("action", "closed");
+        WebhookEventReqDTO payload = new WebhookEventReqDTO();
+        payload.setAction("closed");
 
-        ResponseEntity<Map<String, Object>> response = controller.handleGitHubWebhook("pull_request", payload);
+        ResponseEntity<Result<WebhookRespDTO>> response = controller.handleGitHubWebhook("pull_request", payload);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).containsEntry("status", "ignored");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData().getStatus()).isEqualTo("ignored");
         verifyNoInteractions(webhookService);
+    }
+
+    private WebhookEventReqDTO createPayload(String action, String htmlUrl) {
+        WebhookPullRequestReqDTO pullRequest = new WebhookPullRequestReqDTO();
+        pullRequest.setHtmlUrl(htmlUrl);
+
+        WebhookEventReqDTO payload = new WebhookEventReqDTO();
+        payload.setAction(action);
+        payload.setPullRequest(pullRequest);
+        return payload;
     }
 }

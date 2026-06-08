@@ -1,24 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { compareReviews } from '../lib/api'
-
-interface CompareData {
-  review1?: { id: string; prUrl: string }
-  review2?: { id: string; prUrl: string }
-  newCount?: number
-  fixedCount?: number
-  persistentCount?: number
-  totalIssues1?: number
-  totalIssues2?: number
-  error?: string
-}
+import type { CompareReviewsRespDTO } from '../types/review'
 
 export function ComparePage() {
   const [searchParams] = useSearchParams()
   const r1 = searchParams.get('r1')
   const r2 = searchParams.get('r2')
 
-  const [data, setData] = useState<CompareData | null>(null)
+  const [data, setData] = useState<CompareReviewsRespDTO | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,11 +23,7 @@ export function ComparePage() {
     compareReviews(r1, r2)
       .then((result) => {
         if (cancelled) return
-        if (result.error) {
-          setError(result.error as string)
-        } else {
-          setData(result as CompareData)
-        }
+        setData(result)
         setLoading(false)
       })
       .catch((e) => {

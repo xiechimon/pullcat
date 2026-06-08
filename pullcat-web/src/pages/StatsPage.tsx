@@ -1,12 +1,12 @@
 import {useEffect, useState} from 'react'
 import {toast} from 'sonner'
-import type {StatsOverview, Severity} from '../types/review'
+import type {StatsOverviewRespDTO, Severity} from '../types/review'
 import {getStatsOverview} from '../lib/api'
 import {SeverityChart} from '../components/SeverityChart'
 import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from 'recharts'
 
 export function StatsPage() {
-    const [stats, setStats] = useState<StatsOverview | null>(null)
+    const [stats, setStats] = useState<StatsOverviewRespDTO | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {

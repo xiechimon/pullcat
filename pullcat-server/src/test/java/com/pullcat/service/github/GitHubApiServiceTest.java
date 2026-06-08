@@ -1,15 +1,15 @@
-package com.pullcat.service.github;
+package com.pullcat.remote;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pullcat.model.PRMetadata;
+import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.remote.dto.req.GitHubReviewReqDTO;
+import com.pullcat.remote.dto.resp.GitHubPullRequestRespDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,7 +63,7 @@ class GitHubApiServiceTest {
 
     @Test
     void mapToPRMetadataAllFields() throws Exception {
-        JsonNode json = mapper.readTree("""
+        GitHubPullRequestRespDTO json = mapper.readValue("""
                 {
                   "title": "Add login feature",
                   "body": "Implements user authentication",
@@ -73,10 +73,10 @@ class GitHubApiServiceTest {
                   "additions": 340,
                   "deletions": 55
                 }
-                """);
+                """, GitHubPullRequestRespDTO.class);
 
         GitHubApiService.PRUrl prUrl = new GitHubApiService.PRUrl("owner", "repo", 100);
-        PRMetadata meta = service.mapToPRMetadata(prUrl, json);
+        PRMetadataRespDTO meta = service.mapToPRMetadata(prUrl, json);
 
         assertThat(meta.getOwner()).isEqualTo("owner");
         assertThat(meta.getRepo()).isEqualTo("repo");
@@ -92,10 +92,10 @@ class GitHubApiServiceTest {
 
     @Test
     void mapToPRMetadataHandlesEmptyResponse() throws Exception {
-        JsonNode json = mapper.readTree("{}");
+        GitHubPullRequestRespDTO json = mapper.readValue("{}", GitHubPullRequestRespDTO.class);
         GitHubApiService.PRUrl prUrl = new GitHubApiService.PRUrl("owner", "repo", 1);
 
-        PRMetadata meta = service.mapToPRMetadata(prUrl, json);
+        PRMetadataRespDTO meta = service.mapToPRMetadata(prUrl, json);
 
         assertThat(meta.getTitle()).isEmpty();
         assertThat(meta.getDescription()).isEmpty();
@@ -108,12 +108,12 @@ class GitHubApiServiceTest {
 
     @Test
     void mapToPRMetadataPartialResponse() throws Exception {
-        JsonNode json = mapper.readTree("""
+        GitHubPullRequestRespDTO json = mapper.readValue("""
                 {"title": "Fix bug", "additions": 10}
-                """);
+                """, GitHubPullRequestRespDTO.class);
         GitHubApiService.PRUrl prUrl = new GitHubApiService.PRUrl("a", "b", 1);
 
-        PRMetadata meta = service.mapToPRMetadata(prUrl, json);
+        PRMetadataRespDTO meta = service.mapToPRMetadata(prUrl, json);
 
         assertThat(meta.getTitle()).isEqualTo("Fix bug");
         assertThat(meta.getAdditions()).isEqualTo(10);
@@ -172,36 +172,34 @@ class GitHubApiServiceTest {
 
     @Test
     void buildReviewBodyWithoutComments() {
-        Map<String, Object> body = service.buildReviewBody("## AI Review\n\nLGTM", List.of());
+        GitHubReviewReqDTO body = service.buildReviewBody("## AI Review\n\nLGTM", List.of());
 
-        assertThat(body.get("event")).isEqualTo("COMMENT");
-        assertThat(body.get("body")).isEqualTo("## AI Review\n\nLGTM");
-        assertThat(body.containsKey("comments")).isFalse();
+        assertThat(body.getEvent()).isEqualTo("COMMENT");
+        assertThat(body.getBody()).isEqualTo("## AI Review\n\nLGTM");
+        assertThat(body.getComments()).isNull();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void buildReviewBodyWithComments() {
         List<GitHubApiService.ReviewComment> comments = List.of(
                 new GitHubApiService.ReviewComment("src/Foo.java", 10, "NPE risk"),
                 new GitHubApiService.ReviewComment("src/Bar.java", 20, "missing validation")
         );
 
-        Map<String, Object> body = service.buildReviewBody("## Summary", comments);
+        GitHubReviewReqDTO body = service.buildReviewBody("## Summary", comments);
 
-        assertThat(body.get("event")).isEqualTo("COMMENT");
-        assertThat(body.containsKey("comments")).isTrue();
+        assertThat(body.getEvent()).isEqualTo("COMMENT");
+        assertThat(body.getComments()).hasSize(2);
 
-        List<Map<String, Object>> commentList = (List<Map<String, Object>>) body.get("comments");
+        var commentList = body.getComments();
         assertThat(commentList).hasSize(2);
-        assertThat(commentList.get(0).get("path")).isEqualTo("src/Foo.java");
-        assertThat(commentList.get(0).get("line")).isEqualTo(10);
-        assertThat(commentList.get(0).get("side")).isEqualTo("RIGHT");
-        assertThat(commentList.get(0).get("body")).isEqualTo("NPE risk");
+        assertThat(commentList.get(0).getPath()).isEqualTo("src/Foo.java");
+        assertThat(commentList.get(0).getLine()).isEqualTo(10);
+        assertThat(commentList.get(0).getSide()).isEqualTo("RIGHT");
+        assertThat(commentList.get(0).getBody()).isEqualTo("NPE risk");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void buildReviewBodyFiltersNullFileAndLine() {
         List<GitHubApiService.ReviewComment> comments = List.of(
                 new GitHubApiService.ReviewComment(null, 10, "no file"),
@@ -209,10 +207,10 @@ class GitHubApiServiceTest {
                 new GitHubApiService.ReviewComment("src/Valid.java", 30, "valid")
         );
 
-        Map<String, Object> body = service.buildReviewBody("## Summary", comments);
+        GitHubReviewReqDTO body = service.buildReviewBody("## Summary", comments);
 
-        List<Map<String, Object>> commentList = (List<Map<String, Object>>) body.get("comments");
+        var commentList = body.getComments();
         assertThat(commentList).hasSize(1);
-        assertThat(commentList.get(0).get("path")).isEqualTo("src/Valid.java");
+        assertThat(commentList.get(0).getPath()).isEqualTo("src/Valid.java");
     }
 }

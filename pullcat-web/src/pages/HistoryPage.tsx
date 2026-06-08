@@ -3,12 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { StatusBadge } from '../components/StatusBadge'
-import type { ReviewSession } from '../types/review'
+import type { ReviewSessionRespDTO } from '../types/review'
 import { getReviews, deleteReview } from '../lib/api'
 
 export function HistoryPage() {
   const navigate = useNavigate()
-  const [reviews, setReviews] = useState<ReviewSession[]>([])
+  const [reviews, setReviews] = useState<ReviewSessionRespDTO[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)

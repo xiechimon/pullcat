@@ -1,11 +1,14 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.AnalysisResult;
-import com.pullcat.model.Issue;
-import com.pullcat.model.ReviewSession;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.dto.resp.CompareReviewsRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.dto.resp.ReviewRefRespDTO;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Service
 public class CompareService {
@@ -16,12 +19,12 @@ public class CompareService {
         this.reviewRepository = reviewRepository;
     }
 
-    public Map<String, Object> compare(String reviewId1, String reviewId2) {
-        ReviewSession r1 = reviewRepository.findById(reviewId1);
-        ReviewSession r2 = reviewRepository.findById(reviewId2);
+    public CompareReviewsRespDTO compare(String reviewId1, String reviewId2) {
+        ReviewSessionRespDTO r1 = reviewRepository.findById(reviewId1);
+        ReviewSessionRespDTO r2 = reviewRepository.findById(reviewId2);
 
         if (r1 == null || r2 == null) {
-            return Map.of("error", "One or both reviews not found");
+            throw new IllegalArgumentException("One or both reviews not found");
         }
 
         Set<String> set1 = issueKeys(r1);
@@ -36,22 +39,22 @@ public class CompareService {
         Set<String> persistent = new LinkedHashSet<>(set1);
         persistent.retainAll(set2);
 
-        return Map.of(
-                "review1", Map.of("id", reviewId1, "prUrl", r1.getPrUrl()),
-                "review2", Map.of("id", reviewId2, "prUrl", r2.getPrUrl()),
-                "newCount", newIssues.size(),
-                "fixedCount", fixedIssues.size(),
-                "persistentCount", persistent.size(),
-                "totalIssues1", totalIssueCount(r1),
-                "totalIssues2", totalIssueCount(r2)
-        );
+        CompareReviewsRespDTO response = new CompareReviewsRespDTO();
+        response.setReview1(new ReviewRefRespDTO(reviewId1, r1.getPrUrl()));
+        response.setReview2(new ReviewRefRespDTO(reviewId2, r2.getPrUrl()));
+        response.setNewCount(newIssues.size());
+        response.setFixedCount(fixedIssues.size());
+        response.setPersistentCount(persistent.size());
+        response.setTotalIssues1(totalIssueCount(r1));
+        response.setTotalIssues2(totalIssueCount(r2));
+        return response;
     }
 
-    private Set<String> issueKeys(ReviewSession session) {
+    private Set<String> issueKeys(ReviewSessionRespDTO session) {
         Set<String> keys = new LinkedHashSet<>();
-        for (AnalysisResult result : session.getAnalyses().values()) {
+        for (AnalysisResultRespDTO result : session.getAnalyses().values()) {
             if (result.getIssues() != null) {
-                for (Issue issue : result.getIssues()) {
+                for (IssueRespDTO issue : result.getIssues()) {
                     String file = issue.getFile() != null ? issue.getFile() : "";
                     String line = issue.getLine() != null ? String.valueOf(issue.getLine()) : "";
                     String title = issue.getTitle() != null ? issue.getTitle().substring(0, Math.min(issue.getTitle().length(), 50)) : "";
@@ -62,9 +65,9 @@ public class CompareService {
         return keys;
     }
 
-    private int totalIssueCount(ReviewSession session) {
+    private int totalIssueCount(ReviewSessionRespDTO session) {
         int count = 0;
-        for (AnalysisResult result : session.getAnalyses().values()) {
+        for (AnalysisResultRespDTO result : session.getAnalyses().values()) {
             if (result.getIssues() != null) count += result.getIssues().size();
         }
         return count;

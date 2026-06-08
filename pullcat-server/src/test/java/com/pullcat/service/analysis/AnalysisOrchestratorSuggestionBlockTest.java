@@ -1,6 +1,7 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.Issue;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.IssueRespDTO;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -15,22 +16,22 @@ class AnalysisOrchestratorSuggestionBlockTest {
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
                 null, null, null, null, null, null, null, null, null, null, null, null);
 
-        Issue issue = new Issue();
-        issue.setSeverity(Issue.Severity.HIGH);
+        IssueRespDTO issue = new IssueRespDTO();
+        issue.setSeverity(Severity.HIGH);
         issue.setTitle("NPE risk");
         issue.setFile("src/main/Foo.java");
         issue.setLine(42);
         issue.setDescription("Potential null pointer when user is not authenticated");
-        issue.setSuggestionCode("Optional.ofNullable(user).map(User::getName).orElse(\"unknown\")");
+        issue.setSuggestionCode("Optional.ofNullable(user).map(UserProfile::getName).orElse(\"unknown\")");
 
-        Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildSuggestionBlock", Issue.class);
+        Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildSuggestionBlock", IssueRespDTO.class);
         method.setAccessible(true);
         String result = (String) method.invoke(orchestrator, issue);
 
         assertThat(result).contains("**" + "[HIGH] NPE risk**");
         assertThat(result).contains("Potential null pointer when user is not authenticated");
         assertThat(result).contains("```suggestion");
-        assertThat(result).contains("Optional.ofNullable(user).map(User::getName).orElse(\"unknown\")");
+        assertThat(result).contains("Optional.ofNullable(user).map(UserProfile::getName).orElse(\"unknown\")");
     }
 
     @Test
@@ -38,15 +39,15 @@ class AnalysisOrchestratorSuggestionBlockTest {
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
                 null, null, null, null, null, null, null, null, null, null, null, null);
 
-        Issue issue = new Issue();
-        issue.setSeverity(Issue.Severity.MEDIUM);
+        IssueRespDTO issue = new IssueRespDTO();
+        issue.setSeverity(Severity.MEDIUM);
         issue.setTitle("Missing docs");
         issue.setFile("src/Util.java");
         issue.setLine(null);
         issue.setDescription("No javadoc on public method");
         issue.setSuggestionCode("/** Returns the value. */\npublic String getValue() { return value; }");
 
-        Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildSuggestionBlock", Issue.class);
+        Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildSuggestionBlock", IssueRespDTO.class);
         method.setAccessible(true);
         String result = (String) method.invoke(orchestrator, issue);
 
@@ -60,33 +61,33 @@ class AnalysisOrchestratorSuggestionBlockTest {
         AnalysisOrchestrator orchestrator = new AnalysisOrchestrator(
                 null, null, null, null, null, null, null, aggregator, null, null, null, null);
 
-        var session = new com.pullcat.model.ReviewSession();
+        var session = new com.pullcat.dto.resp.ReviewSessionRespDTO();
         session.setId("test-session");
         session.setPrUrl("https://github.com/owner/repo/pull/1");
 
-        var summaryResult = new com.pullcat.model.AnalysisResult();
-        summaryResult.setType(com.pullcat.model.AnalysisType.SUMMARY);
+        var summaryResult = new com.pullcat.dto.resp.AnalysisResultRespDTO();
+        summaryResult.setType(com.pullcat.common.enums.AnalysisType.SUMMARY);
         summaryResult.setContent("{\"summary\": \"This PR adds login feature\"}");
         session.getAnalyses().put("summary", summaryResult);
 
-        Issue issue = new Issue();
-        issue.setSeverity(Issue.Severity.CRITICAL);
+        IssueRespDTO issue = new IssueRespDTO();
+        issue.setSeverity(Severity.CRITICAL);
         issue.setTitle("SQL injection");
         issue.setFile("src/LoginService.java");
         issue.setLine(25);
         issue.setDescription("Unsanitized input in SQL query");
         issue.setSuggestionCode("PreparedStatement ps = conn.prepareStatement(\"SELECT * FROM users WHERE name = ?\");");
 
-        var riskResult = new com.pullcat.model.AnalysisResult();
-        riskResult.setType(com.pullcat.model.AnalysisType.RISK);
+        var riskResult = new com.pullcat.dto.resp.AnalysisResultRespDTO();
+        riskResult.setType(com.pullcat.common.enums.AnalysisType.RISK);
         riskResult.setIssues(List.of(issue));
         session.getAnalyses().put("risk", riskResult);
 
         Method method = AnalysisOrchestrator.class.getDeclaredMethod("buildPublishSummary",
-                List.class, com.pullcat.model.ReviewSession.class);
+                List.class, com.pullcat.dto.resp.ReviewSessionRespDTO.class);
         method.setAccessible(true);
 
-        List<Issue> merged = aggregator.mergeResults(
+        List<IssueRespDTO> merged = aggregator.mergeResults(
                 List.copyOf(session.getAnalyses().values()));
         String summary = (String) method.invoke(orchestrator, merged, session);
 

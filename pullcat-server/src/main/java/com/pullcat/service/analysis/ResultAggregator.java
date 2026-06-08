@@ -1,7 +1,8 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.AnalysisResult;
-import com.pullcat.model.Issue;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.dto.resp.IssueRespDTO;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -9,13 +10,13 @@ import java.util.*;
 @Component
 public class ResultAggregator {
 
-    public List<Issue> mergeIssues(List<List<Issue>> chunkResults) {
-        List<Issue> merged = new ArrayList<>();
+    public List<IssueRespDTO> mergeIssues(List<List<IssueRespDTO>> chunkResults) {
+        List<IssueRespDTO> merged = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
 
-        for (List<Issue> chunk : chunkResults) {
+        for (List<IssueRespDTO> chunk : chunkResults) {
             if (chunk == null) continue;
-            for (Issue issue : chunk) {
+            for (IssueRespDTO issue : chunk) {
                 String key = buildDedupKey(issue);
                 if (seen.add(key)) {
                     merged.add(issue);
@@ -27,17 +28,17 @@ public class ResultAggregator {
         return merged;
     }
 
-    public List<Issue> mergeResults(List<AnalysisResult> results) {
+    public List<IssueRespDTO> mergeResults(List<AnalysisResultRespDTO> results) {
         if (results == null || results.isEmpty()) {
             return Collections.emptyList();
         }
 
         Map<String, DedupEntry> dedupMap = new LinkedHashMap<>();
 
-        for (AnalysisResult result : results) {
+        for (AnalysisResultRespDTO result : results) {
             if (result == null || result.getIssues() == null) continue;
 
-            for (Issue issue : result.getIssues()) {
+            for (IssueRespDTO issue : result.getIssues()) {
                 String key = buildDedupKey(issue);
                 DedupEntry existing = dedupMap.get(key);
 
@@ -49,9 +50,9 @@ public class ResultAggregator {
             }
         }
 
-        List<Issue> merged = new ArrayList<>();
+        List<IssueRespDTO> merged = new ArrayList<>();
         for (DedupEntry entry : dedupMap.values()) {
-            Issue resolved = resolveMerged(entry);
+            IssueRespDTO resolved = resolveMerged(entry);
             merged.add(resolved);
         }
 
@@ -59,7 +60,7 @@ public class ResultAggregator {
         return merged;
     }
 
-    private void mergeInto(DedupEntry entry, Issue incoming, String dimensionName) {
+    private void mergeInto(DedupEntry entry, IssueRespDTO incoming, String dimensionName) {
         entry.dimensions.add(dimensionName);
 
         if (entry.issue.getSeverity() == null || incoming.getSeverity() != null
@@ -88,7 +89,7 @@ public class ResultAggregator {
         }
     }
 
-    private Issue resolveMerged(DedupEntry entry) {
+    private IssueRespDTO resolveMerged(DedupEntry entry) {
         if (entry.dimensions.size() <= 1) {
             entry.issue.getSourceDimensions().add(entry.dimensions.iterator().next());
             return entry.issue;
@@ -124,11 +125,11 @@ public class ResultAggregator {
         return null;
     }
 
-    private int compareBySeverity(Issue a, Issue b) {
+    private int compareBySeverity(IssueRespDTO a, IssueRespDTO b) {
         return severityWeight(b.getSeverity()) - severityWeight(a.getSeverity());
     }
 
-    int severityWeight(Issue.Severity severity) {
+    int severityWeight(Severity severity) {
         if (severity == null) return 0;
         return switch (severity) {
             case CRITICAL -> 5;
@@ -139,7 +140,7 @@ public class ResultAggregator {
         };
     }
 
-    private String buildDedupKey(Issue issue) {
+    private String buildDedupKey(IssueRespDTO issue) {
         String file = issue.getFile() != null ? issue.getFile() : "";
         String line = issue.getLine() != null ? String.valueOf(issue.getLine()) : "";
         String title = issue.getTitle() != null ? issue.getTitle().trim().toLowerCase() : "";
@@ -148,10 +149,10 @@ public class ResultAggregator {
     }
 
     private static class DedupEntry {
-        final Issue issue;
+        final IssueRespDTO issue;
         final Set<String> dimensions = new LinkedHashSet<>();
 
-        DedupEntry(Issue issue, String dimension) {
+        DedupEntry(IssueRespDTO issue, String dimension) {
             this.issue = issue;
             this.dimensions.add(dimension);
         }

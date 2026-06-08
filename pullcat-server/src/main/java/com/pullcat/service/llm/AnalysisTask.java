@@ -1,10 +1,11 @@
 package com.pullcat.service.llm;
 
 import com.pullcat.config.RetryConfig;
-import com.pullcat.model.AnalysisResult;
-import com.pullcat.model.AnalysisStatus;
-import com.pullcat.model.AnalysisType;
-import com.pullcat.model.Issue;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.common.enums.AnalysisStatus;
+import com.pullcat.common.enums.AnalysisType;
+import com.pullcat.dto.resp.IssueRespDTO;
+import com.pullcat.toolkit.JsonOutputParser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import reactor.core.publisher.Mono;
@@ -21,7 +22,7 @@ public abstract class AnalysisTask {
 
     protected final AnalysisType analysisType;
 
-    protected final AnalysisResult result;
+    protected final AnalysisResultRespDTO result;
 
     /**
      * 构造分析任务，初始化 ChatClient、模型名称及分析类型，并创建对应的结果对象。
@@ -34,7 +35,7 @@ public abstract class AnalysisTask {
         this.chatClient = chatClient;
         this.modelName = modelName;
         this.analysisType = analysisType;
-        this.result = new AnalysisResult(analysisType);
+        this.result = new AnalysisResultRespDTO(analysisType);
         this.result.setModel(modelName);
     }
 
@@ -44,7 +45,7 @@ public abstract class AnalysisTask {
      * @param prompt 发送给 LLM 的提示词
      * @return 包含分析结果的 Mono
      */
-    public Mono<AnalysisResult> execute(String prompt) {
+    public Mono<AnalysisResultRespDTO> execute(String prompt) {
         return Mono.fromCallable(() -> {
             result.setStatus(AnalysisStatus.RUNNING);
             result.setStartedAt(Instant.now());
@@ -55,7 +56,7 @@ public abstract class AnalysisTask {
                     .content();
 
             result.setContent(response);
-            List<Issue> issues = parseIssues(response);
+            List<IssueRespDTO> issues = parseIssues(response);
             assignIssueIds(issues);
             result.setIssues(issues);
             result.setStatus(AnalysisStatus.COMPLETED);
@@ -78,7 +79,7 @@ public abstract class AnalysisTask {
      * @param response LLM 返回的原始文本
      * @return 解析后的问题列表
      */
-    protected List<Issue> parseIssues(String response) {
+    protected List<IssueRespDTO> parseIssues(String response) {
         return JsonOutputParser.parseIssues(response);
     }
 
@@ -87,7 +88,7 @@ public abstract class AnalysisTask {
      *
      * @param issues 问题列表
      */
-    private void assignIssueIds(List<Issue> issues) {
+    private void assignIssueIds(List<IssueRespDTO> issues) {
         for (int i = 0; i < issues.size(); i++) {
             issues.get(i).setId(analysisType.name() + "-" + (i + 1));
         }
@@ -114,7 +115,7 @@ public abstract class AnalysisTask {
      *
      * @return 分析结果
      */
-    public AnalysisResult getResult() {
+    public AnalysisResultRespDTO getResult() {
         return result;
     }
 }

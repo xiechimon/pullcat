@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { StatusBadge } from '../components/StatusBadge'
-import type { StatsOverview, ReviewSession, Severity } from '../types/review'
+import type { StatsOverviewRespDTO, ReviewSessionRespDTO, Severity } from '../types/review'
 import { SEVERITY_BAR_COLORS } from '../types/review'
 import { getStatsOverview, getReviews } from '../lib/api'
 
 export function DashboardPage() {
-  const [stats, setStats] = useState<StatsOverview | null>(null)
-  const [recentReviews, setRecentReviews] = useState<ReviewSession[]>([])
+  const [stats, setStats] = useState<StatsOverviewRespDTO | null>(null)
+  const [recentReviews, setRecentReviews] = useState<ReviewSessionRespDTO[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 

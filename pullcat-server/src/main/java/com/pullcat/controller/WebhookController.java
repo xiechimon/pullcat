@@ -1,13 +1,16 @@
 package com.pullcat.controller;
 
-import com.pullcat.service.analysis.AnalysisOrchestrator;
+import com.pullcat.common.convention.exception.ServiceException;
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.common.convention.result.Results;
+import com.pullcat.common.enums.CommonErrorCodeEnum;
+import com.pullcat.dto.req.WebhookEventReqDTO;
+import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.analysis.WebhookService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/webhooks")
@@ -22,30 +25,37 @@ public class WebhookController {
     }
 
     @PostMapping("/github")
-    public ResponseEntity<Map<String, Object>> handleGitHubWebhook(
+    public ResponseEntity<Result<WebhookRespDTO>> handleGitHubWebhook(
             @RequestHeader("X-GitHub-Event") String eventType,
-            @RequestBody Map<String, Object> payload) {
+            @RequestBody WebhookEventReqDTO requestParam) {
 
         log.info("Received webhook event: {}", eventType);
 
         if (!"pull_request".equals(eventType)) {
-            return ResponseEntity.ok(Map.of("status", "ignored", "reason", "not a PR event"));
+            WebhookRespDTO response = new WebhookRespDTO();
+            response.setStatus("ignored");
+            response.setReason("not a PR event");
+            return ResponseEntity.ok(Results.success(response));
         }
 
-        String action = (String) payload.get("action");
+        String action = requestParam.getAction();
         if (!"opened".equals(action) && !"synchronize".equals(action)) {
-            return ResponseEntity.ok(Map.of("status", "ignored", "action", action));
+            WebhookRespDTO response = new WebhookRespDTO();
+            response.setStatus("ignored");
+            response.setAction(action);
+            return ResponseEntity.ok(Results.success(response));
         }
 
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> pr = (Map<String, Object>) payload.get("pull_request");
-            String prUrl = (String) pr.get("html_url");
+            String prUrl = requestParam.getPullRequest().getHtmlUrl();
             webhookService.triggerReview(prUrl);
-            return ResponseEntity.ok(Map.of("status", "review_triggered", "prUrl", prUrl));
+            WebhookRespDTO response = new WebhookRespDTO();
+            response.setStatus("review_triggered");
+            response.setPrUrl(prUrl);
+            return ResponseEntity.ok(Results.success(response));
         } catch (Exception e) {
             log.error("Webhook processing failed: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            throw new ServiceException(CommonErrorCodeEnum.SERVICE_ERROR.code(), e.getMessage() != null ? e.getMessage() : "Webhook 处理失败");
         }
     }
 }

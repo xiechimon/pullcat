@@ -1,7 +1,7 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createSSEConnection, createReview, getReview, submitFeedback as apiSubmitFeedback } from '../lib/api'
-import type { AnalysisResult, AnalysisStatus, ReviewSession, TaskState } from '../types/review'
+import type { AnalysisResultRespDTO, AnalysisStatus, ReviewSessionRespDTO, TaskStateRespDTO } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
 interface ReviewState {
@@ -18,8 +18,8 @@ interface ReviewState {
   loading: boolean
   isAnalyzing: boolean
   error: string | null
-  tasks: TaskState[]
-  results: Record<string, AnalysisResult | null>
+  tasks: TaskStateRespDTO[]
+  results: Record<string, AnalysisResultRespDTO | null>
   ruleSuggestionUrl: string | null
 }
 
@@ -28,16 +28,16 @@ type Action =
   | { type: 'SUBMIT_SUCCESS'; reviewId: string }
   | { type: 'SUBMIT_ERROR'; error: string }
   | { type: 'TASK_PROGRESS'; task: string; status: AnalysisStatus; model: string }
-  | { type: 'TASK_RESULT'; result: AnalysisResult }
+  | { type: 'TASK_RESULT'; result: AnalysisResultRespDTO }
   | { type: 'ANALYSIS_COMPLETE' }
   | { type: 'TOGGLE_ISSUE'; issueId: string }
   | { type: 'FEEDBACK_ISSUE'; issueId: string; feedback: string; feedbackReason: string | null }
   | { type: 'SSE_CONNECT'; reviewId: string }
   | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number; diff: string }
-  | { type: 'LOAD_REVIEW'; session: ReviewSession }
+  | { type: 'LOAD_REVIEW'; session: ReviewSessionRespDTO }
   | { type: 'RULE_SUGGESTION'; url: string }
 
-function createInitialTasks(): TaskState[] {
+function createInitialTasks(): TaskStateRespDTO[] {
   return ANALYSIS_TYPES.map((name) => ({
     name,
     label: TASK_LABELS[name],
@@ -119,7 +119,7 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
               },
             ]
           })
-        ) as Record<string, AnalysisResult | null>,
+        ) as Record<string, AnalysisResultRespDTO | null>,
       }
 
     case 'FEEDBACK_ISSUE':
@@ -140,7 +140,7 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
               },
             ]
           })
-        ) as Record<string, AnalysisResult | null>,
+        ) as Record<string, AnalysisResultRespDTO | null>,
       }
 
     case 'SSE_CONNECT':
@@ -167,8 +167,8 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
       const session = action.session
       const meta = session.prMetadata
       const analyses = session.analyses || {}
-      const loadedResults: Record<string, AnalysisResult | null> = {}
-      const loadedTasks: TaskState[] = []
+      const loadedResults: Record<string, AnalysisResultRespDTO | null> = {}
+      const loadedTasks: TaskStateRespDTO[] = []
 
       for (const name of ANALYSIS_TYPES) {
         const result = analyses[name]
@@ -260,8 +260,8 @@ interface UseReviewReducerReturn {
   error: string | null
   loading: boolean
   isAnalyzing: boolean
-  tasks: TaskState[]
-  results: Record<string, AnalysisResult | null>
+  tasks: TaskStateRespDTO[]
+  results: Record<string, AnalysisResultRespDTO | null>
   ruleSuggestionUrl: string | null
   startReview: (prUrl: string) => Promise<void>
   resumeReview: (reviewId: string, sseUrl: string) => void
@@ -320,7 +320,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     })
 
     es.addEventListener('task_result', (event) => {
-      const data = JSON.parse((event as MessageEvent).data) as AnalysisResult
+      const data = JSON.parse((event as MessageEvent).data) as AnalysisResultRespDTO
       dispatch({ type: 'TASK_RESULT', result: data })
     })
 

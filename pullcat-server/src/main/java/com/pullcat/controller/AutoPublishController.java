@@ -1,11 +1,15 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.common.convention.result.Results;
+import com.pullcat.dto.req.AutoPublishToggleReqDTO;
+import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
+import com.pullcat.dto.resp.BooleanStatusRespDTO;
 import com.pullcat.service.analysis.ReviewRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class AutoPublishController {
@@ -17,33 +21,33 @@ public class AutoPublishController {
     }
 
     @GetMapping("/api/auto-publish")
-    public ResponseEntity<List<Map<String, Object>>> list() {
+    public ResponseEntity<Result<List<AutoPublishRepoRespDTO>>> list() {
         List<String> repos = reviewRepository.listAutoPublishRepos();
-        List<Map<String, Object>> result = repos.stream()
+        List<AutoPublishRepoRespDTO> result = repos.stream()
                 .map(r -> {
                     String[] parts = r.split("/", 2);
-                    return Map.<String, Object>of("owner", parts[0], "repo", parts[1], "enabled", true);
+                    return new AutoPublishRepoRespDTO(parts[0], parts[1], true);
                 })
                 .toList();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(Results.success(result));
     }
 
     @GetMapping("/api/repos/{owner}/{repo}/auto-publish")
-    public ResponseEntity<Map<String, Object>> get(@PathVariable String owner, @PathVariable String repo) {
-        return ResponseEntity.ok(Map.of("enabled", reviewRepository.isAutoPublishEnabled(owner, repo)));
+    public ResponseEntity<Result<BooleanStatusRespDTO>> get(@PathVariable String owner, @PathVariable String repo) {
+        return ResponseEntity.ok(Results.success(new BooleanStatusRespDTO(reviewRepository.isAutoPublishEnabled(owner, repo))));
     }
 
     @PutMapping("/api/repos/{owner}/{repo}/auto-publish")
-    public ResponseEntity<Map<String, Object>> set(@PathVariable String owner, @PathVariable String repo,
-                                                   @RequestBody Map<String, Boolean> body) {
-        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+    public ResponseEntity<Result<BooleanStatusRespDTO>> set(@PathVariable String owner, @PathVariable String repo,
+                                                   @RequestBody AutoPublishToggleReqDTO requestParam) {
+        boolean enabled = Boolean.TRUE.equals(requestParam.getEnabled());
         reviewRepository.setAutoPublishEnabled(owner, repo, enabled);
-        return ResponseEntity.ok(Map.of("enabled", enabled));
+        return ResponseEntity.ok(Results.success(new BooleanStatusRespDTO(enabled)));
     }
 
     @DeleteMapping("/api/repos/{owner}/{repo}/auto-publish")
-    public ResponseEntity<Map<String, Object>> disable(@PathVariable String owner, @PathVariable String repo) {
+    public ResponseEntity<Result<BooleanStatusRespDTO>> disable(@PathVariable String owner, @PathVariable String repo) {
         reviewRepository.setAutoPublishEnabled(owner, repo, false);
-        return ResponseEntity.ok(Map.of("enabled", false));
+        return ResponseEntity.ok(Results.success(new BooleanStatusRespDTO(false)));
     }
 }

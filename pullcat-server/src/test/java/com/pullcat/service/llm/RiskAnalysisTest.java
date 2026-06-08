@@ -1,9 +1,10 @@
 package com.pullcat.service.llm;
 
-import com.pullcat.model.AnalysisResult;
-import com.pullcat.model.AnalysisStatus;
-import com.pullcat.model.AnalysisType;
-import com.pullcat.model.Issue;
+import com.pullcat.dto.resp.AnalysisResultRespDTO;
+import com.pullcat.common.enums.AnalysisStatus;
+import com.pullcat.common.enums.AnalysisType;
+import com.pullcat.common.enums.Severity;
+import com.pullcat.dto.resp.IssueRespDTO;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -43,11 +44,11 @@ class RiskAnalysisTest {
                   ]
                 }""";
 
-        List<Issue> issues = analysis.parseIssues(response);
+        List<IssueRespDTO> issues = analysis.parseIssues(response);
 
         assertThat(issues).hasSize(1);
-        Issue issue = issues.get(0);
-        assertThat(issue.getSeverity()).isEqualTo(Issue.Severity.CRITICAL);
+        IssueRespDTO issue = issues.get(0);
+        assertThat(issue.getSeverity()).isEqualTo(Severity.CRITICAL);
         assertThat(issue.getFile()).isEqualTo("src/Login.java");
         assertThat(issue.getLine()).isEqualTo(42);
         assertThat(issue.getTitle()).isEqualTo("SQL injection risk");
@@ -58,7 +59,7 @@ class RiskAnalysisTest {
         RiskAnalysis analysis = new RiskAnalysis(null, null);
         String response = "{\"summary\": \"No risks\", \"issues\": []}";
 
-        List<Issue> issues = analysis.parseIssues(response);
+        List<IssueRespDTO> issues = analysis.parseIssues(response);
 
         assertThat(issues).isEmpty();
     }
@@ -67,7 +68,7 @@ class RiskAnalysisTest {
     void parseMalformedJsonReturnsEmpty() {
         RiskAnalysis analysis = new RiskAnalysis(null, null);
 
-        List<Issue> issues = analysis.parseIssues("{broken json");
+        List<IssueRespDTO> issues = analysis.parseIssues("{broken json");
 
         assertThat(issues).isEmpty();
     }
@@ -76,7 +77,7 @@ class RiskAnalysisTest {
     void resultInitializedWithCorrectTypeAndModel() {
         QualityAnalysis analysis = new QualityAnalysis(null, "test-model");
 
-        AnalysisResult result = analysis.getResult();
+        AnalysisResultRespDTO result = analysis.getResult();
 
         assertThat(result.getType()).isEqualTo(AnalysisType.QUALITY);
         assertThat(result.getModel()).isEqualTo("test-model");

@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.ReviewSession;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -16,7 +16,7 @@ class WebhookServiceTest {
 
     @Test
     void triggerReviewCreatesSessionAndStartsAsync() {
-        ReviewSession session = new ReviewSession();
+        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
         session.setId("test-session");
         session.setPrUrl("https://github.com/owner/repo/pull/1");
 

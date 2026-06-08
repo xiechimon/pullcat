@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import type { Issue, Severity } from '../types/review'
+import type { IssueRespDTO, Severity } from '../types/review'
 
 interface DiffViewerProps {
   diff: string
-  issues: Issue[]
+  issues: IssueRespDTO[]
   activeIssueId?: string | null
   onIssueClick?: (issueId: string) => void
   fileName?: string
@@ -74,7 +74,7 @@ export function DiffViewer({ diff, issues, activeIssueId, onIssueClick, fileName
   const sections = useMemo(() => parseDiff(diff || ''), [diff])
 
   const issuesByFileAndLine = useMemo(() => {
-    const map = new Map<string, Issue[]>()
+    const map = new Map<string, IssueRespDTO[]>()
     for (const issue of issues) {
       const key = `${issue.file || fileName || ''}:${issue.line || 0}`
       const existing = map.get(key) || []

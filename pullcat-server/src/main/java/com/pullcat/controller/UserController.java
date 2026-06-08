@@ -1,6 +1,10 @@
 package com.pullcat.controller;
 
-import com.pullcat.model.User;
+import com.pullcat.common.convention.result.Result;
+import com.pullcat.common.convention.result.Results;
+import com.pullcat.dao.entity.UserDO;
+import com.pullcat.dto.resp.CurrentUserRespDTO;
+import com.pullcat.dto.resp.LogoutRespDTO;
 import com.pullcat.service.analysis.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -12,8 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 public class UserController {
 
@@ -24,27 +26,29 @@ public class UserController {
     }
 
     @GetMapping("/api/user")
-    public ResponseEntity<?> currentUser(@AuthenticationPrincipal OAuth2User principal) {
+    public ResponseEntity<Result<CurrentUserRespDTO>> currentUser(@AuthenticationPrincipal OAuth2User principal) {
         if (principal == null) {
-            return ResponseEntity.ok(Map.of("authenticated", false));
+            CurrentUserRespDTO response = new CurrentUserRespDTO();
+            response.setAuthenticated(false);
+            return ResponseEntity.ok(Results.success(response));
         }
         String login = principal.getAttribute("login");
-        User user = userRepository.findByLogin(login);
-        return ResponseEntity.ok(Map.of(
-                "authenticated", true,
-                "login", login,
-                "avatarUrl", user != null ? user.getAvatarUrl() : principal.getAttribute("avatar_url"),
-                "name", principal.getAttribute("name")
-        ));
+        UserDO user = userRepository.findByLogin(login);
+        CurrentUserRespDTO response = new CurrentUserRespDTO();
+        response.setAuthenticated(true);
+        response.setLogin(login);
+        response.setAvatarUrl(user != null ? user.getAvatarUrl() : principal.getAttribute("avatar_url"));
+        response.setName(principal.getAttribute("name"));
+        return ResponseEntity.ok(Results.success(response));
     }
 
     @PostMapping("/api/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<Result<LogoutRespDTO>> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
-        return ResponseEntity.ok(Map.of("status", "logged_out"));
+        return ResponseEntity.ok(Results.success(new LogoutRespDTO("logged_out")));
     }
 }

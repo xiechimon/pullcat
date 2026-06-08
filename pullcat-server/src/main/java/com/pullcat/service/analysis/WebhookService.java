@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.ReviewSession;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,7 +15,7 @@ public class WebhookService {
     }
 
     public void triggerReview(String prUrl) {
-        ReviewSession session = orchestrator.createSession(prUrl, null);
+        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, null);
         reviewRepository.save(session);
         orchestrator.startReviewAsync(session);
     }

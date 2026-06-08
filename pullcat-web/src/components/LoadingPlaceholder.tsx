@@ -1,7 +1,7 @@
-import type { TaskState } from '../types/review'
+import type { TaskStateRespDTO } from '../types/review'
 
 interface LoadingPlaceholderProps {
-  task: TaskState
+  task: TaskStateRespDTO
 }
 
 export function LoadingPlaceholder({ task }: LoadingPlaceholderProps) {

@@ -1,7 +1,7 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.config.RedisKeys;
-import com.pullcat.model.ReviewSession;
+import com.pullcat.common.constant.RedisKeys;
+import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +18,7 @@ public class ReviewRepository {
         this.redisTemplate = redisTemplate;
     }
 
-    public void save(ReviewSession session) {
+    public void save(ReviewSessionRespDTO session) {
         redisTemplate.opsForValue().set(RedisKeys.reviewKey(session.getId()), session, RedisKeys.REVIEW_TTL);
         redisTemplate.opsForZSet().add(RedisKeys.REVIEW_INDEX, session.getId(), session.getCreatedAt().toEpochMilli());
 
@@ -37,15 +37,15 @@ public class ReviewRepository {
         }
     }
 
-    public ReviewSession findById(String id) {
+    public ReviewSessionRespDTO findById(String id) {
         Object obj = redisTemplate.opsForValue().get(RedisKeys.reviewKey(id));
-        if (obj instanceof ReviewSession) {
-            return (ReviewSession) obj;
+        if (obj instanceof ReviewSessionRespDTO) {
+            return (ReviewSessionRespDTO) obj;
         }
         return null;
     }
 
-    public List<ReviewSession> findAll(int page, int size) {
+    public List<ReviewSessionRespDTO> findAll(int page, int size) {
         long start = (long) page * size;
         long end = start + size - 1;
 
@@ -53,7 +53,7 @@ public class ReviewRepository {
         return fetchByIds(ids);
     }
 
-    public List<ReviewSession> findByRepo(String fullName, int page, int size) {
+    public List<ReviewSessionRespDTO> findByRepo(String fullName, int page, int size) {
         long start = (long) page * size;
         long end = start + size - 1;
 
@@ -63,7 +63,7 @@ public class ReviewRepository {
         return fetchByIds(ids);
     }
 
-    public List<ReviewSession> findByLogin(String login, int page, int size) {
+    public List<ReviewSessionRespDTO> findByLogin(String login, int page, int size) {
         long start = (long) page * size;
         long end = start + size - 1;
         Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.reviewUserKey(login), start, end);
@@ -75,7 +75,7 @@ public class ReviewRepository {
         return s != null ? s : 0;
     }
 
-    public List<ReviewSession> findAnonymous(int page, int size) {
+    public List<ReviewSessionRespDTO> findAnonymous(int page, int size) {
         long start = (long) page * size;
         long end = start + size - 1;
         Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_ANONYMOUS_INDEX, start, end);
@@ -98,17 +98,17 @@ public class ReviewRepository {
         return size != null ? size : 0;
     }
 
-    public List<ReviewSession> findAllReviews() {
+    public List<ReviewSessionRespDTO> findAllReviews() {
         Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_INDEX, 0, -1);
         return fetchByIds(ids);
     }
 
-    private List<ReviewSession> fetchByIds(Set<Object> ids) {
-        List<ReviewSession> results = new ArrayList<>();
+    private List<ReviewSessionRespDTO> fetchByIds(Set<Object> ids) {
+        List<ReviewSessionRespDTO> results = new ArrayList<>();
         if (ids == null || ids.isEmpty()) return results;
 
         for (Object id : ids) {
-            ReviewSession session = findById(id.toString());
+            ReviewSessionRespDTO session = findById(id.toString());
             if (session != null) {
                 results.add(session);
             }
@@ -117,7 +117,7 @@ public class ReviewRepository {
     }
 
     public void delete(String id) {
-        ReviewSession session = findById(id);
+        ReviewSessionRespDTO session = findById(id);
         if (session != null) {
             if (session.getRepositoryFullName() != null) {
                 String[] parts = session.getRepositoryFullName().split("/", 2);

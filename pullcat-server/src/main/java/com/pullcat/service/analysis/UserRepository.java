@@ -1,6 +1,6 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.model.User;
+import com.pullcat.dao.entity.UserDO;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,17 +15,17 @@ public class UserRepository {
         this.redisTemplate = redisTemplate;
     }
 
-    public void save(User user) {
+    public void save(UserDO user) {
         redisTemplate.opsForValue().set(KEY_PREFIX + user.getId(), user);
         redisTemplate.opsForValue().set(KEY_PREFIX + "login:" + user.getGithubLogin(), user.getId());
     }
 
-    public User findById(String id) {
+    public UserDO findById(String id) {
         Object obj = redisTemplate.opsForValue().get(KEY_PREFIX + id);
-        return obj instanceof User ? (User) obj : null;
+        return obj instanceof UserDO ? (UserDO) obj : null;
     }
 
-    public User findByLogin(String login) {
+    public UserDO findByLogin(String login) {
         Object id = redisTemplate.opsForValue().get(KEY_PREFIX + "login:" + login);
         if (id == null) return null;
         return findById(id.toString());
