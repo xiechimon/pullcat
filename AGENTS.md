@@ -68,14 +68,14 @@ Pullcat 是一个 AI 驱动的 Pull Request 评审工具。
 
 ## 开发工作流
 
-每次开始新的 OpenSpec 变更时遵循：
+当前仓库未启用 `openspec/` 目录，默认按下面流程执行：
 
-1. **创建 OpenSpec 变更**：`/opsx-propose <change-name>` 或手动 `openspec new change "<name>"`
-2. **从 main 创建分支**：`git checkout main && git pull && git checkout -b feat/<name>` 或 `fix/<name>`
-3. **实现变更**：`/opsx-apply <change-name>` 或按 `tasks.md` 逐项完成
-4. **验证通过**：`npm run build && npm test && npm run lint`
-5. **归档变更**：`/opsx-archive <change-name>`
-6. **提交 PR**：将分支推送到远程并创建 Pull Request
+1. **从 main 开始工作**：同步最新代码，再按需创建开发分支
+2. **先更新设计与规范认知**：实现前先检查 `AGENTS.md`、`README.md` 与相关模块代码
+3. **实现变更**：优先保持小步提交，避免一次混入多个独立主题
+4. **验证通过**：至少运行与改动范围匹配的构建、测试或 lint 命令
+5. **同步文档**：若包结构、命名规范或使用方式变更，必须同步更新 Markdown 文档
+6. **集成回 main**：优先通过 PR 合入，也允许在确认后直接合并到 `main`
 
 ## PR 规范
 
@@ -122,17 +122,23 @@ com.pullcat
 │   ├── config                   # 远程调用配置预留目录
 │   └── dto                      # 第三方接口 DTO
 ├── service
-│   ├── analysis                 # 评审编排、仓库/会话存储、规则、统计
+│   ├── analysis                 # 评审编排、仓库/会话存储、规则等领域接口
+│   ├── analysis/impl            # analysis 领域实现
 │   ├── github                   # 迁移预留目录
-│   ├── impl                     # 通用实现预留目录
-│   └── llm                      # 多维分析任务实现
+│   ├── impl                     # 应用服务实现
+│   ├── llm                      # 多维分析接口
+│   └── llm/impl                 # 多维分析实现
 └── toolkit                      # 工具类
 ```
 
 说明：
 
 - `model` 目录正在退出使用，新代码不要再放入 `com.pullcat.model`
-- `service.github`、`service.impl`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
+- Controller 统一使用 `*Controller` 后缀
+- `service` 根目录优先只保留接口，类名统一使用 `*Service` 后缀
+- `service.impl` 下实现类统一使用 `*ServiceImpl` 后缀
+- `service.analysis`、`service.llm` 优先定义接口，具体实现统一收敛到各自的 `impl` 子包
+- `service.github`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
 - 远程调用相关代码统一收敛到 `remote`，不要继续在 `service` 下新增第三方 API 客户端
 - `dao.entity` 下实体统一使用 `*DO` 后缀
 - `dto.req` 下请求对象统一使用 `*ReqDTO` 后缀
@@ -235,6 +241,8 @@ Controller 只负责四件事：
 
 约束：
 
+- 面向 Controller 暴露的应用服务统一通过接口注入，不直接依赖 `*ServiceImpl`
+- `service.impl` 只承载应用服务实现，不再把接口与实现混放
 - 编排逻辑放 `AnalysisOrchestrator` 这类 Service 中
 - 持久化访问逻辑集中在 `*Repository`，不要在多个 Controller 中直接操作 Redis
 - 涉及 LLM 的具体分析实现放 `service.llm`，不要把 Prompt 调用直接散落到 Controller 或通用 Service

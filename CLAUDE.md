@@ -86,17 +86,23 @@ com.pullcat
 │   ├── config                   # 远程调用配置预留目录
 │   └── dto                      # 第三方接口 DTO
 ├── service
-│   ├── analysis                 # 评审编排、仓库/会话存储、规则、统计
+│   ├── analysis                 # 评审编排、仓库/会话存储、规则等领域接口
+│   ├── analysis/impl            # analysis 领域实现
 │   ├── github                   # 迁移预留目录
-│   ├── impl                     # 通用实现预留目录
-│   └── llm                      # 多维分析任务实现
+│   ├── impl                     # 应用服务实现
+│   ├── llm                      # 多维分析接口
+│   └── llm/impl                 # 多维分析实现
 └── toolkit                      # 工具类
 ```
 
 说明：
 
 - `model` 目录正在退出使用，新代码不要再放入 `com.pullcat.model`
-- `service.github`、`service.impl`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
+- Controller 统一使用 `*Controller` 后缀
+- `service` 根目录优先只保留接口，类名统一使用 `*Service` 后缀
+- `service.impl` 下实现类统一使用 `*ServiceImpl` 后缀
+- `service.analysis`、`service.llm` 优先定义接口，具体实现统一收敛到各自的 `impl` 子包
+- `service.github`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
 - 远程调用相关代码统一收敛到 `remote`，不要继续在 `service` 下新增第三方 API 客户端
 - `dao.entity` 下实体统一使用 `*DO` 后缀
 - `dto.req` 下请求对象统一使用 `*ReqDTO` 后缀
@@ -209,6 +215,8 @@ Controller 只负责四件事：
 
 约束：
 
+- 面向 Controller 暴露的应用服务统一通过接口注入，不直接依赖 `*ServiceImpl`
+- `service.impl` 只承载应用服务实现，不再把接口与实现混放
 - 编排逻辑放 `AnalysisOrchestrator` 这类 Service 中
 - 持久化访问逻辑集中在 `*Repository`，不要在多个 Controller 中直接操作 Redis
 - 涉及 LLM 的具体分析实现放 `service.llm`，不要把 Prompt 调用直接散落到 Controller 或通用 Service

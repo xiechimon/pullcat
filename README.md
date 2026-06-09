@@ -185,17 +185,29 @@ pullcat/
 │   └── src/main/java/com/pullcat/
 │       ├── common/                   公共协议、异常、结果对象、常量
 │       ├── config/                   安全、Redis、CORS、重试、指标配置
-│       ├── controller/               REST Controller 与 SSE 入口
+│       ├── controller/               REST Controller 与 SSE 入口，统一使用 *Controller 命名
 │       ├── dao/entity/               持久化对象
 │       ├── dto/req                   请求 DTO
 │       ├── dto/resp                  响应 DTO
 │       ├── remote/                   GitHub API 调用与第三方 DTO
-│       ├── service/analysis/         编排、上下文、规则、统计、存储访问
-│       ├── service/llm/              五维分析任务实现
+│       ├── service/                  应用服务接口，统一使用 *Service 命名
+│       ├── service/impl/             应用服务实现，统一使用 *ServiceImpl 命名
+│       ├── service/analysis/         编排、上下文、规则、存储访问等领域接口
+│       ├── service/analysis/impl/    analysis 领域实现
+│       ├── service/llm/              五维分析接口
+│       ├── service/llm/impl/         五维分析实现
 │       └── toolkit/                  工具类
 ├── AGENTS.md                         仓库协作与提交流程约束
 └── .env.example                      环境变量模板
 ```
+
+### 后端分层约定
+
+- Controller 仅负责接参与返回，类名统一使用 `*Controller`
+- `service` 根目录仅放应用服务接口，类名统一使用 `*Service`
+- `service/impl` 放应用服务实现，类名统一使用 `*ServiceImpl`
+- `service/analysis` 与 `service/llm` 优先放接口，具体实现分别收敛到各自的 `impl` 子包
+- Repository 风格组件继续收敛在 `service.analysis`，避免在 Controller 中直接操作 Redis 或远程调用
 
 ---
 
