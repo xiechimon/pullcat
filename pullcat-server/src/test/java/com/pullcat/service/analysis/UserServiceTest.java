@@ -3,7 +3,7 @@ package com.pullcat.service.analysis;
 import com.pullcat.dao.entity.UserDO;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
-import com.pullcat.service.UserService;
+import com.pullcat.service.impl.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ class UserServiceTest {
     UserRepository userRepository;
 
     @InjectMocks
-    UserService userService;
+    UserServiceImpl userService;
 
     @Test
     void getCurrentUser_nullPrincipal_returnsUnauthenticated() {

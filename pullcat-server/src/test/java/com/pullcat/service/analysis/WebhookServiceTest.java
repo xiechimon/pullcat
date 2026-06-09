@@ -4,7 +4,7 @@ import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.req.WebhookPullRequestReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
-import com.pullcat.service.WebhookService;
+import com.pullcat.service.impl.WebhookServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,7 +24,7 @@ class WebhookServiceTest {
     ReviewRepository reviewRepository;
 
     @InjectMocks
-    WebhookService webhookService;
+    WebhookServiceImpl webhookService;
 
     @Test
     void handle_nonPrEvent_returnsIgnored() {

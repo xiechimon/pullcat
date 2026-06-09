@@ -2,7 +2,7 @@ package com.pullcat.service.analysis;
 
 import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
 import com.pullcat.dto.resp.BooleanStatusRespDTO;
-import com.pullcat.service.AutoPublishService;
+import com.pullcat.service.impl.AutoPublishServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,7 +21,7 @@ class AutoPublishServiceTest {
     ReviewRepository reviewRepository;
 
     @InjectMocks
-    AutoPublishService autoPublishService;
+    AutoPublishServiceImpl autoPublishService;
 
     @Test
     void listAutoPublishRepos_returnsMappedDTOs() {

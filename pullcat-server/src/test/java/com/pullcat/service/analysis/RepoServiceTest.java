@@ -5,7 +5,7 @@ import com.pullcat.dao.entity.RepoDO;
 import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
-import com.pullcat.service.RepoService;
+import com.pullcat.service.impl.RepoServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,7 +28,7 @@ class RepoServiceTest {
     RepoRepository repoRepository;
 
     @InjectMocks
-    RepoService repoService;
+    RepoServiceImpl repoService;
 
     @Test
     void listRepos_returnsMappedDTOs() {

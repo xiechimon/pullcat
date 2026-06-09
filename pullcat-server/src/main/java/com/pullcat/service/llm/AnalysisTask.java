@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Slf4j
-public abstract class AnalysisTask {
+public abstract class AnalysisTask implements AnalysisService {
 
     protected final ChatClient chatClient;
 
