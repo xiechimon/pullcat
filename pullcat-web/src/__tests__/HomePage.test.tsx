@@ -20,16 +20,19 @@ describe('HomePage', () => {
 
   it('renders an input-first review workspace', () => {
     renderHomePage()
-    expect(screen.getByRole('heading', { name: '开始审查', level: 1 })).toBeInTheDocument()
-    expect(screen.getByText('粘贴 GitHub Pull Request 链接后，直接进入审查会话')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '新建审查', level: 1 })).toBeInTheDocument()
+    expect(screen.getByText('贴入 PR，立即开始')).toBeInTheDocument()
     expect(screen.getByText('GitHub Pull Request')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('粘贴 GitHub PR 链接')).toBeInTheDocument()
   })
 
   it('renders compact review cues and submit button', () => {
     renderHomePage()
-    expect(screen.getByText('GitHub Pull Request')).toBeInTheDocument()
-    expect(screen.getByText('粘贴 GitHub Pull Request 链接后，直接进入审查会话')).toBeInTheDocument()
+    expect(screen.getByText('会话参数')).toBeInTheDocument()
+    expect(screen.getByText('来源')).toBeInTheDocument()
+    expect(screen.getByText('GitHub PR')).toBeInTheDocument()
+    expect(screen.getByText('创建')).toBeInTheDocument()
+    expect(screen.getByText('即时')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /审查|review/i })).toBeInTheDocument()
   })
 

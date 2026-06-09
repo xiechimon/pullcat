@@ -81,9 +81,6 @@ export function DashboardPage() {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Dashboard</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">仪表盘</h1>
-          <p className="max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            最近审查优先，统计只作为下一步判断的辅助信息
-          </p>
         </div>
         <button
           onClick={() => navigate('/')}
@@ -115,23 +112,10 @@ export function DashboardPage() {
                 <span>{getIssueCount(latestReview)} 个问题</span>
               </div>
 
-              <div className="mt-5 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                从最近一次审查继续查看问题、确认反馈，或者直接返回完整审查页继续处理
-              </div>
-
-              <div className="mt-5 grid gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">1</span>
-                  <span>检查问题</span>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">2</span>
-                  <span>确认反馈</span>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">3</span>
-                  <span>进入完整审查页</span>
-                </div>
+              <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">查看问题</span>
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">确认反馈</span>
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">继续处理</span>
               </div>
 
               <Link
@@ -170,58 +154,49 @@ export function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-0 md:grid-cols-[minmax(0,1.28fr)_14.5rem]">
-            <div className="px-5 py-6 md:px-6">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">开始第一条审查</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                创建审查后，这里会优先展示最近一次会话，让你不用回到历史列表里再找
-              </p>
-              <div className="mt-5 grid gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">1</span>
-                  <span>输入公开仓库 PR</span>
+          <div className="px-5 py-5 md:px-6 md:py-6">
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_16rem] md:items-start">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">开始第一条审查</h2>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">2</span>
-                  <span>自动创建会话</span>
+
+                <div className="flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">公开仓库 PR</span>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">自动建会话</span>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-900/70">实时审查</span>
                 </div>
-                <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-900/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-500 shadow-sm dark:bg-slate-950 dark:text-slate-400">3</span>
-                  <span>直接进入审查页</span>
-                </div>
+
+                <Link
+                  to="/"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
+                >
+                  新建审查
+                </Link>
               </div>
-              <Link
-                to="/"
-                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
-              >
-                新建审查
-              </Link>
-            </div>
 
-            <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
-              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">工作摘要</div>
-              <dl className="mt-4 space-y-3">
-                {summaryItems.map(item => (
-                  <div key={item.label} className="border-b border-slate-200/80 pb-3 last:border-b-0 last:pb-0 dark:border-slate-800">
-                    <div className="flex items-end justify-between gap-3">
-                      <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</dt>
-                      <dd className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</dd>
+              <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">工作摘要</div>
+                <div className="grid gap-3">
+                  {summaryItems.map(item => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3 dark:bg-slate-950/70">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500">{item.hint}</div>
+                      </div>
+                      <div className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{item.hint}</div>
-                  </div>
-                ))}
-              </dl>
+                  ))}
+                </div>
 
-              <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
-                <div className="text-xs font-medium text-slate-400 dark:text-slate-500">严重度分布</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                {severitySummary.map(item => (
-                  <span key={item.label} className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${item.tone}`}>
-                    {item.label}
-                    <span>{item.count}</span>
-                  </span>
-                ))}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {severitySummary.map(item => (
+                    <span key={item.label} className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${item.tone}`}>
+                      {item.label}
+                      <span>{item.count}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -248,15 +223,11 @@ export function DashboardPage() {
       <section className="surface-card overflow-hidden">
         <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-800 md:px-6">
           <h2 className="text-lg font-semibold text-slate-950 dark:text-white">最近审查</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">按时间查看最近会话，快速回到需要处理的 Pull Request</p>
         </div>
         {recentReviews.length === 0 ? (
           <div className="px-5 py-10 md:px-6">
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-8 text-center dark:border-slate-700 dark:bg-slate-900/40">
               <h3 className="text-lg font-semibold text-slate-950 dark:text-white">还没有审查记录</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                从一个公开仓库 Pull Request 开始，Pullcat 会自动创建会话并带你进入审查页
-              </p>
               <Link
                 to="/"
                 className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
