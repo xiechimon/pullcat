@@ -11,13 +11,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +29,7 @@ class UserServiceTest {
     UserServiceImpl userService;
 
     @Test
-    void getCurrentUser_nullPrincipal_returnsUnauthenticated() {
+    void getCurrentUser_nullLogin_returnsUnauthenticated() {
         CurrentUserRespDTO result = userService.getCurrentUser(null);
 
         assertFalse(result.isAuthenticated());
@@ -39,33 +37,28 @@ class UserServiceTest {
     }
 
     @Test
-    void getCurrentUser_withPrincipal_returnsUserData() {
-        OAuth2User principal = mock(OAuth2User.class);
-        when(principal.getAttribute("login")).thenReturn("xiechimon");
-        when(principal.getAttribute("name")).thenReturn("Xie Chi Mon");
-        when(principal.getAttribute("avatar_url")).thenReturn("https://avatars.github.com/u/1");
+    void getCurrentUser_withLogin_returnsAuthenticatedUser() {
         when(userRepository.findByLogin("xiechimon")).thenReturn(null);
 
-        CurrentUserRespDTO result = userService.getCurrentUser(principal);
+        CurrentUserRespDTO result = userService.getCurrentUser("xiechimon");
 
         assertTrue(result.isAuthenticated());
         assertEquals("xiechimon", result.getLogin());
-        assertEquals("Xie Chi Mon", result.getName());
-        assertEquals("https://avatars.github.com/u/1", result.getAvatarUrl());
+        assertNull(result.getName());
+        assertNull(result.getAvatarUrl());
     }
 
     @Test
     void getCurrentUser_withStoredUser_usesStoredAvatarUrl() {
-        OAuth2User principal = mock(OAuth2User.class);
-        when(principal.getAttribute("login")).thenReturn("xiechimon");
-        when(principal.getAttribute("name")).thenReturn("Xie");
         UserDO user = new UserDO();
+        user.setGithubLogin("xiechimon");
         user.setAvatarUrl("https://stored-avatar.com/img.png");
         when(userRepository.findByLogin("xiechimon")).thenReturn(user);
 
-        CurrentUserRespDTO result = userService.getCurrentUser(principal);
+        CurrentUserRespDTO result = userService.getCurrentUser("xiechimon");
 
         assertEquals("https://stored-avatar.com/img.png", result.getAvatarUrl());
+        assertEquals("xiechimon", result.getName());
     }
 
     @Test

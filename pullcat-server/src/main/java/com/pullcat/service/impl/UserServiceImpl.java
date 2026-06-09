@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,19 +18,20 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public CurrentUserRespDTO getCurrentUser(OAuth2User principal) {
+    public CurrentUserRespDTO getCurrentUser(String login) {
         CurrentUserRespDTO response = new CurrentUserRespDTO();
-        if (principal == null) {
+        if (login == null || login.isBlank()) {
             response.setAuthenticated(false);
             return response;
         }
 
-        String login = principal.getAttribute("login");
         UserDO user = userRepository.findByLogin(login);
         response.setAuthenticated(true);
         response.setLogin(login);
-        response.setAvatarUrl(user != null ? user.getAvatarUrl() : principal.getAttribute("avatar_url"));
-        response.setName(principal.getAttribute("name"));
+        if (user != null) {
+            response.setAvatarUrl(user.getAvatarUrl());
+            response.setName(user.getGithubLogin());
+        }
         return response;
     }
 
