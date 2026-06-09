@@ -66,6 +66,15 @@ class UserServiceTest {
     }
 
     @Test
+    void getCurrentUser_anonymousLogin_returnsUnauthenticated() {
+        CurrentUserRespDTO result = userService.getCurrentUser("anonymousUser");
+
+        assertFalse(result.isAuthenticated());
+        assertNull(result.getLogin());
+        verifyNoInteractions(userMapper);
+    }
+
+    @Test
     void getCurrentUser_withStoredUser_usesStoredAvatarUrl() {
         UserDO user = new UserDO();
         user.setGithubLogin("xiechimon");

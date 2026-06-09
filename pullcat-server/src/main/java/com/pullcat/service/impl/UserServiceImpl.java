@@ -18,13 +18,15 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String ANONYMOUS_LOGIN = "anonymousUser";
+
     private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public CurrentUserRespDTO getCurrentUser(String login) {
         CurrentUserRespDTO response = new CurrentUserRespDTO();
-        if (login == null || login.isBlank()) {
+        if (login == null || login.isBlank() || ANONYMOUS_LOGIN.equals(login)) {
             response.setAuthenticated(false);
             return response;
         }
