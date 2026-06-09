@@ -23,7 +23,6 @@ import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ResultAggregator;
 import com.pullcat.service.analysis.ReviewSessionService;
-import com.pullcat.service.analysis.RuleEngine;
 import com.pullcat.service.analysis.RuleSuggestionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
@@ -65,7 +64,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final AnalysisTaskFactory taskFactory;
     private final ExecutorService analysisExecutor;
     private final ResultAggregator resultAggregator;
-    private final RuleEngine ruleEngine;
     private final RuleSuggestionService ruleSuggestionService;
     private final MeterRegistry meterRegistry;
 
@@ -76,7 +74,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                                     AnalysisTaskFactory taskFactory,
                                     @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
                                     ResultAggregator resultAggregator,
-                                    RuleEngine ruleEngine,
                                     RuleSuggestionService ruleSuggestionService,
                                     MeterRegistry meterRegistry) {
         this.gitHubApiService = gitHubApiService;
@@ -86,7 +83,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         this.taskFactory = taskFactory;
         this.analysisExecutor = analysisExecutor;
         this.resultAggregator = resultAggregator;
-        this.ruleEngine = ruleEngine;
         this.ruleSuggestionService = ruleSuggestionService;
         this.meterRegistry = meterRegistry;
     }
