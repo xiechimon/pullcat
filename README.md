@@ -200,7 +200,9 @@ pullcat/
 │       ├── dao/mapper/               MyBatis-Plus Mapper
 │       ├── dto/req                   请求 DTO
 │       ├── dto/resp                  响应 DTO
-│       ├── remote/                   第三方调用接口与 DTO
+│       ├── remote/                   第三方调用接口（GitHubApiService）
+│       ├── remote/dto/req/           第三方接口请求 DTO
+│       ├── remote/dto/resp/          第三方接口响应 DTO
 │       ├── remote/impl/              第三方调用实现
 │       ├── service/                  应用服务接口，统一使用 *Service 命名
 │       ├── service/impl/             应用服务实现，统一使用 *ServiceImpl 命名

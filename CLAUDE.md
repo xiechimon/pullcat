@@ -83,12 +83,13 @@ com.pullcat
 │   ├── req                      # 请求 DTO
 │   └── resp                     # 响应 DTO
 ├── remote
-│   ├── config                   # 远程调用配置预留目录
-│   └── dto                      # 第三方接口 DTO
+│   ├── dto
+│   │   ├── req                  # 第三方接口请求 DTO
+│   │   └── resp                 # 第三方接口响应 DTO
+│   └── impl                     # 第三方调用实现
 ├── service
 │   ├── analysis                 # 评审编排、仓库/会话存储、规则等领域接口
 │   ├── analysis/impl            # analysis 领域实现
-│   ├── github                   # 迁移预留目录
 │   ├── impl                     # 应用服务实现
 │   ├── llm                      # 多维分析接口
 │   └── llm/impl                 # 多维分析实现
@@ -102,7 +103,7 @@ com.pullcat
 - `service` 根目录优先只保留接口，类名统一使用 `*Service` 后缀
 - `service.impl` 下实现类统一使用 `*ServiceImpl` 后缀
 - `service.analysis`、`service.llm` 优先定义接口，具体实现统一收敛到各自的 `impl` 子包
-- `service.github`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
+- `dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
 - 远程调用相关代码统一收敛到 `remote`，不要继续在 `service` 下新增第三方 API 客户端
 - `dao.entity` 下实体统一使用 `*DO` 后缀
 - `dto.req` 下请求对象统一使用 `*ReqDTO` 后缀
@@ -235,11 +236,12 @@ Redis Key 常量统一放在 `common.constant.RedisKeys`。
 
 ### 远程调用
 
-GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 处理。
+GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，具体实现收敛在 `remote.impl`。
 
 约束：
 
 - 第三方 API 访问代码集中在 `remote` 层
+- `remote` 根目录优先定义接口，具体实现放到 `remote.impl`
 - 认证、重试、限流、错误翻译优先在远程调用层封装
 - 不要在业务层直接 new `WebClient` 或拼 GitHub API URL
 

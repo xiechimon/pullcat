@@ -119,12 +119,13 @@ com.pullcat
 │   ├── req                      # 请求 DTO
 │   └── resp                     # 响应 DTO
 ├── remote
-│   ├── config                   # 远程调用配置预留目录
-│   └── dto                      # 第三方接口 DTO
+│   ├── dto
+│   │   ├── req                  # 第三方接口请求 DTO
+│   │   └── resp                 # 第三方接口响应 DTO
+│   └── impl                     # 第三方调用实现
 ├── service
 │   ├── analysis                 # 评审编排、仓库/会话存储、规则等领域接口
 │   ├── analysis/impl            # analysis 领域实现
-│   ├── github                   # 迁移预留目录
 │   ├── impl                     # 应用服务实现
 │   ├── llm                      # 多维分析接口
 │   └── llm/impl                 # 多维分析实现
@@ -138,7 +139,7 @@ com.pullcat
 - `service` 根目录优先只保留接口，类名统一使用 `*Service` 后缀
 - `service.impl` 下实现类统一使用 `*ServiceImpl` 后缀
 - `service.analysis`、`service.llm` 优先定义接口，具体实现统一收敛到各自的 `impl` 子包
-- `service.github`、`dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
+- `dao.mapper`、`common.database`、`common.serialize` 当前主要作为扩展位，新增代码前先确认是否真的需要落在这些目录
 - 远程调用相关代码统一收敛到 `remote`，不要继续在 `service` 下新增第三方 API 客户端
 - `dao.entity` 下实体统一使用 `*DO` 后缀
 - `dto.req` 下请求对象统一使用 `*ReqDTO` 后缀
@@ -148,7 +149,7 @@ com.pullcat
 
 ### 统一响应
 
-所有 Controller 返回值统一使用 `Result<T>`，通过 `Results` 工厂方法构造。
+所有 Controller 返回值统一使用 `Result<T>`，通过 `Results` 工厂方法构造，**不使用 `ResponseEntity` 包装**。SSE 端点例外，直接返回 `SseEmitter`。
 
 ### 实体类
 
@@ -290,27 +291,17 @@ GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，�
 
 ### 注释约束
 
-允许给字段补充简短 Javadoc，包括基础包装对象。
-
-但中文短句注释末尾不要加句号。
-
-禁止这样写：
-
+Controller、Service、Repository 等组件类，以及其中的公共方法，均需打上精简 Javadoc。中文短句末尾不加句号。格式如下：
 ```java
 /**
- * 是否成功。
+ * 审查控制层
  */
-```
 
-应该这样写：
-
-```java
 /**
- * 是否成功
+ * 分页查询审查列表
  */
 ```
-
-适用于字段注释、方法摘要注释以及类似的简短中文说明。
+适用于类注释、方法摘要注释、字段注释以及类似的简短中文说明。
 
 ## 文档维护约定
 
