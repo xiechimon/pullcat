@@ -122,17 +122,101 @@ public class ReviewService {
     }
 
     /**
-     * 发布审查结果（stub，待任务 4 实现）
+     * 将审查结果发布到 PR 评论
      */
     public PublishReviewRespDTO publishReview(String id, PublishReqDTO requestParam, String login) {
-        throw new UnsupportedOperationException("not implemented");
+        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        if (session == null) {
+            throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
+        }
+        if (!isOwner(session, login)) {
+            throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权发布此审查");
+        }
+        ReviewSessionRespDTO updated = orchestrator.publishReview(id, requestParam);
+        PublishReviewRespDTO response = new PublishReviewRespDTO();
+        response.setStatus(updated.getStatus().name());
+        response.setCommentId(updated.getPublishedCommentId());
+        response.setPrUrl(updated.getPrUrl());
+        return response;
     }
 
     /**
-     * 启动 SSE 流（stub，待任务 4 实现）
+     * SSE 流式推送分析进度与结果
      */
     public SseEmitter startSseStream(String id, String login) {
-        throw new UnsupportedOperationException("not implemented");
+        SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
+
+        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        if (session == null) {
+            sendErrorAndComplete(emitter, "Review session not found");
+            return emitter;
+        }
+        if (!isOwner(session, login)) {
+            sendErrorAndComplete(emitter, "无权访问此审查");
+            return emitter;
+        }
+
+        StreamContext ctx = new StreamContext(id, emitter);
+        StreamRegistry.register(id, ctx);
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("connected")
+                    .data(new SseConnectedRespDTO(id)));
+
+            if (session.getStatus() == com.pullcat.common.enums.SessionStatus.FAILED) {
+                emitter.send(SseEmitter.event().name("review_error")
+                        .data(new SseMessageRespDTO("Review previously failed. Please start a new review.")));
+                emitter.complete();
+                return emitter;
+            }
+
+            if (session.getStatus() == com.pullcat.common.enums.SessionStatus.COMPLETED) {
+                if (session.getPrMetadata() != null) {
+                    SsePrInfoRespDTO prInfo = new SsePrInfoRespDTO();
+                    prInfo.setPrUrl(session.getPrUrl());
+                    prInfo.setMetadata(session.getPrMetadata());
+                    prInfo.setDiff(session.getRawDiff() != null ? session.getRawDiff() : "");
+                    emitter.send(SseEmitter.event().name("pr_info").data(prInfo));
+                }
+                for (Map.Entry<String, com.pullcat.dto.resp.AnalysisResultRespDTO> entry
+                        : session.getAnalyses().entrySet()) {
+                    emitter.send(SseEmitter.event().name("task_result").data(entry.getValue()));
+                }
+                emitter.send(SseEmitter.event().name("all_complete")
+                        .data(new SseCompletionRespDTO("completed")));
+                emitter.complete();
+                return emitter;
+            }
+
+            emitter.send(SseEmitter.event()
+                    .name("analysis_started")
+                    .data(new SseAnalysisStartedRespDTO(Arrays.asList(
+                            "summary", "risk", "quality", "consistency", "testing"))));
+
+            if (session.getStatus() == com.pullcat.common.enums.SessionStatus.FETCHING) {
+                orchestrator.startReviewAsync(session);
+            }
+
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+            StreamRegistry.remove(id);
+        }
+
+        emitter.onCompletion(() -> StreamRegistry.remove(id));
+        emitter.onTimeout(() -> StreamRegistry.remove(id));
+        emitter.onError(e -> StreamRegistry.remove(id));
+
+        return emitter;
+    }
+
+    private void sendErrorAndComplete(SseEmitter emitter, String message) {
+        try {
+            emitter.send(SseEmitter.event().name("error").data(new SseMessageRespDTO(message)));
+            emitter.complete();
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
     }
 
     /**
