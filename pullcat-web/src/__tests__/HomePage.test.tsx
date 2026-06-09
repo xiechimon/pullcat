@@ -20,16 +20,15 @@ describe('HomePage', () => {
 
   it('renders an input-first review workspace', () => {
     renderHomePage()
-    expect(screen.getByRole('heading', { name: '开始一次新审查' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '开始审查', level: 1 })).toBeInTheDocument()
+    expect(screen.getByText('输入一个 GitHub Pull Request 链接')).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/github\.com.*pull/)).toBeInTheDocument()
-    expect(screen.getByText('支持公开 GitHub Pull Request 链接，提交后会立即创建审查会话')).toBeInTheDocument()
   })
 
-  it('renders review steps and submit button', () => {
+  it('renders compact review cues and submit button', () => {
     renderHomePage()
-    expect(screen.getByText('粘贴 PR 链接')).toBeInTheDocument()
-    expect(screen.getByText('等待 AI 分析')).toBeInTheDocument()
-    expect(screen.getByText('确认并发布评论')).toBeInTheDocument()
+    expect(screen.getByText('支持公开仓库 PR')).toBeInTheDocument()
+    expect(screen.getByText('创建后自动进入审查页')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /审查|review/i })).toBeInTheDocument()
   })
 

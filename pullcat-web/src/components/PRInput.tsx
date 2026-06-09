@@ -27,14 +27,6 @@ export function PRInput({ onSubmit, loading }: PRInputProps) {
 
   return (
     <form onSubmit={handleSubmit} className="home-review-form">
-      <div className="home-review-form__header">
-        <label htmlFor="pr-url" className="home-review-form__label">
-          GitHub Pull Request URL
-        </label>
-        <p className="home-review-form__hint">
-          支持公开 GitHub Pull Request 链接，提交后会立即创建审查会话
-        </p>
-      </div>
       <div className="home-review-form__controls">
         <div className="home-review-form__field">
           <input
@@ -42,7 +34,7 @@ export function PRInput({ onSubmit, loading }: PRInputProps) {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="粘贴 GitHub PR 链接，例如 https://github.com/owner/repo/pull/123"
+            placeholder="https://github.com/owner/repo/pull/123"
             className="home-review-form__input"
             disabled={loading}
           />
