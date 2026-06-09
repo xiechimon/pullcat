@@ -1,94 +1,130 @@
-import {useEffect, useState} from 'react'
-import {toast} from 'sonner'
-import type {StatsOverviewRespDTO, Severity} from '../types/review'
-import {getStatsOverview} from '../lib/api'
-import {SeverityChart} from '../components/SeverityChart'
-import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from 'recharts'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { SeverityChart } from '../components/SeverityChart'
+import { getStatsOverview } from '../lib/api'
+import type { Severity, StatsOverviewRespDTO } from '../types/review'
 
 export function StatsPage() {
-    const [stats, setStats] = useState<StatsOverviewRespDTO | null>(null)
-    const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<StatsOverviewRespDTO | null>(null)
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        let cancelled = false
-        getStatsOverview()
-            .then(s => {
-                if (!cancelled) setStats(s)
-            })
-            .catch(e => {
-                if (!cancelled) toast.error(e.message)
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [])
+  useEffect(() => {
+    let cancelled = false
 
-    if (loading) {
-        return <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse">
-            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"/>
-            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-xl"/>
-        </div>
+    getStatsOverview()
+      .then((response) => {
+        if (!cancelled) setStats(response)
+      })
+      .catch((error) => {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : '加载统计失败')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
-    if (!stats) return null
+  }, [])
 
-    const issueTypeData = (stats.commonIssueTypes || []).map(t => ({
-        name: t.type.length > 40 ? t.type.slice(0, 40) + '...' : t.type,
-        count: t.count
-    }))
-
+  if (loading) {
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">数据统计</h1>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                    {label: '总审查次数', value: stats.totalReviews},
-                    {label: '发现问题总数', value: stats.totalIssues},
-                    {label: '覆盖仓库数', value: stats.repoCount},
-                    {label: '平均问题数', value: stats.avgIssuesPerReview.toFixed(1)},
-                ].map((c, i) => (
-                    <div key={c.label}
-                         className={`p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-up ${['delay-75','delay-150','delay-200','delay-250'][i]}`}>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</div>
-                        <div className="text-sm text-gray-500 mt-1">{c.label}</div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">严重度分布</h2>
-                    <div className="flex justify-center">
-                        <SeverityChart distribution={(stats.severityDistribution || {}) as Record<Severity, number>}
-                                       size={200}/>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">仓库审查分布</h2>
-                    <div className="text-center text-sm text-gray-400 py-12">即将推出</div>
-                </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">常见问题类型 Top 10</h2>
-                {issueTypeData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={issueTypeData.length * 40}>
-                        <BarChart data={issueTypeData} layout="vertical" margin={{left: 10}}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false}/>
-                            <XAxis type="number" fontSize={11}/>
-                            <YAxis type="category" dataKey="name" width={140} fontSize={12}/>
-                            <Tooltip/>
-                            <Bar dataKey="count" fill="#059669" radius={[0, 4, 4, 0]}/>
-                        </BarChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="text-center text-sm text-gray-400 py-12">暂无数据</div>
-                )}
-            </div>
+      <div className="page-shell py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_18rem]">
+            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-80 rounded-2xl bg-slate-200 dark:bg-slate-800" />
         </div>
+      </div>
     )
+  }
+
+  if (!stats) return null
+
+  const issueTypeData = (stats.commonIssueTypes || []).map(item => ({
+    name: item.type.length > 28 ? `${item.type.slice(0, 28)}...` : item.type,
+    count: item.count,
+  }))
+
+  const summaryItems = [
+    { label: '总审查', value: stats.totalReviews, hint: '累计会话数' },
+    { label: '总问题', value: stats.totalIssues, hint: '已识别问题' },
+    { label: '覆盖仓库', value: stats.repoCount, hint: '最近统计范围' },
+    { label: '平均问题', value: stats.avgIssuesPerReview.toFixed(1), hint: '每次审查' },
+  ]
+
+  const severityList: Array<{ label: string; value: number; tone: string }> = [
+    { label: '高严重度', value: (stats.severityDistribution?.CRITICAL ?? 0) + (stats.severityDistribution?.HIGH ?? 0), tone: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300' },
+    { label: '中严重度', value: stats.severityDistribution?.MEDIUM ?? 0, tone: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-300' },
+    { label: '低严重度', value: (stats.severityDistribution?.LOW ?? 0) + (stats.severityDistribution?.INFO ?? 0), tone: 'bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300' },
+  ]
+
+  return (
+    <div className="page-shell space-y-4 py-8 animate-fade-in">
+      <section className="surface-card overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-[minmax(0,1.15fr)_18rem]">
+          <div className="px-5 py-5 md:px-6 md:py-6">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">统计只回答两个问题</h1>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {summaryItems.map(item => (
+                <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</div>
+                    <div className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{item.hint}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 max-w-3xl">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">高频问题</div>
+              {issueTypeData.length > 0 ? (
+                <div className="mt-3 h-[320px] rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950/60">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={issueTypeData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.18)" />
+                      <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis type="category" dataKey="name" width={132} fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
+                      <Bar dataKey="count" fill="#047857" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/40">
+                  暂无问题类型数据
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">严重度分布</div>
+            <div className="mt-4 flex justify-center">
+              <SeverityChart distribution={(stats.severityDistribution || {}) as Record<Severity, number>} size={190} />
+            </div>
+
+            <div className="mt-5 space-y-2">
+              {severityList.map(item => (
+                <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3 dark:bg-slate-950/70">
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${item.tone}`}>
+                    {item.label}
+                  </span>
+                  <span className="text-lg font-semibold text-slate-950 dark:text-white">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
 }
