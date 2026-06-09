@@ -27,3 +27,5 @@
   ]
 }
 suggestionCode 为可选项，如无法生成确切代码可省略。
+
+{repo_conventions}

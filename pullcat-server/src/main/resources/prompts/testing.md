@@ -36,3 +36,5 @@
 }
 
 无问题时 issues 设为空数组。
+
+{repo_conventions}

@@ -49,3 +49,5 @@
 
 confidence 为 0.0~1.0，表示你对该问题真实存在的置信度。
 只报告置信度 > 0.6 的问题。无问题时 issues 设为空数组。
+
+{repo_conventions}
