@@ -1,31 +1,48 @@
 package com.pullcat.service.analysis;
 
 import com.pullcat.dao.entity.UserDO;
+import com.pullcat.dao.mapper.UserMapper;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
 import com.pullcat.service.impl.UserServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
     @Mock
-    UserRepository userRepository;
+    UserMapper userMapper;
+
+    @Mock
+    RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    ValueOperations<String, Object> valueOperations;
 
     @InjectMocks
     UserServiceImpl userService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
 
     @Test
     void getCurrentUser_nullLogin_returnsUnauthenticated() {
@@ -37,7 +54,8 @@ class UserServiceTest {
 
     @Test
     void getCurrentUser_withLogin_returnsAuthenticatedUser() {
-        when(userRepository.findByLogin("xiechimon")).thenReturn(null);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(userMapper.selectOne(any())).thenReturn(null);
 
         CurrentUserRespDTO result = userService.getCurrentUser("xiechimon");
 
@@ -52,7 +70,8 @@ class UserServiceTest {
         UserDO user = new UserDO();
         user.setGithubLogin("xiechimon");
         user.setAvatarUrl("https://stored-avatar.com/img.png");
-        when(userRepository.findByLogin("xiechimon")).thenReturn(user);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(userMapper.selectOne(any())).thenReturn(user);
 
         CurrentUserRespDTO result = userService.getCurrentUser("xiechimon");
 

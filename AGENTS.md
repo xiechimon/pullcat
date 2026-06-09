@@ -229,14 +229,14 @@ Controller 只负责四件事：
 - 不在 Controller 中拼装跨多个领域的核心逻辑
 - SSE 接口的流事件命名保持稳定，避免随意修改前端依赖的事件名
 
-### Service 与 Repository
+### Service、Mapper 与缓存职责
 
-当前 `service.analysis` 中同时承载了编排逻辑和 Repository 风格组件，例如：
+当前后端按“应用服务 + Mapper + 缓存”划分职责，例如：
 
 - `AnalysisOrchestrator`
-- `RepoRepository`
+- `RepoService`
 - `ReviewRepository`
-- `RuleRepository`
+- `RuleService`
 - `StatsService`
 
 约束：
@@ -244,7 +244,9 @@ Controller 只负责四件事：
 - 面向 Controller 暴露的应用服务统一通过接口注入，不直接依赖 `*ServiceImpl`
 - `service.impl` 只承载应用服务实现，不再把接口与实现混放
 - 编排逻辑放 `AnalysisOrchestrator` 这类 Service 中
-- 持久化访问逻辑集中在 `*Repository`，不要在多个 Controller 中直接操作 Redis
+- `Rule`、`Repo`、`User` 这类基础数据访问统一通过 `dao.mapper` 完成，不再额外引入 `Repository`
+- Redis 作为缓存层时，缓存读写逻辑直接收敛在对应 `*ServiceImpl` 中，不要在多个 Controller 中直接操作 Redis
+- `Review` 这类会话态或聚合态存储，允许按实际复杂度保留独立持久化组件
 - 涉及 LLM 的具体分析实现放 `service.llm`，不要把 Prompt 调用直接散落到 Controller 或通用 Service
 
 ### Redis Key 命名

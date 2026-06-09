@@ -1,5 +1,6 @@
 package com.pullcat.service.analysis;
 
+import com.pullcat.dao.mapper.RuleMapper;
 import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.enums.RuleType;
 import com.pullcat.common.enums.Severity;
@@ -8,37 +9,52 @@ import com.pullcat.dto.req.RuleUpsertReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RuleRespDTO;
 import com.pullcat.service.impl.RuleServiceImpl;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RuleServiceTest {
 
     @Mock
-    RuleRepository ruleRepository;
+    RuleMapper ruleMapper;
 
     @Mock
     RuleSuggestionService ruleSuggestionService;
 
+    @Mock
+    RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    ValueOperations<String, Object> valueOperations;
+
     @InjectMocks
     RuleServiceImpl ruleService;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
 
     // ---- list ----
 
     @Test
     void list_returnsMappedDTOs() {
         RuleDO rule = rule("r1");
-        when(ruleRepository.findByRepo("owner", "repo")).thenReturn(List.of(rule));
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(ruleMapper.selectList(any())).thenReturn(List.of(rule));
         List<RuleRespDTO> result = ruleService.list("owner", "repo");
         assertEquals(1, result.size());
         assertEquals("r1", result.get(0).getId());
@@ -62,14 +78,14 @@ class RuleServiceTest {
         RuleUpsertReqDTO req = upsertReq();
         RuleRespDTO result = ruleService.create("owner", "repo", req);
         assertNotNull(result.getId());
-        verify(ruleRepository).save(any(RuleDO.class));
+        verify(ruleMapper).insert(any(RuleDO.class));
     }
 
     @Test
     void create_setsRepoOwnerAndName() {
         RuleUpsertReqDTO req = upsertReq();
         ruleService.create("owner", "repo", req);
-        verify(ruleRepository).save(argThat(r -> "owner".equals(r.getRepoOwner()) && "repo".equals(r.getRepoName())));
+        verify(ruleMapper).insert(argThat((RuleDO r) -> "owner".equals(r.getRepoOwner()) && "repo".equals(r.getRepoName())));
     }
 
     // ---- update ----
@@ -78,7 +94,7 @@ class RuleServiceTest {
     void update_usesProvidedRuleId() {
         RuleUpsertReqDTO req = upsertReq();
         RuleRespDTO result = ruleService.update("owner", "repo", "rid1", req);
-        verify(ruleRepository).save(argThat(r -> "rid1".equals(r.getId())));
+        verify(ruleMapper).updateById(argThat((RuleDO r) -> "rid1".equals(r.getId())));
         assertEquals("rid1", result.getId());
     }
 
@@ -87,7 +103,7 @@ class RuleServiceTest {
     @Test
     void delete_delegatesToRepository() {
         DeletedRespDTO result = ruleService.delete("owner", "repo", "rid1");
-        verify(ruleRepository).delete("owner", "repo", "rid1");
+        verify(ruleMapper).deleteById("rid1");
         assertTrue(result.isDeleted());
     }
 
@@ -95,7 +111,7 @@ class RuleServiceTest {
 
     @Test
     void toggle_notFound_throwsClientException() {
-        when(ruleRepository.findById("owner", "repo", "rid1")).thenReturn(Optional.empty());
+        when(ruleMapper.selectOne(any())).thenReturn(null);
         assertThrows(ClientException.class, () -> ruleService.toggle("owner", "repo", "rid1"));
     }
 
@@ -103,17 +119,17 @@ class RuleServiceTest {
     void toggle_enabled_disablesRule() {
         RuleDO rule = rule("rid1");
         rule.setEnabled(true);
-        when(ruleRepository.findById("owner", "repo", "rid1")).thenReturn(Optional.of(rule));
+        when(ruleMapper.selectOne(any())).thenReturn(rule);
         RuleRespDTO result = ruleService.toggle("owner", "repo", "rid1");
         assertFalse(result.isEnabled());
-        verify(ruleRepository).save(rule);
+        verify(ruleMapper).updateById(rule);
     }
 
     @Test
     void toggle_disabled_enablesRule() {
         RuleDO rule = rule("rid1");
         rule.setEnabled(false);
-        when(ruleRepository.findById("owner", "repo", "rid1")).thenReturn(Optional.of(rule));
+        when(ruleMapper.selectOne(any())).thenReturn(rule);
         RuleRespDTO result = ruleService.toggle("owner", "repo", "rid1");
         assertTrue(result.isEnabled());
     }

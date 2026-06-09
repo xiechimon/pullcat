@@ -6,8 +6,8 @@ import com.pullcat.dao.entity.RuleDO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.analysis.ReviewRepository;
-import com.pullcat.service.analysis.RuleRepository;
 import com.pullcat.service.analysis.RuleSuggestionService;
+import com.pullcat.service.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,16 +33,16 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
     private static final Duration CACHE_TTL = Duration.ofHours(1);
 
     private final ReviewRepository reviewRepository;
-    private final RuleRepository ruleRepository;
+    private final RuleServiceImpl ruleService;
     private final ChatClient lightChatClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public RuleSuggestionServiceImpl(ReviewRepository reviewRepository,
-                                     RuleRepository ruleRepository,
+                                     RuleServiceImpl ruleService,
                                      @Qualifier("lightChatClient") ChatClient lightChatClient,
                                      RedisTemplate<String, Object> redisTemplate) {
         this.reviewRepository = reviewRepository;
-        this.ruleRepository = ruleRepository;
+        this.ruleService = ruleService;
         this.lightChatClient = lightChatClient;
         this.redisTemplate = redisTemplate;
     }
@@ -111,7 +111,7 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
     public List<RuleDO> getSuggestions(String owner, String repo) {
         List<RuleDO> aiRules = suggestRules(owner, repo);
 
-        List<RuleDO> existingRules = ruleRepository.findByRepo(owner, repo);
+        List<RuleDO> existingRules = ruleService.findRules(owner, repo);
         Set<String> existingNames = existingRules.stream()
                 .map(RuleDO::getName)
                 .filter(Objects::nonNull)

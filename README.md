@@ -85,7 +85,9 @@
 | Spring Boot Web                              | REST API + SSE 流式推送              |  框架  |
 | Spring Boot WebFlux                          | GitHub API 响应式调用 (WebClient)     |  框架  |
 | Spring AI (OpenAI)                           | 对接 DeepSeek LLM，统一 ChatClient 接口 | SDK  |
-| Spring Boot Data Redis                       | 审查会话缓存、限流计数                      | 基础设施 |
+| Spring Boot Data Redis                       | 审查会话存储、缓存与限流计数                   | 基础设施 |
+| MyBatis-Plus                                | `Repo` / `Rule` / `User` 基础数据访问        | ORM  |
+| MySQL Connector/J                           | MySQL 驱动                            | 驱动  |
 | Spring Boot OAuth2 Client                    | GitHub OAuth 登录                  | 基础设施 |
 | Spring Boot Actuator + Micrometer Prometheus | 健康检查、指标暴露                        |  运维  |
 | Meemaw `spring-dotenv`                       | `.env` 文件加载                      |  工具  |
@@ -120,7 +122,7 @@
 
 ### 环境要求
 
-- **Java 17+** / **Node.js 20+** / **Redis** / **DeepSeek API Key**
+- **Java 17+** / **Node.js 20+** / **Redis** / **MySQL 8+** / **DeepSeek API Key**
 
 ### 1. 克隆并配置
 
@@ -187,6 +189,7 @@ pullcat/
 │       ├── config/                   安全、Redis、CORS、重试、指标配置
 │       ├── controller/               REST Controller 与 SSE 入口，统一使用 *Controller 命名
 │       ├── dao/entity/               持久化对象
+│       ├── dao/mapper/               MyBatis-Plus Mapper
 │       ├── dto/req                   请求 DTO
 │       ├── dto/resp                  响应 DTO
 │       ├── remote/                   第三方调用接口与 DTO
@@ -208,7 +211,8 @@ pullcat/
 - `service` 根目录仅放应用服务接口，类名统一使用 `*Service`
 - `service/impl` 放应用服务实现，类名统一使用 `*ServiceImpl`
 - `service/analysis` 与 `service/llm` 优先放接口，具体实现分别收敛到各自的 `impl` 子包
-- Repository 风格组件继续收敛在 `service.analysis`，避免在 Controller 中直接操作 Redis 或远程调用
+- `Repo`、`Rule`、`User` 等基础数据通过 `dao/mapper` 访问，缓存逻辑直接收敛在对应 `*ServiceImpl`
+- `ReviewRepository` 继续承载审查会话这类聚合态存储，避免在 Controller 中直接操作 Redis
 
 ---
 
@@ -220,6 +224,9 @@ pullcat/
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App 凭据    | -                   |
 | `GITHUB_TOKEN`                              | GitHub PAT（可选，登录后无需配置） | 空                   |
 | `REDIS_HOST` / `REDIS_PORT`                 | Redis 连接               | `localhost:6379`    |
+| `SPRING_DATASOURCE_URL`                     | MySQL JDBC 连接串         | -                   |
+| `SPRING_DATASOURCE_USERNAME`                | MySQL 用户名              | -                   |
+| `SPRING_DATASOURCE_PASSWORD`                | MySQL 密码               | -                   |
 | `pullcat.llm.light-model`                   | 轻量模型                   | `deepseek-v4-flash` |
 | `pullcat.llm.heavy-model`                   | 重量模型                   | `deepseek-v4-flash` |
 

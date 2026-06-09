@@ -1,13 +1,16 @@
 package com.pullcat.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.pullcat.common.constant.RedisKeys;
 import com.pullcat.dao.entity.UserDO;
+import com.pullcat.dao.mapper.UserMapper;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
 import com.pullcat.service.UserService;
-import com.pullcat.service.analysis.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +18,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public CurrentUserRespDTO getCurrentUser(String login) {
@@ -25,7 +29,7 @@ public class UserServiceImpl implements UserService {
             return response;
         }
 
-        UserDO user = userRepository.findByLogin(login);
+        UserDO user = findByLogin(login);
         response.setAuthenticated(true);
         response.setLogin(login);
         if (user != null) {
@@ -43,5 +47,23 @@ public class UserServiceImpl implements UserService {
         }
         SecurityContextHolder.clearContext();
         return new LogoutRespDTO("logged_out");
+    }
+
+    public UserDO findByLogin(String login) {
+        Object cachedId = redisTemplate.opsForValue().get(RedisKeys.userLoginKey(login));
+        if (cachedId != null) {
+            Object cachedUser = redisTemplate.opsForValue().get(RedisKeys.userKey(cachedId.toString()));
+            if (cachedUser instanceof UserDO userDO) {
+                return userDO;
+            }
+        }
+
+        UserDO user = userMapper.selectOne(new LambdaQueryWrapper<UserDO>()
+                .eq(UserDO::getGithubLogin, login));
+        if (user != null) {
+            redisTemplate.opsForValue().set(RedisKeys.userKey(user.getId()), user);
+            redisTemplate.opsForValue().set(RedisKeys.userLoginKey(login), user.getId());
+        }
+        return user;
     }
 }

@@ -41,6 +41,21 @@ public final class RedisKeys {
     public static final String REPO_INDEX = "repo:index";
 
     /**
+     * 规则缓存 key 前缀，格式: rule:{owner}/{repo}
+     */
+    public static final String RULE_PREFIX = "rule:";
+
+    /**
+     * 用户缓存 key 前缀，格式: user:{id}
+     */
+    public static final String USER_PREFIX = "user:";
+
+    /**
+     * 用户登录名索引 key 前缀，格式: user:login:{login}
+     */
+    public static final String USER_LOGIN_PREFIX = "user:login:";
+
+    /**
      * 根据 ID 构造 Review key
      */
     public static String reviewKey(String id) {
@@ -59,6 +74,18 @@ public final class RedisKeys {
      */
     public static String repoKey(String fullName) {
         return REPO_PREFIX + fullName;
+    }
+
+    public static String ruleKey(String owner, String repo) {
+        return RULE_PREFIX + owner + "/" + repo;
+    }
+
+    public static String userKey(String id) {
+        return USER_PREFIX + id;
+    }
+
+    public static String userLoginKey(String login) {
+        return USER_LOGIN_PREFIX + login;
     }
 
     /**

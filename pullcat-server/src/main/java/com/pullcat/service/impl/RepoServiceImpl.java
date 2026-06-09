@@ -1,14 +1,17 @@
 package com.pullcat.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pullcat.common.convention.exception.ClientException;
+import com.pullcat.common.constant.RedisKeys;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.dao.entity.RepoDO;
+import com.pullcat.dao.mapper.RepoMapper;
 import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
 import com.pullcat.service.RepoService;
-import com.pullcat.service.analysis.RepoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,11 +20,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RepoServiceImpl implements RepoService {
 
-    private final RepoRepository repoRepository;
+    private final RepoMapper repoMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public List<RepoRespDTO> listRepos() {
-        return repoRepository.findAll().stream().map(this::toRespDTO).toList();
+        return repoMapper.selectList(null).stream().map(this::toRespDTO).toList();
     }
 
     @Override
@@ -36,26 +40,33 @@ public class RepoServiceImpl implements RepoService {
         if (req.getDescription() != null) {
             repoDO.setDescription(req.getDescription());
         }
-        repoRepository.save(repoDO);
+        repoMapper.insert(repoDO);
+        redisTemplate.opsForValue().set(RedisKeys.repoKey(repoDO.getFullName()), repoDO);
         return toRespDTO(repoDO);
     }
 
     @Override
     public DeletedRespDTO removeRepo(String owner, String repo) {
-        if (!repoRepository.exists(owner, repo)) {
+        String fullName = owner + "/" + repo;
+        if (repoMapper.selectById(fullName) == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
 
-        repoRepository.delete(owner, repo);
+        repoMapper.deleteById(fullName);
+        redisTemplate.delete(RedisKeys.repoKey(fullName));
         return new DeletedRespDTO(true);
     }
 
     @Override
     public RepoRespDTO getRepo(String owner, String repo) {
-        RepoDO repoDO = repoRepository.findById(owner + "/" + repo);
+        String fullName = owner + "/" + repo;
+        Object cached = redisTemplate.opsForValue().get(RedisKeys.repoKey(fullName));
+        RepoDO repoDO = cached instanceof RepoDO ? (RepoDO) cached : repoMapper.selectOne(
+                new LambdaQueryWrapper<RepoDO>().eq(RepoDO::getFullName, fullName));
         if (repoDO == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
+        redisTemplate.opsForValue().set(RedisKeys.repoKey(fullName), repoDO);
 
         return toRespDTO(repoDO);
     }

@@ -44,7 +44,6 @@ class AnalysisOrchestratorImplTest {
                     executorService,
                     Mockito.mock(ResultAggregator.class),
                     Mockito.mock(RuleEngine.class),
-                    Mockito.mock(RuleRepository.class),
                     Mockito.mock(RuleSuggestionService.class),
                     new SimpleMeterRegistry()
             );
@@ -80,7 +79,6 @@ class AnalysisOrchestratorImplTest {
                     executorService,
                     Mockito.mock(ResultAggregator.class),
                     Mockito.mock(RuleEngine.class),
-                    Mockito.mock(RuleRepository.class),
                     Mockito.mock(RuleSuggestionService.class),
                     new SimpleMeterRegistry()
             );
