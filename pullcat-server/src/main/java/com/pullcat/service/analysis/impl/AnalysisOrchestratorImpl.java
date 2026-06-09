@@ -40,8 +40,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -462,5 +465,54 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
     private AnalysisTask createTask(AnalysisType type) {
         return taskFactory.create(type);
+    }
+
+    /**
+     * 从文件树字符串中检测根目录约定文件候选列表，按优先级排序，最多返回 3 个
+     */
+    public static List<String> detectConventionCandidates(String fileTree) {
+        if (fileTree == null || fileTree.isBlank()) return List.of();
+
+        Set<String> EXCLUDE = Set.of(
+                "readme.md", "changelog.md", "license.md", "changes.md",
+                "history.md", "release.md", "releases.md", "security.md"
+        );
+
+        List<String> PRIORITY = List.of(
+                "AGENTS.md", "CLAUDE.md", "OPENCODE.md", "GEMINI.md",
+                ".cursorrules", "CONTRIBUTING.md", "CONVENTIONS.md",
+                "DEVELOPMENT.md", ".pullcat.md"
+        );
+
+        // 提取 "./" 根目录段下的文件名（格式：以 "  " 两空格开头的行）
+        List<String> rootFiles = new ArrayList<>();
+        boolean inRoot = false;
+        for (String line : fileTree.split("\n")) {
+            if ("./".equals(line.trim())) {
+                inRoot = true;
+                continue;
+            }
+            if (inRoot) {
+                if (line.isBlank() || !line.startsWith("  ")) break;
+                String name = line.strip();
+                if (name.toLowerCase().endsWith(".md") || PRIORITY.contains(name)) {
+                    rootFiles.add(name);
+                }
+            }
+        }
+
+        // 排除名单（大小写不敏感）
+        rootFiles.removeIf(f -> EXCLUDE.contains(f.toLowerCase()));
+
+        // 按优先级排序，优先级表之外的文件排到末尾
+        Map<String, Integer> priorityIdx = new HashMap<>();
+        for (int i = 0; i < PRIORITY.size(); i++) {
+            priorityIdx.put(PRIORITY.get(i), i);
+        }
+        rootFiles.sort(Comparator
+                .comparingInt((String f) -> priorityIdx.getOrDefault(f, Integer.MAX_VALUE))
+                .thenComparing(Comparator.naturalOrder()));
+
+        return rootFiles.stream().limit(3).toList();
     }
 }
