@@ -37,14 +37,13 @@ export function PRInput({ onSubmit, loading, compact = false }: PRInputProps) {
 
       <div className="home-review-form__controls">
         <div className="home-review-form__field">
-          <label htmlFor="pr-url" className="home-review-form__label">GitHub Pull Request</label>
           <div className="home-review-form__entry">
             <input
               id="pr-url"
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="粘贴 GitHub PR 链接"
+              placeholder="输入 GitHub Pull Request 链接"
               className="home-review-form__input"
               disabled={loading}
               autoComplete="off"
@@ -72,7 +71,6 @@ export function PRInput({ onSubmit, loading, compact = false }: PRInputProps) {
           </div>
         </div>
       </div>
-
     </form>
   )
 }

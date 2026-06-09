@@ -31,10 +31,9 @@ describe('Layout', () => {
   it('shows desktop navigation entries', async () => {
     renderLayout('/history')
 
-    expect(await screen.findByRole('link', { name: '仪表盘' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: '新建审查' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '历史' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '统计' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '新建审查' })).toBeInTheDocument()
   })
 
   it('shows mobile navigation trigger and opens mobile menu', async () => {

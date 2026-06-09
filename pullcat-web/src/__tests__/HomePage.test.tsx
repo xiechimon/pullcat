@@ -5,6 +5,13 @@ import { MemoryRouter } from 'react-router-dom'
 import { toast } from 'sonner'
 import { HomePage } from '../pages/HomePage'
 
+vi.mock('../lib/api', () => ({
+  createReview: vi.fn(),
+  getReviews: vi.fn(),
+}))
+
+import { getReviews } from '../lib/api'
+
 function renderHomePage() {
   return render(
     <MemoryRouter>
@@ -16,26 +23,29 @@ function renderHomePage() {
 describe('HomePage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.mocked(getReviews).mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 0,
+      size: 10,
+    })
   })
 
   it('renders an input-first review workspace', () => {
     renderHomePage()
-    expect(screen.getByRole('heading', { name: '开始审查' })).toBeInTheDocument()
-    expect(screen.getByText('GitHub Pull Request')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('粘贴 GitHub PR 链接')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('输入 GitHub Pull Request 链接')).toBeInTheDocument()
   })
 
-  it('renders compact review cues and submit button', () => {
+  it('renders submit button and recent reviews section', async () => {
     renderHomePage()
     expect(screen.getByRole('button', { name: '开始审查' })).toBeInTheDocument()
-    expect(screen.getByText('GitHub PR')).toBeInTheDocument()
-    expect(screen.getByText('即时开始')).toBeInTheDocument()
+    expect(await screen.findByText('最近审查')).toBeInTheDocument()
   })
 
   it('validates invalid URL', () => {
     const toastSpy = vi.spyOn(toast, 'error')
     renderHomePage()
-    const input = screen.getByPlaceholderText('粘贴 GitHub PR 链接')
+    const input = screen.getByPlaceholderText('输入 GitHub Pull Request 链接')
     fireEvent.change(input, { target: { value: 'not-a-valid-url' } })
     fireEvent.click(screen.getByRole('button', { name: /审查|review/i }))
     expect(toastSpy).toHaveBeenCalledWith(expect.stringMatching(/无效|invalid|请输入/i))
