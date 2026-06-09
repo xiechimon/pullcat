@@ -6,7 +6,7 @@ import com.pullcat.dto.req.CreateReviewReqDTO;
 import com.pullcat.dto.req.IssueFeedbackReqDTO;
 import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.*;
-import com.pullcat.service.analysis.ReviewService;
+import com.pullcat.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

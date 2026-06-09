@@ -5,7 +5,7 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
-import com.pullcat.service.analysis.RepoService;
+import com.pullcat.service.RepoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

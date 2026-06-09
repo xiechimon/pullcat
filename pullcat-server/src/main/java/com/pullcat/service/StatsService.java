@@ -1,4 +1,4 @@
-package com.pullcat.service.analysis;
+package com.pullcat.service;
 
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.CommonIssueTypeRespDTO;
@@ -6,6 +6,7 @@ import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.RepoStatsRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.StatsOverviewRespDTO;
+import com.pullcat.service.analysis.ReviewRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;

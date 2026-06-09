@@ -1,8 +1,9 @@
-package com.pullcat.service.analysis;
+package com.pullcat.service;
 
 import com.pullcat.dao.entity.UserDO;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
+import com.pullcat.service.analysis.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

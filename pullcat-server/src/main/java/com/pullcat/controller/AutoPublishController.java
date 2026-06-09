@@ -5,7 +5,7 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.AutoPublishToggleReqDTO;
 import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
 import com.pullcat.dto.resp.BooleanStatusRespDTO;
-import com.pullcat.service.analysis.AutoPublishService;
+import com.pullcat.service.AutoPublishService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

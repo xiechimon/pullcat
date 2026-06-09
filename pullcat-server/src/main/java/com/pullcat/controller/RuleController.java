@@ -5,7 +5,7 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.RuleUpsertReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RuleRespDTO;
-import com.pullcat.service.analysis.RuleService;
+import com.pullcat.service.RuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

@@ -4,7 +4,7 @@ import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
-import com.pullcat.service.analysis.WebhookService;
+import com.pullcat.service.WebhookService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

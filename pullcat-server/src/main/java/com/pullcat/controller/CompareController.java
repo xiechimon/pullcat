@@ -6,7 +6,7 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.dto.req.CompareReviewsReqDTO;
 import com.pullcat.dto.resp.CompareReviewsRespDTO;
-import com.pullcat.service.analysis.CompareService;
+import com.pullcat.service.CompareService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

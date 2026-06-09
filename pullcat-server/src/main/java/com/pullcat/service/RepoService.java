@@ -1,4 +1,4 @@
-package com.pullcat.service.analysis;
+package com.pullcat.service;
 
 import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
@@ -6,6 +6,7 @@ import com.pullcat.dao.entity.RepoDO;
 import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
+import com.pullcat.service.analysis.RepoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -4,7 +4,7 @@ import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.resp.RepoStatsRespDTO;
 import com.pullcat.dto.resp.StatsOverviewRespDTO;
-import com.pullcat.service.analysis.StatsService;
+import com.pullcat.service.StatsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

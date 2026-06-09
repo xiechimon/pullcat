@@ -5,6 +5,7 @@ import com.pullcat.dao.entity.RepoDO;
 import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
+import com.pullcat.service.RepoService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

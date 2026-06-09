@@ -1,7 +1,8 @@
-package com.pullcat.service.analysis;
+package com.pullcat.service;
 
 import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
 import com.pullcat.dto.resp.BooleanStatusRespDTO;
+import com.pullcat.service.analysis.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

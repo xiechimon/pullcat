@@ -7,6 +7,7 @@ import com.pullcat.dao.entity.RuleDO;
 import com.pullcat.dto.req.RuleUpsertReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RuleRespDTO;
+import com.pullcat.service.RuleService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

@@ -4,7 +4,7 @@ import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
-import com.pullcat.service.analysis.UserService;
+import com.pullcat.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

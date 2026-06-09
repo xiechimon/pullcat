@@ -2,6 +2,7 @@ package com.pullcat.service.analysis;
 
 import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
 import com.pullcat.dto.resp.BooleanStatusRespDTO;
+import com.pullcat.service.AutoPublishService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
