@@ -35,7 +35,6 @@ public class WebConfig implements WebMvcConfigurer {
     private int statsWindowSeconds;
 
     private final RateLimiterInterceptor rateLimiterInterceptor;
-
     public WebConfig(RateLimiter rateLimiter, MeterRegistry meterRegistry) {
         Counter rejectionCounter = Counter.builder("rate_limit_rejections_total")
                 .description("Total number of rate-limited requests")

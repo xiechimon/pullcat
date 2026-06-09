@@ -1,5 +1,6 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.biz.user.CurrentLogin;
 import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.CreateReviewReqDTO;
@@ -9,10 +10,6 @@ import com.pullcat.dto.resp.*;
 import com.pullcat.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -27,27 +24,13 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     /**
-     * 从认证信息中提取 GitHub 用户名
-     */
-    private static String extractLogin(OAuth2User principal) {
-        if (principal != null) {
-            return principal.getAttribute("login");
-        }
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth instanceof OAuth2AuthenticationToken oauth) {
-            return oauth.getName();
-        }
-        return null;
-    }
-
-    /**
      * 创建审查会话并返回 SSE 地址
      */
     @PostMapping
     public Result<CreateReviewRespDTO> createReview(
             @RequestBody CreateReviewReqDTO requestParam,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return Results.success(reviewService.createReview(requestParam.getPrUrl(), extractLogin(principal)));
+            @CurrentLogin String login) {
+        return Results.success(reviewService.createReview(requestParam.getPrUrl(), login));
     }
 
     /**
@@ -58,8 +41,8 @@ public class ReviewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String repo,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return Results.success(reviewService.listReviews(page, size, repo, extractLogin(principal)));
+            @CurrentLogin String login) {
+        return Results.success(reviewService.listReviews(page, size, repo, login));
     }
 
     /**
@@ -68,8 +51,8 @@ public class ReviewController {
     @GetMapping("/{id}")
     public Result<ReviewSessionRespDTO> getReview(
             @PathVariable String id,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return Results.success(reviewService.getReview(id, extractLogin(principal)));
+            @CurrentLogin String login) {
+        return Results.success(reviewService.getReview(id, login));
     }
 
     /**
@@ -78,8 +61,8 @@ public class ReviewController {
     @DeleteMapping("/{id}")
     public Result<DeletedRespDTO> deleteReview(
             @PathVariable String id,
-            @AuthenticationPrincipal OAuth2User principal) {
-        reviewService.deleteReview(id, extractLogin(principal));
+            @CurrentLogin String login) {
+        reviewService.deleteReview(id, login);
         return Results.success(new DeletedRespDTO(true));
     }
 
@@ -91,10 +74,10 @@ public class ReviewController {
             @PathVariable String reviewId,
             @PathVariable String issueId,
             @RequestBody IssueFeedbackReqDTO requestParam,
-            @AuthenticationPrincipal OAuth2User principal) {
+            @CurrentLogin String login) {
         boolean accepted = Boolean.TRUE.equals(requestParam.getAccepted());
         return Results.success(reviewService.submitFeedback(reviewId, issueId, accepted,
-                requestParam.getReason(), extractLogin(principal)));
+                requestParam.getReason(), login));
     }
 
     /**
@@ -103,8 +86,8 @@ public class ReviewController {
     @GetMapping(value = "/{id}/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamEvents(
             @PathVariable String id,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return reviewService.startSseStream(id, extractLogin(principal));
+            @CurrentLogin String login) {
+        return reviewService.startSseStream(id, login);
     }
 
     /**
@@ -114,7 +97,7 @@ public class ReviewController {
     public Result<PublishReviewRespDTO> publishReview(
             @PathVariable String id,
             @RequestBody PublishReqDTO requestParam,
-            @AuthenticationPrincipal OAuth2User principal) {
-        return Results.success(reviewService.publishReview(id, requestParam, extractLogin(principal)));
+            @CurrentLogin String login) {
+        return Results.success(reviewService.publishReview(id, requestParam, login));
     }
 }
