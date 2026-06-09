@@ -235,7 +235,7 @@ Controller 只负责四件事：
 
 - `AnalysisOrchestrator`
 - `RepoService`
-- `ReviewRepository`
+- `ReviewSessionService`
 - `RuleService`
 - `StatsService`
 

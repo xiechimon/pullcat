@@ -220,7 +220,7 @@ pullcat/
 - `service/impl` 放应用服务实现，类名统一使用 `*ServiceImpl`
 - `service/analysis` 与 `service/llm` 优先放接口，具体实现分别收敛到各自的 `impl` 子包
 - `Repo`、`Rule`、`User` 等基础数据通过 `dao/mapper` 访问，缓存逻辑直接收敛在对应 `*ServiceImpl`
-- `ReviewRepository` 继续承载审查会话这类聚合态存储，避免在 Controller 中直接操作 Redis
+- `service.analysis` 下通过领域接口承载审查会话这类聚合态存储能力，避免在 Controller 中直接操作持久化细节
 
 ---
 
