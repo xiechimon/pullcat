@@ -23,6 +23,7 @@ import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.ReviewRepository;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,20 +39,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 审查控制层
+ */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/reviews")
 public class ReviewController {
 
     private final AnalysisOrchestrator orchestrator;
     private final ReviewRepository reviewRepository;
 
-    @Lazy
-    public ReviewController(AnalysisOrchestrator orchestrator,
-                            ReviewRepository reviewRepository) {
-        this.orchestrator = orchestrator;
-        this.reviewRepository = reviewRepository;
-    }
-
+    /**
+     * 从认证信息中提取 GitHub 用户名
+     */
     private static String extractLogin(OAuth2User principal) {
         if (principal != null) {
             return principal.getAttribute("login");
@@ -63,6 +64,9 @@ public class ReviewController {
         return null;
     }
 
+    /**
+     * 创建审查会话并返回 SSE 地址
+     */
     @PostMapping
     public ResponseEntity<Result<CreateReviewRespDTO>> createReview(@RequestBody CreateReviewReqDTO requestParam,
                                                                     @AuthenticationPrincipal OAuth2User principal) {
@@ -82,6 +86,9 @@ public class ReviewController {
         return ResponseEntity.ok(Results.success(response));
     }
 
+    /**
+     * 分页查询审查列表
+     */
     @GetMapping
     public ResponseEntity<Result<ReviewListRespDTO>> listReviews(
             @RequestParam(defaultValue = "0") int page,
@@ -112,9 +119,12 @@ public class ReviewController {
         return ResponseEntity.ok(Results.success(response));
     }
 
+    /**
+     * 获取单条审查详情
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Result<ReviewSessionRespDTO>> getReview(@PathVariable String id,
-                                                           @AuthenticationPrincipal OAuth2User principal) {
+                                                                  @AuthenticationPrincipal OAuth2User principal) {
         ReviewSessionRespDTO session = reviewRepository.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
@@ -126,9 +136,12 @@ public class ReviewController {
         return ResponseEntity.ok(Results.success(session));
     }
 
+    /**
+     * 删除审查记录
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Result<DeletedRespDTO>> deleteReview(@PathVariable String id,
-                                                                    @AuthenticationPrincipal OAuth2User principal) {
+                                                               @AuthenticationPrincipal OAuth2User principal) {
         ReviewSessionRespDTO session = reviewRepository.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
@@ -141,6 +154,9 @@ public class ReviewController {
         return ResponseEntity.ok(Results.success(new DeletedRespDTO(true)));
     }
 
+    /**
+     * 提交问题反馈（接受或拒绝）
+     */
     @PostMapping("/{reviewId}/issues/{issueId}/feedback")
     public ResponseEntity<Result<StatusRespDTO>> submitFeedback(
             @PathVariable String reviewId,
@@ -176,6 +192,9 @@ public class ReviewController {
         throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "问题不存在");
     }
 
+    /**
+     * SSE 流式推送分析进度与结果
+     */
     @GetMapping(value = "/{id}/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamEvents(@PathVariable String id,
                                    @AuthenticationPrincipal OAuth2User principal) {
@@ -197,12 +216,12 @@ public class ReviewController {
 
         try {
             emitter.send(SseEmitter.event()
-                    .name("connected")
-                    .data(new SseConnectedRespDTO(id)));
+                                 .name("connected")
+                                 .data(new SseConnectedRespDTO(id)));
 
             if (session.getStatus() == com.pullcat.common.enums.SessionStatus.FAILED) {
                 emitter.send(SseEmitter.event().name("review_error")
-                        .data(new SseMessageRespDTO("Review previously failed. Please start a new review.")));
+                                     .data(new SseMessageRespDTO("Review previously failed. Please start a new review.")));
                 emitter.complete();
                 return emitter;
             }
@@ -224,9 +243,9 @@ public class ReviewController {
             }
 
             emitter.send(SseEmitter.event()
-                    .name("analysis_started")
-                    .data(new SseAnalysisStartedRespDTO(Arrays.asList(
-                            "summary", "risk", "quality", "consistency", "testing"))));
+                                 .name("analysis_started")
+                                 .data(new SseAnalysisStartedRespDTO(Arrays.asList(
+                                         "summary", "risk", "quality", "consistency", "testing"))));
 
             if (session.getStatus() == com.pullcat.common.enums.SessionStatus.FETCHING) {
                 orchestrator.startReviewAsync(session);
@@ -244,10 +263,13 @@ public class ReviewController {
         return emitter;
     }
 
+    /**
+     * 将审查结果发布到 PR 评论
+     */
     @PostMapping("/{id}/publish")
     public ResponseEntity<Result<PublishReviewRespDTO>> publishReview(@PathVariable String id,
-                                                                     @RequestBody PublishReqDTO requestParam,
-                                                                     @AuthenticationPrincipal OAuth2User principal) {
+                                                                      @RequestBody PublishReqDTO requestParam,
+                                                                      @AuthenticationPrincipal OAuth2User principal) {
         ReviewSessionRespDTO session = reviewRepository.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
@@ -264,6 +286,9 @@ public class ReviewController {
         return ResponseEntity.ok(Results.success(response));
     }
 
+    /**
+     * 校验当前用户是否为审查所有者
+     */
     private boolean isOwner(ReviewSessionRespDTO session, String login) {
         if (session.getUserId() == null) {
             return login == null;
@@ -271,6 +296,9 @@ public class ReviewController {
         return session.getUserId().equals(login);
     }
 
+    /**
+     * 推送错误事件并关闭 SSE 连接
+     */
     private void sendErrorAndComplete(SseEmitter emitter, String message) {
         try {
             emitter.send(SseEmitter.event().name("error").data(new SseMessageRespDTO(message)));
