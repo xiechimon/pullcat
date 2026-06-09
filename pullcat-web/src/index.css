@@ -204,16 +204,173 @@ body {
   background: var(--color-surface);
 }
 
-.input-card {
-  background: var(--color-surface);
+.home-page {
+  display: grid;
+  gap: 1.5rem;
+  padding-block: 1rem 2rem;
+}
+
+.home-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.home-hero__intro {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 56rem;
+}
+
+.home-hero__eyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.home-hero__title {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.home-hero__summary {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--color-text-secondary);
+  font-size: 1.02rem;
+  line-height: 1.7;
+}
+
+.home-review-panel {
+  padding: 1.15rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.home-review-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.home-review-form__header {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.home-review-form__label {
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.home-review-form__hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.home-review-form__controls {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.home-review-form__field {
+  position: relative;
+}
+
+.home-review-form__input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.95rem;
+  background: color-mix(in oklab, var(--color-bg) 72%, var(--color-surface));
+  color: var(--color-text);
+  font-size: 1rem;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.home-review-form__input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--color-primary) 70%, var(--color-border));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 14%, transparent);
+}
+
+.home-review-form__submit {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0 1.2rem;
+  border: 0;
+  border-radius: 0.95rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: #f8fafc;
+  font-size: 0.98rem;
+  font-weight: 700;
+  transition: transform 160ms ease, filter 180ms ease, opacity 180ms ease;
+}
+
+.home-review-form__submit:hover {
+  filter: brightness(1.03);
+}
+
+.home-review-form__submit:active {
+  transform: translateY(1px);
+}
+
+.home-review-form__submit:disabled {
+  opacity: 0.82;
+}
+
+.home-flow {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.home-flow__item {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
   border: 1px solid var(--color-border);
   border-radius: 1rem;
-  padding: 1.5rem;
-  max-width: 640px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  background: color-mix(in oklab, var(--color-surface) 88%, var(--color-bg));
+}
+
+.home-flow__step {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 0.32rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-surface));
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.home-flow__title {
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.home-flow__description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.93rem;
+  line-height: 1.65;
 }
 
 .content-section {
@@ -301,5 +458,31 @@ body {
 @media (min-width: 640px) {
   .app-nav--desktop {
     display: flex;
+  }
+
+  .home-review-form__controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .home-review-form__submit {
+    min-width: 148px;
+  }
+}
+
+@media (min-width: 900px) {
+  .home-page {
+    gap: 2rem;
+    padding-block: 2rem 3rem;
+  }
+
+  .home-hero {
+    grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 28rem);
+    align-items: start;
+    gap: 1.5rem;
+  }
+
+  .home-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
