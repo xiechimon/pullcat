@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { SeverityChart } from '../components/SeverityChart'
 import { getStatsOverview } from '../lib/api'
 import type { Severity, StatsOverviewRespDTO } from '../types/review'
@@ -43,9 +42,11 @@ export function StatsPage() {
   if (!stats) return null
 
   const issueTypeData = (stats.commonIssueTypes || []).map(item => ({
-    name: item.type.length > 28 ? `${item.type.slice(0, 28)}...` : item.type,
+    name: item.type.length > 36 ? `${item.type.slice(0, 36)}...` : item.type,
+    fullName: item.type,
     count: item.count,
   }))
+  const maxIssueCount = Math.max(...issueTypeData.map(item => item.count), 1)
 
   const summaryItems = [
     { label: '总审查', value: stats.totalReviews },
@@ -80,16 +81,28 @@ export function StatsPage() {
           <div className="space-y-3">
             <div className="text-sm font-medium text-slate-500 dark:text-slate-400">高频问题</div>
             {issueTypeData.length > 0 ? (
-              <div className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={issueTypeData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.18)" />
-                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="name" width={132} fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-                    <Bar dataKey="count" fill="#047857" radius={[0, 6, 6, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-3">
+                {issueTypeData.map((item, index) => (
+                  <div key={item.fullName} className="grid gap-2 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_3rem] sm:items-center">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-950 dark:text-white" title={item.fullName}>
+                        {item.name}
+                      </div>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-900/70">
+                      <div
+                        className="h-full rounded-full bg-emerald-700 transition-[width] duration-500"
+                        style={{ width: `${(item.count / maxIssueCount) * 100}%` }}
+                      />
+                    </div>
+                    <div className="text-right text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      {item.count}
+                    </div>
+                    {index < issueTypeData.length - 1 && (
+                      <div className="sm:col-span-3 h-px bg-slate-100 dark:bg-slate-900/70" />
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/40">
