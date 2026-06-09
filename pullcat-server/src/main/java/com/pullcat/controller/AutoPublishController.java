@@ -5,48 +5,51 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.AutoPublishToggleReqDTO;
 import com.pullcat.dto.resp.AutoPublishRepoRespDTO;
 import com.pullcat.dto.resp.BooleanStatusRespDTO;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.AutoPublishService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 自动发布控制层
+ */
 @RestController
+@RequiredArgsConstructor
 public class AutoPublishController {
 
-    private final ReviewRepository reviewRepository;
+    private final AutoPublishService autoPublishService;
 
-    public AutoPublishController(ReviewRepository reviewRepository) {
-        this.reviewRepository = reviewRepository;
-    }
-
+    /**
+     * 查询所有已启用自动发布的仓库
+     */
     @GetMapping("/api/auto-publish")
     public Result<List<AutoPublishRepoRespDTO>> list() {
-        List<String> repos = reviewRepository.listAutoPublishRepos();
-        List<AutoPublishRepoRespDTO> result = repos.stream()
-                .map(r -> {
-                    String[] parts = r.split("/", 2);
-                    return new AutoPublishRepoRespDTO(parts[0], parts[1], true);
-                })
-                .toList();
-        return Results.success(result);
+        return Results.success(autoPublishService.listAutoPublishRepos());
     }
 
+    /**
+     * 查询指定仓库的自动发布状态
+     */
     @GetMapping("/api/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> get(@PathVariable String owner, @PathVariable String repo) {
-        return Results.success(new BooleanStatusRespDTO(reviewRepository.isAutoPublishEnabled(owner, repo)));
+        return Results.success(autoPublishService.getStatus(owner, repo));
     }
 
+    /**
+     * 设置指定仓库的自动发布状态
+     */
     @PutMapping("/api/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> set(@PathVariable String owner, @PathVariable String repo,
                                             @RequestBody AutoPublishToggleReqDTO requestParam) {
-        boolean enabled = Boolean.TRUE.equals(requestParam.getEnabled());
-        reviewRepository.setAutoPublishEnabled(owner, repo, enabled);
-        return Results.success(new BooleanStatusRespDTO(enabled));
+        return Results.success(autoPublishService.setEnabled(owner, repo, requestParam.getEnabled()));
     }
 
+    /**
+     * 禁用指定仓库的自动发布
+     */
     @DeleteMapping("/api/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> disable(@PathVariable String owner, @PathVariable String repo) {
-        reviewRepository.setAutoPublishEnabled(owner, repo, false);
-        return Results.success(new BooleanStatusRespDTO(false));
+        return Results.success(autoPublishService.setEnabled(owner, repo, false));
     }
 }
