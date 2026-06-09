@@ -18,6 +18,7 @@ import com.pullcat.dto.resp.SseRuleSuggestionRespDTO;
 import com.pullcat.dto.resp.SseTaskProgressRespDTO;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
+import com.pullcat.service.analysis.AnalysisTaskFactory;
 import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ResultAggregator;
@@ -27,17 +28,10 @@ import com.pullcat.service.analysis.RuleSuggestionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
 import com.pullcat.service.llm.AnalysisTask;
-import com.pullcat.service.llm.impl.ConsistencyAnalysisServiceImpl;
-import com.pullcat.service.llm.impl.QualityAnalysisServiceImpl;
-import com.pullcat.service.llm.impl.RiskAnalysisServiceImpl;
-import com.pullcat.service.llm.impl.SummaryAnalysisServiceImpl;
-import com.pullcat.service.llm.impl.TestingGapAnalysisServiceImpl;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -64,26 +58,18 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final PromptLoader promptLoader;
     private final ContextBuilder contextBuilder;
     private final ReviewSessionService reviewSessionService;
-    private final ChatClient lightChatClient;
-    private final ChatClient heavyChatClient;
+    private final AnalysisTaskFactory taskFactory;
     private final ExecutorService analysisExecutor;
     private final ResultAggregator resultAggregator;
     private final RuleEngine ruleEngine;
     private final RuleSuggestionService ruleSuggestionService;
     private final MeterRegistry meterRegistry;
 
-    @Value("${pullcat.llm.light-model:deepseek-chat}")
-    private String lightModelName;
-
-    @Value("${pullcat.llm.heavy-model:deepseek-reasoner}")
-    private String heavyModelName;
-
     public AnalysisOrchestratorImpl(GitHubApiService gitHubApiService,
                                     PromptLoader promptLoader,
                                     ContextBuilder contextBuilder,
                                     ReviewSessionService reviewSessionService,
-                                    @Qualifier("lightChatClient") ChatClient lightChatClient,
-                                    @Qualifier("heavyChatClient") ChatClient heavyChatClient,
+                                    AnalysisTaskFactory taskFactory,
                                     @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
                                     ResultAggregator resultAggregator,
                                     RuleEngine ruleEngine,
@@ -93,8 +79,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
         this.reviewSessionService = reviewSessionService;
-        this.lightChatClient = lightChatClient;
-        this.heavyChatClient = heavyChatClient;
+        this.taskFactory = taskFactory;
         this.analysisExecutor = analysisExecutor;
         this.resultAggregator = resultAggregator;
         this.ruleEngine = ruleEngine;
@@ -118,7 +103,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     @Override
     public void startReviewAsync(ReviewSessionRespDTO session) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
-        new Thread(() -> {
+        analysisExecutor.submit(() -> {
             SecurityContextHolder.setContext(securityContext);
             Timer.Sample sample = Timer.start(meterRegistry);
             try {
@@ -273,7 +258,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
             } finally {
                 SecurityContextHolder.clearContext();
             }
-        }, "review-" + session.getId()).start();
+        });
     }
 
     private AnalysisResultRespDTO executeTask(AnalysisType type, Map<String, String> variables, String sessionId) {
@@ -476,12 +461,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     }
 
     private AnalysisTask createTask(AnalysisType type) {
-        return switch (type) {
-            case SUMMARY -> new SummaryAnalysisServiceImpl(lightChatClient, lightModelName);
-            case RISK -> new RiskAnalysisServiceImpl(heavyChatClient, heavyModelName);
-            case QUALITY -> new QualityAnalysisServiceImpl(heavyChatClient, heavyModelName);
-            case CONSISTENCY -> new ConsistencyAnalysisServiceImpl(heavyChatClient, heavyModelName);
-            case TESTING -> new TestingGapAnalysisServiceImpl(lightChatClient, lightModelName);
-        };
+        return taskFactory.create(type);
     }
 }
