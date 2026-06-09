@@ -23,19 +23,9 @@ export function HomePage() {
 
   return (
     <div className="page-shell home-page">
-      <section className="home-hero animate-fade-up">
-        <div className="home-hero__intro">
-          <h1 className="home-hero__title">开始审查</h1>
-          <p className="home-hero__summary">输入一个 GitHub Pull Request 链接</p>
-        </div>
-
+      <section className="home-workbench animate-fade-up">
         <div className="surface-card home-review-panel animate-scale-in delay-100">
           <PRInput onSubmit={handleSubmit} loading={loading} />
-        </div>
-
-        <div className="home-supporting-strip animate-fade-in delay-150" aria-label="辅助信息">
-          <span className="home-supporting-strip__item">支持公开仓库 PR</span>
-          <span className="home-supporting-strip__item">创建后自动进入审查页</span>
         </div>
       </section>
     </div>
