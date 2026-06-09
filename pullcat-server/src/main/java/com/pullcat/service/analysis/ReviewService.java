@@ -78,17 +78,47 @@ public class ReviewService {
     }
 
     /**
-     * 创建审查（stub，待任务 3 实现）
+     * 创建审查会话并返回初始信息
      */
     public CreateReviewRespDTO createReview(String prUrl, String login) {
-        throw new UnsupportedOperationException("not implemented");
+        if (prUrl == null || prUrl.isBlank()) {
+            throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
+        }
+        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, login);
+        reviewRepository.save(session);
+
+        CreateReviewRespDTO response = new CreateReviewRespDTO();
+        response.setReviewId(session.getId());
+        response.setStatus(session.getStatus().name());
+        response.setSseUrl("/api/reviews/" + session.getId() + "/sse");
+        return response;
     }
 
     /**
-     * 提交问题反馈（stub，待任务 3 实现）
+     * 提交问题反馈（接受或拒绝）
      */
     public StatusRespDTO submitFeedback(String reviewId, String issueId, boolean accepted, String reason, String login) {
-        throw new UnsupportedOperationException("not implemented");
+        ReviewSessionRespDTO session = reviewRepository.findById(reviewId);
+        if (session == null) {
+            throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
+        }
+        if (!isOwner(session, login)) {
+            throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权操作此审查");
+        }
+
+        for (var entry : session.getAnalyses().entrySet()) {
+            if (entry.getValue().getIssues() != null) {
+                for (IssueRespDTO issue : entry.getValue().getIssues()) {
+                    if (issue.getId() != null && issue.getId().equals(issueId)) {
+                        issue.setFeedback(accepted ? "ACCEPTED" : "REJECTED");
+                        issue.setFeedbackReason(reason);
+                        reviewRepository.save(session);
+                        return new StatusRespDTO("ok");
+                    }
+                }
+            }
+        }
+        throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "问题不存在");
     }
 
     /**
