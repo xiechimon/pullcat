@@ -23,12 +23,30 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const [user, setUser] = useState<CurrentUserRespDTO>({ authenticated: false })
   const [mobileMenuState, setMobileMenuState] = useState({ open: false, path: '/' })
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < 640)
 
   useEffect(() => {
     let cancelled = false
     getCurrentUser().then(u => { if (!cancelled) setUser(u) }).catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileViewport(window.innerWidth < 640)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setMobileMenuState(state => (state.open ? { open: false, path: location.pathname } : state))
+    }
+  }, [isMobileViewport, location.pathname])
 
   const mobileMenuOpen = mobileMenuState.open && mobileMenuState.path === location.pathname
 
@@ -138,24 +156,26 @@ export function Layout({ children }: LayoutProps) {
                 登录
               </Link>
             )}
-            <button
-              type="button"
-              className="app-nav-trigger sm:hidden"
-              aria-label="打开导航菜单"
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuState(state => ({
-                open: state.path === location.pathname ? !state.open : true,
-                path: location.pathname,
-              }))}
-            >
-              <span className="app-nav-trigger__line" />
-              <span className="app-nav-trigger__line" />
-              <span className="app-nav-trigger__line" />
-            </button>
+            {isMobileViewport && (
+              <button
+                type="button"
+                className="app-nav-trigger sm:hidden"
+                aria-label="打开导航菜单"
+                aria-expanded={mobileMenuOpen}
+                onClick={() => setMobileMenuState(state => ({
+                  open: state.path === location.pathname ? !state.open : true,
+                  path: location.pathname,
+                }))}
+              >
+                <span className="app-nav-trigger__line" />
+                <span className="app-nav-trigger__line" />
+                <span className="app-nav-trigger__line" />
+              </button>
+            )}
           </div>
         </header>
 
-        {mobileMenuOpen && (
+        {isMobileViewport && mobileMenuOpen && (
           <div className="app-mobile-nav sm:hidden" role="dialog" aria-label="移动端导航">
             <nav className="app-mobile-nav__list" aria-label="移动端导航链接">
               {NAV_ITEMS.map(item => (

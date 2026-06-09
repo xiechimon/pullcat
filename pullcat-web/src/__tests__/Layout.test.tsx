@@ -23,9 +23,19 @@ function renderLayout(path = '/') {
   )
 }
 
+function setViewport(width: number) {
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    writable: true,
+    value: width,
+  })
+  window.dispatchEvent(new Event('resize'))
+}
+
 describe('Layout', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    setViewport(1280)
   })
 
   it('shows desktop navigation entries', async () => {
@@ -36,7 +46,15 @@ describe('Layout', () => {
     expect(screen.getByRole('link', { name: '统计' })).toBeInTheDocument()
   })
 
+  it('hides mobile navigation trigger on desktop', async () => {
+    renderLayout('/')
+
+    await screen.findByRole('link', { name: '新建审查' })
+    expect(screen.queryByRole('button', { name: '打开导航菜单' })).not.toBeInTheDocument()
+  })
+
   it('shows mobile navigation trigger and opens mobile menu', async () => {
+    setViewport(375)
     renderLayout('/')
 
     const trigger = await screen.findByRole('button', { name: '打开导航菜单' })
