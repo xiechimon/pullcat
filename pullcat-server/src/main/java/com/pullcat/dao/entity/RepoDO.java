@@ -9,26 +9,50 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * 仓库信息
+ */
 @Data
 @NoArgsConstructor
 @TableName("repo")
 public class RepoDO {
 
+    /**
+     * 仓库 owner
+     */
     @TableField("owner")
     private String owner;
 
+    /**
+     * 仓库名
+     */
     @TableField("repo")
     private String repo;
 
+    /**
+     * owner/repo
+     */
     @TableId(value = "full_name", type = IdType.INPUT)
     private String fullName;
 
+    /**
+     * 仓库描述
+     */
     private String description;
 
+    /**
+     * Star 数
+     */
     private Integer stars;
 
+    /**
+     * 主语言
+     */
     private String language;
 
+    /**
+     * 添加时间
+     */
     @TableField("added_at")
     private Instant addedAt = Instant.now();
 
