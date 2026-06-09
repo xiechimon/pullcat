@@ -1,31 +1,82 @@
 package com.pullcat.service.analysis;
 
+import com.pullcat.dto.req.WebhookEventReqDTO;
+import com.pullcat.dto.req.WebhookPullRequestReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
+import com.pullcat.dto.resp.WebhookRespDTO;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class WebhookServiceTest {
 
-    private final AnalysisOrchestrator orchestrator = mock(AnalysisOrchestrator.class);
-    private final ReviewRepository reviewRepository = mock(ReviewRepository.class);
-    private final WebhookService webhookService = new WebhookService(orchestrator, reviewRepository);
+    @Mock
+    AnalysisOrchestrator orchestrator;
+
+    @Mock
+    ReviewRepository reviewRepository;
+
+    @InjectMocks
+    WebhookService webhookService;
 
     @Test
-    void triggerReviewCreatesSessionAndStartsAsync() {
+    void handle_nonPrEvent_returnsIgnored() {
+        WebhookRespDTO result = webhookService.handle("push", new WebhookEventReqDTO());
+        assertEquals("ignored", result.getStatus());
+        assertEquals("not a PR event", result.getReason());
+        verifyNoInteractions(orchestrator);
+    }
+
+    @Test
+    void handle_prEventUnsupportedAction_returnsIgnored() {
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("closed");
+        WebhookRespDTO result = webhookService.handle("pull_request", req);
+        assertEquals("ignored", result.getStatus());
+        assertEquals("closed", result.getAction());
+        verifyNoInteractions(orchestrator);
+    }
+
+    @Test
+    void handle_prOpened_triggersReview() {
+        WebhookPullRequestReqDTO pr = new WebhookPullRequestReqDTO();
+        pr.setHtmlUrl("https://github.com/a/b/pull/1");
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("opened");
+        req.setPullRequest(pr);
+
         ReviewSessionRespDTO session = new ReviewSessionRespDTO();
-        session.setId("test-session");
-        session.setPrUrl("https://github.com/owner/repo/pull/1");
+        session.setId("s1");
+        when(orchestrator.createSession("https://github.com/a/b/pull/1", null)).thenReturn(session);
 
-        when(orchestrator.createSession(anyString(), any())).thenReturn(session);
+        WebhookRespDTO result = webhookService.handle("pull_request", req);
 
-        webhookService.triggerReview("https://github.com/owner/repo/pull/1");
-
-        verify(orchestrator).createSession(eq("https://github.com/owner/repo/pull/1"), eq((String) null));
-        verify(reviewRepository).save(session);
+        assertEquals("review_triggered", result.getStatus());
+        assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
         verify(orchestrator).startReviewAsync(session);
+    }
+
+    @Test
+    void handle_prSynchronize_triggersReview() {
+        WebhookPullRequestReqDTO pr = new WebhookPullRequestReqDTO();
+        pr.setHtmlUrl("https://github.com/a/b/pull/2");
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("synchronize");
+        req.setPullRequest(pr);
+
+        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
+        session.setId("s2");
+        when(orchestrator.createSession("https://github.com/a/b/pull/2", null)).thenReturn(session);
+
+        WebhookRespDTO result = webhookService.handle("pull_request", req);
+
+        assertEquals("review_triggered", result.getStatus());
+        verify(reviewRepository).save(session);
     }
 }
