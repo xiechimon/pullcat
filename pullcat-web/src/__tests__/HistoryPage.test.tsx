@@ -39,7 +39,7 @@ describe('HistoryPage', () => {
 
     expect(await screen.findByPlaceholderText('筛选仓库，例如 owner/repo')).toBeInTheDocument()
     expect(screen.getByText('暂无审查记录')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '开始第一次审查' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '开始审查' })).toBeInTheDocument()
   })
 
   it('renders review rows and compare controls', async () => {

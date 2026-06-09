@@ -14,7 +14,7 @@ interface LayoutProps {
 
 const NAV_ITEMS = [
   { path: '/', label: '新建审查' },
-  { path: '/history', label: '历史' },
+  { path: '/history', label: '审查历史' },
   { path: '/stats', label: '统计' },
 ]
 

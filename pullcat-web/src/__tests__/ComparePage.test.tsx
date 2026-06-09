@@ -27,7 +27,7 @@ describe('ComparePage', () => {
 
   it('缺少 r1/r2 参数时提示前往历史页', () => {
     renderComparePage()
-    expect(screen.getByText(/前往审查历史/)).toBeInTheDocument()
+    expect(screen.getByText(/查看审查历史/)).toBeInTheDocument()
   })
 
   it('API 失败时调用 toast.error，不渲染全页错误标题', async () => {
@@ -52,7 +52,7 @@ describe('ComparePage', () => {
     })
     renderComparePage('?r1=1&r2=2')
     await waitFor(() => {
-      expect(screen.getByText('两次审查，差异一眼看清')).toBeInTheDocument()
+      expect(screen.getByText('对比结果')).toBeInTheDocument()
     })
     expect(screen.getByText('已修复')).toBeInTheDocument()
   })

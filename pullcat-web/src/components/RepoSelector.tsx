@@ -59,7 +59,7 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
       <input
         type="text"
         value={value || search}
-        placeholder="搜索仓库 (owner/repo)..."
+        placeholder="输入仓库，例如 owner/repo"
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800 text-sm"
         onFocus={() => setOpen(true)}
         onChange={e => {
@@ -79,7 +79,7 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
               onClick={handleAdd}
               className="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              收藏仓库: {search}
+              添加仓库 {search}
             </button>
           )}
           {filtered.map(r => (
@@ -104,7 +104,7 @@ export function RepoSelector({ value, onChange }: RepoSelectorProps) {
             </div>
           ))}
           {search && !search.includes('/') && filtered.length === 0 && (
-            <div className="px-4 py-2 text-xs text-gray-500">输入 owner/repo 格式来收藏仓库</div>
+            <div className="px-4 py-2 text-xs text-gray-500">请输入 owner/repo 格式</div>
           )}
         </div>
       )}

@@ -68,10 +68,7 @@ export function RepoPage() {
       <section className="surface-card overflow-hidden">
         <div className="grid gap-0 md:grid-cols-[minmax(0,1.16fr)_18rem]">
           <div className="px-5 py-5 md:px-6 md:py-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {summaryItems.map((item) => (
@@ -88,7 +85,7 @@ export function RepoPage() {
             <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950/60">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-medium text-slate-500 dark:text-slate-400">最近结果</div>
+                  <div className="text-sm font-medium text-slate-500 dark:text-slate-400">最近审查</div>
                   <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                     {reviews.length === 0 ? '还没有可回看的记录' : `${reviews.length} 条可追溯审查`}
                   </div>
@@ -97,7 +94,7 @@ export function RepoPage() {
                   onClick={() => navigate('/')}
                   className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
                 >
-                  审查此仓库
+                  开始审查
                 </button>
               </div>
             </div>
@@ -148,7 +145,7 @@ export function RepoPage() {
                       {r.prMetadata?.title || r.prUrl}
                     </div>
                     <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                      {new Date(r.createdAt).toLocaleDateString('zh-CN')} · {issueCount} issues
+                      {new Date(r.createdAt).toLocaleDateString('zh-CN')} · {issueCount} 个问题
                     </div>
                   </div>
                   <StatusBadge status={r.status} />

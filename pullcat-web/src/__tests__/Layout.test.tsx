@@ -42,7 +42,7 @@ describe('Layout', () => {
     renderLayout('/history')
 
     expect(await screen.findByRole('link', { name: '新建审查' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '历史' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '审查历史' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '统计' })).toBeInTheDocument()
   })
 

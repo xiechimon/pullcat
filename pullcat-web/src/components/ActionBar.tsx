@@ -31,7 +31,7 @@ export function ActionBar({
         <div className="flex items-center gap-3">
           {published ? (
             <span className="text-sm text-[#047857] font-medium animate-fade-in">
-              发布成功！
+              已发布
             </span>
           ) : (
             <button

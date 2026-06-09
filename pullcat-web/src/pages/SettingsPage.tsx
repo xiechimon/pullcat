@@ -46,16 +46,23 @@ export function SettingsPage() {
   return (
     <div className="page-shell space-y-4 py-8 animate-fade-in">
       <section className="surface-card overflow-hidden">
-        <div className="grid gap-0 md:grid-cols-[minmax(0,1.18fr)_18rem]">
+        <div className="grid gap-0 md:grid-cols-[minmax(0,1.2fr)_19rem]">
           <div className="px-5 py-5 md:px-6 md:py-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">先把连接和自动化配好</h1>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">登录状态</div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400">登录状态</div>
+                    <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">Pullcat 会复用当前 GitHub 登录态</div>
+                  </div>
+                  <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    isAuthenticated
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+                      : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+                  }`}>
+                    {isAuthenticated ? '已连接' : '未连接'}
+                  </span>
+                </div>
                 {isAuthenticated ? (
                   <div className="mt-4 flex items-center gap-3">
                     {user?.avatarUrl && <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full" />}
@@ -66,15 +73,15 @@ export function SettingsPage() {
                   </div>
                 ) : (
                   <Link to="/login" className="mt-4 inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300">
-                    去登录
+                    登录 GitHub
                   </Link>
                 )}
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
-                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Token</div>
-                <div className="mt-4 text-sm text-slate-950 dark:text-white">默认跟随 GitHub 登录</div>
-                <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">Webhook 或本地场景再补 `.env`</div>
+                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">认证方式</div>
+                <div className="mt-4 text-sm font-medium text-slate-950 dark:text-white">默认跟随 GitHub OAuth 登录</div>
+                <div className="mt-1 text-xs leading-5 text-slate-400 dark:text-slate-500">需要脚本调用、Webhook 联调或本地特殊场景时，再补个人 Token 或 `.env` 配置</div>
                 <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300">
                   管理 Token
                 </a>
@@ -82,9 +89,14 @@ export function SettingsPage() {
             </div>
 
             <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950/60">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex flex-col gap-1">
+                <div className="text-sm font-medium text-slate-950 dark:text-white">Webhook 仓库</div>
+                <div className="text-xs leading-5 text-slate-400 dark:text-slate-500">填入目标仓库后，直接跳到 GitHub 的 Webhook 创建页，避免自己翻设置菜单</div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
                 <label className="min-w-0 flex-1 space-y-2">
-                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Webhook 仓库</span>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">仓库路径</span>
                   <input
                     type="text"
                     value={webhookRepo}
@@ -107,15 +119,24 @@ export function SettingsPage() {
                 </a>
               </div>
 
-              <div className="mt-4 space-y-2 text-xs text-slate-400 dark:text-slate-500">
-                <div>Payload URL: <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-900">https://your-domain/api/pullcat/v1/webhooks/github</code></div>
-                <div>事件类型: <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-900">Pull requests</code></div>
+              <div className="mt-4 grid gap-3 text-xs text-slate-400 dark:text-slate-500 sm:grid-cols-2">
+                <div className="rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-900/60">
+                  <div className="font-medium text-slate-500 dark:text-slate-400">Payload URL</div>
+                  <code className="mt-2 block break-all rounded bg-slate-100 px-2 py-1.5 text-[11px] dark:bg-slate-950">https://your-domain/api/pullcat/v1/webhooks/github</code>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-900/60">
+                  <div className="font-medium text-slate-500 dark:text-slate-400">事件类型</div>
+                  <code className="mt-2 inline-flex rounded bg-slate-100 px-2 py-1.5 text-[11px] dark:bg-slate-950">Pull requests</code>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">自动发布</div>
+            <div className="space-y-1">
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">自动发布</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">审查结束后直接回写 PR 评论</div>
+            </div>
             <div className="mt-4 space-y-3">
               {autoPublishRepos.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-500">
@@ -155,7 +176,7 @@ export function SettingsPage() {
                   添加
                 </button>
               </div>
-              <div className="text-xs text-slate-400 dark:text-slate-500">审查结束后会直接回写 PR 评论</div>
+              <div className="text-xs leading-5 text-slate-400 dark:text-slate-500">开启后，新审查完成时会自动发布结果，适合固定接入的仓库</div>
             </div>
           </div>
         </div>

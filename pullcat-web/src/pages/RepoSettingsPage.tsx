@@ -120,7 +120,7 @@ export function RepoSettingsPage() {
   }
 
   const tabs: { key: Tab; label: string; badge?: number }[] = [
-    { key: 'rules', label: '规则列表' },
+    { key: 'rules', label: '规则' },
     { key: 'suggestions', label: 'AI 建议', badge: suggestions.filter(s => !addedIds.has(s.id!)).length },
   ]
 
@@ -131,10 +131,7 @@ export function RepoSettingsPage() {
       <section className="surface-card overflow-hidden">
         <div className="grid gap-0 md:grid-cols-[minmax(0,1.18fr)_18rem]">
           <div className="px-5 py-5 md:px-6 md:py-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
 
             <div className="mt-4 flex flex-wrap gap-2">
               {tabs.map(tab => (
@@ -231,7 +228,7 @@ export function RepoSettingsPage() {
                           onClick={adoptAllSuggestions}
                           className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
                         >
-                          一键添加 {pendingSuggestions.length} 条
+                          添加全部建议
                         </button>
                       </div>
                     )}
@@ -285,7 +282,7 @@ export function RepoSettingsPage() {
           </div>
 
           <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">工作台摘要</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">规则概览</div>
             <div className="mt-4 space-y-3">
               <div className="rounded-xl bg-white px-4 py-4 dark:bg-slate-950/70">
                 <div className="text-sm font-medium text-slate-500 dark:text-slate-400">现有规则</div>

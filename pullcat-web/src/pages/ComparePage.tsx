@@ -39,18 +39,15 @@ export function ComparePage() {
       <div className="page-shell py-8">
         <section className="surface-card px-5 py-10 text-center md:px-6">
           <div className="mx-auto max-w-md space-y-4">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">选择两次审查再比较</h1>
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">选择两次审查</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              从历史记录里勾选两次结果，这里只负责看变化。
+              先从审查历史中选中两次结果，再开始对比。
             </p>
             <Link
               to="/history"
               className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
             >
-              前往审查历史
+              查看审查历史
             </Link>
           </div>
         </section>
@@ -81,16 +78,16 @@ export function ComparePage() {
   const issueDelta = (data.totalIssues2 ?? 0) - (data.totalIssues1 ?? 0)
   const reviewCards = [
     {
-      label: 'Review A',
+      label: '第一次审查',
       url: data.review1?.prUrl || r1,
       value: data.totalIssues1 ?? '-',
-      hint: '基线结果',
+      hint: '对比起点',
     },
     {
-      label: 'Review B',
+      label: '第二次审查',
       url: data.review2?.prUrl || r2,
       value: data.totalIssues2 ?? '-',
-      hint: '当前结果',
+      hint: '对比终点',
     },
   ]
 
@@ -105,10 +102,7 @@ export function ComparePage() {
       <section className="surface-card overflow-hidden">
         <div className="grid gap-0 md:grid-cols-[minmax(0,1.12fr)_18rem]">
           <div className="px-5 py-5 md:px-6 md:py-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">两次审查，差异一眼看清</h1>
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">对比结果</h1>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               {reviewCards.map((card) => (
@@ -172,7 +166,7 @@ export function ComparePage() {
               to="/history"
               className="mt-4 inline-flex text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
             >
-              返回审查历史
+              查看审查历史
             </Link>
           </div>
         </div>

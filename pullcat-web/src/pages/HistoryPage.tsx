@@ -196,7 +196,7 @@ export function HistoryPage() {
               to="/"
               className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
             >
-              开始第一次审查
+              开始审查
             </Link>
           </div>
         </section>
