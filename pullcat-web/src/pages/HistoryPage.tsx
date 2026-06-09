@@ -126,22 +126,9 @@ export function HistoryPage() {
 
   return (
     <div className="page-shell space-y-4 py-8 animate-fade-in">
-      <section className="flex items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">History</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">审查历史</h1>
-        </div>
-        <Link
-          to="/"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
-        >
-          新建审查
-        </Link>
-      </section>
-
       <section className="surface-card overflow-hidden">
-        <div className="grid gap-4 px-5 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:px-6">
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <div className="grid gap-3 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:px-6">
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-800 dark:bg-slate-900/50">
             <input
               type="text"
               value={repoInput}
@@ -150,31 +137,29 @@ export function HistoryPage() {
                 if (e.key === 'Enter') applyRepoFilter()
               }}
               placeholder="筛选仓库，例如 owner/repo"
-              className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950/60 dark:text-white"
+              className="min-h-10 min-w-0 flex-1 rounded-xl bg-white px-4 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 dark:bg-slate-950/70 dark:text-white"
             />
-            <button
-              type="button"
-              onClick={applyRepoFilter}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900/70"
-            >
-              应用
-            </button>
-            {repo ? (
+            {repo && (
               <button
                 type="button"
                 onClick={clearRepoFilter}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/70"
+                className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl px-3 text-sm font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-700 dark:text-slate-300 dark:hover:bg-slate-950/70 dark:hover:text-white"
               >
                 清除
               </button>
-            ) : (
-              <div className="hidden md:block" />
             )}
+            <button
+              type="button"
+              onClick={applyRepoFilter}
+              className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-200 dark:hover:bg-slate-900/80"
+            >
+              应用
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 md:justify-end">
             {compareMode && (
-              <span className="inline-flex min-h-11 items-center rounded-xl bg-slate-100 px-4 text-sm font-medium text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">
+              <span className="inline-flex min-h-10 items-center rounded-xl bg-slate-100 px-3 text-sm font-medium text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">
                 已选 {selectedIds.size}/2
               </span>
             )}
@@ -183,7 +168,7 @@ export function HistoryPage() {
                 type="button"
                 disabled={selectedIds.size !== 2}
                 onClick={startCompare}
-                className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-35 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
+                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:pointer-events-none disabled:opacity-35 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
               >
                 开始对比
               </button>
@@ -191,7 +176,7 @@ export function HistoryPage() {
             <button
               type="button"
               onClick={toggleCompareMode}
-              className={`inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors ${
+              className={`inline-flex min-h-10 items-center justify-center rounded-xl px-4 text-sm font-semibold transition-colors ${
                 compareMode
                   ? 'border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-900/70'
                   : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:hover:bg-emerald-950/50'
@@ -253,7 +238,6 @@ export function HistoryPage() {
                         >
                           {review.prMetadata?.title || review.prUrl}
                         </Link>
-                        <StatusBadge status={review.status} />
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -265,13 +249,19 @@ export function HistoryPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 md:justify-end">
+                    <div className="flex items-center gap-3 md:min-w-28 md:justify-end">
+                      <div className="flex items-center">
+                        <StatusBadge status={review.status} />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setDeleteTarget(review.id)}
-                        className="text-sm font-medium text-red-500 transition-colors hover:text-red-700"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-red-600 dark:text-slate-500 dark:hover:bg-slate-900/70 dark:hover:text-red-400"
+                        aria-label="删除审查记录"
                       >
-                        删除
+                        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                          <path d="M6.5 7.5V14.25M10 7.5V14.25M13.5 7.5V14.25M3.75 5.25H16.25M12.75 5.25V4.5C12.75 3.81 12.19 3.25 11.5 3.25H8.5C7.81 3.25 7.25 3.81 7.25 4.5V5.25M5.5 5.25H14.5V15.25C14.5 15.94 13.94 16.5 13.25 16.5H6.75C6.06 16.5 5.5 15.94 5.5 15.25V5.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </button>
                     </div>
                   </div>

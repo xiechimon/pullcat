@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { StatusBadge } from '../components/StatusBadge'
 import type { ReviewSessionRespDTO, Severity, StatsOverviewRespDTO } from '../types/review'
@@ -14,7 +14,6 @@ export function DashboardPage() {
   const [recentReviews, setRecentReviews] = useState<ReviewSessionRespDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -77,19 +76,6 @@ export function DashboardPage() {
 
   return (
     <div className="page-shell space-y-4 py-8 animate-fade-in">
-      <section className="flex items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Dashboard</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">仪表盘</h1>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-800"
-        >
-          新建审查
-        </button>
-      </section>
-
       <section className="surface-card overflow-hidden">
         {latestReview ? (
           <div className="grid gap-0 md:grid-cols-[minmax(0,1.28fr)_14.5rem]">

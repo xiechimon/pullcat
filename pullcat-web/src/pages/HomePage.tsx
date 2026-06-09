@@ -23,13 +23,6 @@ export function HomePage() {
 
   return (
     <div className="page-shell space-y-4 py-8 animate-fade-in">
-      <section className="flex items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Review</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">新建审查</h1>
-        </div>
-      </section>
-
       <section className="surface-card overflow-hidden home-entry-panel">
         <div className="grid gap-0 md:grid-cols-[minmax(0,1.22fr)_15rem]">
           <div className="px-5 py-5 md:px-6 md:py-6">

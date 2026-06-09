@@ -20,7 +20,6 @@ describe('HomePage', () => {
 
   it('renders an input-first review workspace', () => {
     renderHomePage()
-    expect(screen.getByRole('heading', { name: '新建审查', level: 1 })).toBeInTheDocument()
     expect(screen.getByText('贴入 PR，立即开始')).toBeInTheDocument()
     expect(screen.getByText('GitHub Pull Request')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('粘贴 GitHub PR 链接')).toBeInTheDocument()

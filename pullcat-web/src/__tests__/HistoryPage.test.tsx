@@ -37,7 +37,7 @@ describe('HistoryPage', () => {
 
     renderHistory()
 
-    expect(await screen.findByRole('heading', { name: '审查历史', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByPlaceholderText('筛选仓库，例如 owner/repo')).toBeInTheDocument()
     expect(screen.getByText('暂无审查记录')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '开始第一次审查' })).toBeInTheDocument()
   })
@@ -197,8 +197,8 @@ describe('HistoryPage', () => {
 
     renderHistory()
 
-    fireEvent.click(await screen.findByRole('button', { name: '删除' }))
-    fireEvent.click(screen.getByRole('button', { name: '删除', hidden: false }))
+    fireEvent.click(await screen.findByRole('button', { name: '删除审查记录' }))
+    fireEvent.click(screen.getByRole('button', { name: '删除' }))
 
     expect(vi.mocked(deleteReview)).toHaveBeenCalledWith('review-1')
   })
