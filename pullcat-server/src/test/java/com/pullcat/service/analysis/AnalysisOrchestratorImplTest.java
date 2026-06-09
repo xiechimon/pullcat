@@ -78,12 +78,18 @@ class AnalysisOrchestratorImplTest {
         String tree = "./\n  README.md\n  CHANGELOG.md\n  LICENSE.md\n  AGENTS.md\n\nsrc/\n  Main.java\n";
         List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
         assertThat(result).containsExactly("AGENTS.md");
-        assertThat(result).doesNotContain("README.md", "CHANGELOG.md", "LICENSE.md");
+    }
+
+    @Test
+    void detectConventionCandidates_returnsAllWhenFewerThanThree() {
+        String tree = "./\n  AGENTS.md\n  CONTRIBUTING.md\n\n";
+        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        assertThat(result).containsExactly("AGENTS.md", "CONTRIBUTING.md");
     }
 
     @Test
     void detectConventionCandidates_sortsByPriorityThenLimitsToThree() {
-        // CONTRIBUTING.md 优先级低于 AGENTS.md/CLAUDE.md
+        // 优先级：AGENTS.md(0) > CLAUDE.md(1) > CONTRIBUTING.md(5)；DEVELOPMENT.md(8)/CONVENTIONS.md(6) 被截断
         String tree = "./\n  CONTRIBUTING.md\n  CLAUDE.md\n  AGENTS.md\n  DEVELOPMENT.md\n  CONVENTIONS.md\n\n";
         List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
         assertThat(result).hasSize(3);
