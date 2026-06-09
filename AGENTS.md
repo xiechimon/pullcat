@@ -273,14 +273,14 @@ GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，�
 
 ### API 路径规范
 
-当前后端 API 以 `/api` 为统一前缀，例如：
+当前后端 API 以 `/api/pullcat/v1` 为统一前缀，例如：
 
 ```text
-/api/repos
-/api/reviews
-/api/reviews/{id}/sse
-/api/stats/overview
-/api/user
+/api/pullcat/v1/repos
+/api/pullcat/v1/reviews
+/api/pullcat/v1/reviews/{id}/sse
+/api/pullcat/v1/stats/overview
+/api/pullcat/v1/user
 ```
 
 约束：
