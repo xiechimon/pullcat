@@ -1,159 +1,197 @@
 package com.pullcat.service.analysis;
 
-import com.pullcat.common.constant.RedisKeys;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pullcat.common.convention.exception.ServiceException;
+import com.pullcat.dao.entity.RepoAutoPublishDO;
+import com.pullcat.dao.entity.ReviewDO;
+import com.pullcat.dao.mapper.RepoAutoPublishMapper;
+import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 
 @Repository
 public class ReviewRepository {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final ReviewMapper reviewMapper;
 
-    public ReviewRepository(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    private final RepoAutoPublishMapper repoAutoPublishMapper;
+
+    private final ObjectMapper objectMapper;
+
+    public ReviewRepository(ReviewMapper reviewMapper,
+                            RepoAutoPublishMapper repoAutoPublishMapper,
+                            ObjectMapper objectMapper) {
+        this.reviewMapper = reviewMapper;
+        this.repoAutoPublishMapper = repoAutoPublishMapper;
+        this.objectMapper = objectMapper;
     }
 
     public void save(ReviewSessionRespDTO session) {
-        redisTemplate.opsForValue().set(RedisKeys.reviewKey(session.getId()), session, RedisKeys.REVIEW_TTL);
-        redisTemplate.opsForZSet().add(RedisKeys.REVIEW_INDEX, session.getId(), session.getCreatedAt().toEpochMilli());
-
-        if (session.getRepositoryFullName() != null) {
-            String[] parts = session.getRepositoryFullName().split("/", 2);
-            redisTemplate.opsForZSet().add(RedisKeys.reviewRepoKey(parts[0], parts[1]),
-                    session.getId(), session.getCreatedAt().toEpochMilli());
-        }
-
-        if (session.getUserId() != null) {
-            redisTemplate.opsForZSet().add(RedisKeys.reviewUserKey(session.getUserId()),
-                    session.getId(), session.getCreatedAt().toEpochMilli());
+        ReviewDO reviewDO = toDO(session);
+        if (reviewMapper.selectById(session.getId()) == null) {
+            reviewMapper.insert(reviewDO);
         } else {
-            redisTemplate.opsForZSet().add(RedisKeys.REVIEW_ANONYMOUS_INDEX,
-                    session.getId(), session.getCreatedAt().toEpochMilli());
+            reviewMapper.updateById(reviewDO);
         }
     }
 
     public ReviewSessionRespDTO findById(String id) {
-        Object obj = redisTemplate.opsForValue().get(RedisKeys.reviewKey(id));
-        if (obj instanceof ReviewSessionRespDTO) {
-            return (ReviewSessionRespDTO) obj;
-        }
-        return null;
+        return toDTO(reviewMapper.selectById(id));
     }
 
     public List<ReviewSessionRespDTO> findAll(int page, int size) {
-        long start = (long) page * size;
-        long end = start + size - 1;
-
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_INDEX, start, end);
-        return fetchByIds(ids);
+        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+                        .orderByDesc(ReviewDO::getCreatedAt)
+                        .last(limitClause(page, size)))
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public List<ReviewSessionRespDTO> findByRepo(String fullName, int page, int size) {
-        long start = (long) page * size;
-        long end = start + size - 1;
-
-        String[] parts = fullName.split("/", 2);
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(
-                RedisKeys.reviewRepoKey(parts[0], parts[1]), start, end);
-        return fetchByIds(ids);
+        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+                        .eq(ReviewDO::getRepositoryFullName, fullName)
+                        .orderByDesc(ReviewDO::getCreatedAt)
+                        .last(limitClause(page, size)))
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public List<ReviewSessionRespDTO> findByLogin(String login, int page, int size) {
-        long start = (long) page * size;
-        long end = start + size - 1;
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.reviewUserKey(login), start, end);
-        return fetchByIds(ids);
+        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+                        .eq(ReviewDO::getUserId, login)
+                        .orderByDesc(ReviewDO::getCreatedAt)
+                        .last(limitClause(page, size)))
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public long countByLogin(String login) {
-        Long s = redisTemplate.opsForZSet().size(RedisKeys.reviewUserKey(login));
-        return s != null ? s : 0;
+        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+                .eq(ReviewDO::getUserId, login));
     }
 
     public List<ReviewSessionRespDTO> findAnonymous(int page, int size) {
-        long start = (long) page * size;
-        long end = start + size - 1;
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_ANONYMOUS_INDEX, start, end);
-        return fetchByIds(ids);
+        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+                        .isNull(ReviewDO::getUserId)
+                        .orderByDesc(ReviewDO::getCreatedAt)
+                        .last(limitClause(page, size)))
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public long countAnonymous() {
-        Long s = redisTemplate.opsForZSet().size(RedisKeys.REVIEW_ANONYMOUS_INDEX);
-        return s != null ? s : 0;
+        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+                .isNull(ReviewDO::getUserId));
     }
 
     public long count() {
-        Long size = redisTemplate.opsForZSet().size(RedisKeys.REVIEW_INDEX);
-        return size != null ? size : 0;
+        return reviewMapper.selectCount(null);
     }
 
     public long countByRepo(String fullName) {
-        String[] parts = fullName.split("/", 2);
-        Long size = redisTemplate.opsForZSet().size(RedisKeys.reviewRepoKey(parts[0], parts[1]));
-        return size != null ? size : 0;
+        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+                .eq(ReviewDO::getRepositoryFullName, fullName));
     }
 
     public List<ReviewSessionRespDTO> findAllReviews() {
-        Set<Object> ids = redisTemplate.opsForZSet().reverseRange(RedisKeys.REVIEW_INDEX, 0, -1);
-        return fetchByIds(ids);
-    }
-
-    private List<ReviewSessionRespDTO> fetchByIds(Set<Object> ids) {
-        List<ReviewSessionRespDTO> results = new ArrayList<>();
-        if (ids == null || ids.isEmpty()) return results;
-
-        for (Object id : ids) {
-            ReviewSessionRespDTO session = findById(id.toString());
-            if (session != null) {
-                results.add(session);
-            }
-        }
-        return results;
+        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+                        .orderByDesc(ReviewDO::getCreatedAt))
+                .stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     public void delete(String id) {
-        ReviewSessionRespDTO session = findById(id);
-        if (session != null) {
-            if (session.getRepositoryFullName() != null) {
-                String[] parts = session.getRepositoryFullName().split("/", 2);
-                redisTemplate.opsForZSet().remove(RedisKeys.reviewRepoKey(parts[0], parts[1]), id);
-            }
-            if (session.getUserId() != null) {
-                redisTemplate.opsForZSet().remove(RedisKeys.reviewUserKey(session.getUserId()), id);
-            } else {
-                redisTemplate.opsForZSet().remove(RedisKeys.REVIEW_ANONYMOUS_INDEX, id);
-            }
-        }
-        redisTemplate.opsForZSet().remove(RedisKeys.REVIEW_INDEX, id);
-        redisTemplate.delete(RedisKeys.reviewKey(id));
+        reviewMapper.deleteById(id);
     }
 
     public boolean exists(String id) {
-        return redisTemplate.hasKey(RedisKeys.reviewKey(id));
+        return reviewMapper.selectById(id) != null;
     }
 
     public boolean isAutoPublishEnabled(String owner, String repo) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(RedisKeys.autoPublishKey(owner, repo)));
+        RepoAutoPublishDO config = repoAutoPublishMapper.selectById(owner + "/" + repo);
+        return config != null && config.isEnabled();
     }
 
     public void setAutoPublishEnabled(String owner, String repo, boolean enabled) {
+        String fullName = owner + "/" + repo;
         if (enabled) {
-            redisTemplate.opsForValue().set(RedisKeys.autoPublishKey(owner, repo), "1");
+            RepoAutoPublishDO config = new RepoAutoPublishDO(owner, repo, true);
+            RepoAutoPublishDO existing = repoAutoPublishMapper.selectById(fullName);
+            if (existing != null) {
+                config.setCreatedAt(existing.getCreatedAt());
+            }
+            config.setUpdatedAt(Instant.now());
+            if (existing == null) {
+                repoAutoPublishMapper.insert(config);
+            } else {
+                repoAutoPublishMapper.updateById(config);
+            }
         } else {
-            redisTemplate.delete(RedisKeys.autoPublishKey(owner, repo));
+            repoAutoPublishMapper.deleteById(fullName);
         }
     }
 
     public List<String> listAutoPublishRepos() {
-        Set<String> keys = redisTemplate.keys(RedisKeys.REPO_AUTO_PUBLISH_PREFIX + "*");
-        if (keys == null) return List.of();
-        return keys.stream()
-                .map(k -> k.substring(RedisKeys.REPO_AUTO_PUBLISH_PREFIX.length()))
+        return repoAutoPublishMapper.selectList(new LambdaQueryWrapper<RepoAutoPublishDO>()
+                        .eq(RepoAutoPublishDO::isEnabled, true)
+                        .orderByAsc(RepoAutoPublishDO::getFullName))
+                .stream()
+                .map(RepoAutoPublishDO::getFullName)
                 .toList();
+    }
+
+    private ReviewDO toDO(ReviewSessionRespDTO session) {
+        ReviewDO reviewDO = new ReviewDO();
+        reviewDO.setId(session.getId());
+        reviewDO.setPrUrl(session.getPrUrl());
+        reviewDO.setRepositoryFullName(session.getRepositoryFullName());
+        reviewDO.setUserId(session.getUserId());
+        reviewDO.setStatus(session.getStatus() == null ? null : session.getStatus().name());
+        reviewDO.setPublishedCommentId(session.getPublishedCommentId());
+        reviewDO.setCreatedAt(session.getCreatedAt());
+        reviewDO.setCompletedAt(session.getCompletedAt());
+        reviewDO.setUpdatedAt(Instant.now());
+        reviewDO.setSnapshotJson(writeSnapshot(session));
+        return reviewDO;
+    }
+
+    private ReviewSessionRespDTO toDTO(ReviewDO reviewDO) {
+        if (reviewDO == null) {
+            return null;
+        }
+        return readSnapshot(reviewDO.getSnapshotJson());
+    }
+
+    private String writeSnapshot(ReviewSessionRespDTO session) {
+        try {
+            return objectMapper.writeValueAsString(session);
+        } catch (JsonProcessingException ex) {
+            throw new ServiceException("B500", "审查会话序列化失败");
+        }
+    }
+
+    private ReviewSessionRespDTO readSnapshot(String snapshotJson) {
+        try {
+            return objectMapper.readValue(snapshotJson, ReviewSessionRespDTO.class);
+        } catch (JsonProcessingException ex) {
+            throw new ServiceException("B500", "审查会话反序列化失败");
+        }
+    }
+
+    private String limitClause(int page, int size) {
+        long offset = (long) page * size;
+        return "LIMIT " + offset + "," + size;
     }
 }

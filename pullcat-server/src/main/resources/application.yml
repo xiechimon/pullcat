@@ -13,11 +13,20 @@ spring:
           model: deepseek-chat
 
   # --- Redis 配置 ---
-  # Redis 用于存储 Review 会话状态（自动过期）。
+  # Redis 主要用于缓存与限流。
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+
+  # --- MySQL 配置 ---
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/pullcat?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   # --- OAuth2 登录配置 ---
   security:
@@ -91,3 +100,7 @@ management:
     export:
       prometheus:
         enabled: true
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

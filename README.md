@@ -142,14 +142,22 @@ brew install redis && brew services start redis
 docker run -d -p 6379:6379 redis:7-alpine
 ```
 
-### 3. 启动后端
+### 3. 初始化 MySQL
+
+```bash
+mysql -uroot -p < sql/schema.sql
+```
+
+当前 `Repo`、`Rule`、`User`、`Review` 会话和自动发布开关均使用 MySQL 持久化，Redis 主要用于缓存与限流。
+
+### 4. 启动后端
 
 ```bash
 cd pullcat-server && ./mvnw spring-boot:run
 # → http://localhost:8080
 ```
 
-### 4. 启动前端
+### 5. 启动前端
 
 ```bash
 cd pullcat-web && npm install && npm run dev
