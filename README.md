@@ -189,7 +189,8 @@ pullcat/
 │       ├── dao/entity/               持久化对象
 │       ├── dto/req                   请求 DTO
 │       ├── dto/resp                  响应 DTO
-│       ├── remote/                   GitHub API 调用与第三方 DTO
+│       ├── remote/                   第三方调用接口与 DTO
+│       ├── remote/impl/              第三方调用实现
 │       ├── service/                  应用服务接口，统一使用 *Service 命名
 │       ├── service/impl/             应用服务实现，统一使用 *ServiceImpl 命名
 │       ├── service/analysis/         编排、上下文、规则、存储访问等领域接口

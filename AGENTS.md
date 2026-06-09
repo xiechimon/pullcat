@@ -259,11 +259,12 @@ Redis Key 常量统一放在 `common.constant.RedisKeys`。
 
 ### 远程调用
 
-GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 处理。
+GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，具体实现收敛在 `remote.impl`。
 
 约束：
 
 - 第三方 API 访问代码集中在 `remote` 层
+- `remote` 根目录优先定义接口，具体实现放到 `remote.impl`
 - 认证、重试、限流、错误翻译优先在远程调用层封装
 - 不要在业务层直接 new `WebClient` 或拼 GitHub API URL
 
