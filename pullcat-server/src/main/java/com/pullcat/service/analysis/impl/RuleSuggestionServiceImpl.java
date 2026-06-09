@@ -2,12 +2,13 @@ package com.pullcat.service.analysis.impl;
 
 import com.pullcat.common.enums.RuleType;
 import com.pullcat.common.enums.Severity;
+import com.pullcat.dao.mapper.RuleMapper;
 import com.pullcat.dao.entity.RuleDO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.RuleSuggestionService;
-import com.pullcat.service.impl.RuleServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,16 +34,16 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
     private static final Duration CACHE_TTL = Duration.ofHours(1);
 
     private final ReviewSessionService reviewSessionService;
-    private final RuleServiceImpl ruleService;
+    private final RuleMapper ruleMapper;
     private final ChatClient lightChatClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
     public RuleSuggestionServiceImpl(ReviewSessionService reviewSessionService,
-                                     RuleServiceImpl ruleService,
+                                     RuleMapper ruleMapper,
                                      @Qualifier("lightChatClient") ChatClient lightChatClient,
                                      RedisTemplate<String, Object> redisTemplate) {
         this.reviewSessionService = reviewSessionService;
-        this.ruleService = ruleService;
+        this.ruleMapper = ruleMapper;
         this.lightChatClient = lightChatClient;
         this.redisTemplate = redisTemplate;
     }
@@ -111,7 +112,9 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
     public List<RuleDO> getSuggestions(String owner, String repo) {
         List<RuleDO> aiRules = suggestRules(owner, repo);
 
-        List<RuleDO> existingRules = ruleService.findRules(owner, repo);
+        List<RuleDO> existingRules = ruleMapper.selectList(new LambdaQueryWrapper<RuleDO>()
+                                                                   .eq(RuleDO::getRepoOwner, owner)
+                                                                   .eq(RuleDO::getRepoName, repo));
         Set<String> existingNames = existingRules.stream()
                 .map(RuleDO::getName)
                 .filter(Objects::nonNull)
