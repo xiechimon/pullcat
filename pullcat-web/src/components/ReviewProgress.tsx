@@ -25,10 +25,10 @@ function getHighestSeverity(result?: AnalysisResultRespDTO | null): Severity | n
 function getTaskStyle(task: TaskStateRespDTO, result?: AnalysisResultRespDTO | null, isActive: boolean = false) {
   if (task.status === 'PENDING') {
     return {
-      icon: <span className="animate-pulse">○</span>,
+      icon: <span className="animate-pulse opacity-40">○</span>,
       color: 'text-gray-400 dark:text-gray-500',
-      bg: isActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-900',
-      border: isActive ? 'border-gray-400' : 'border-gray-200 dark:border-gray-800',
+      bg: isActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900',
+      border: isActive ? 'border-gray-400' : 'border-gray-200 dark:border-gray-700',
       ring: isActive ? 'ring-2 ring-gray-200' : ''
     }
   }
@@ -119,11 +119,9 @@ function AnalysisTaskCard({ task, result, isActive, onClick }: AnalysisTaskCardP
         <p className={`text-sm font-medium w-full truncate ${isActive ? style.color : 'text-gray-700 dark:text-gray-300'}`}>
           {task.label}
         </p>
-        {task.model && (
-          <p className="text-[11px] w-full truncate mt-0.5 opacity-70 text-gray-500 dark:text-gray-400">
-            {task.model}
-          </p>
-        )}
+        <p className="text-[11px] h-4 w-full truncate mt-0.5 text-gray-400 dark:text-gray-500" style={{ opacity: task.model ? 0.7 : 0 }}>
+          {task.model}
+        </p>
       </div>
     </button>
   )

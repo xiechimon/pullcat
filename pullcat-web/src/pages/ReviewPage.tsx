@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
-import { useParams, useLocation } from 'react-router-dom'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ReviewProgress } from '../components/ReviewProgress'
 import { ResultSection } from '../components/ResultSection'
@@ -20,6 +20,7 @@ interface NavigateState {
 export function ReviewPage() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   const navigateState = location.state as NavigateState | null
 
   const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue, submitFeedback } = useReviewReducer()
@@ -67,6 +68,15 @@ export function ReviewPage() {
   }, [navigateState, id, resumeReview, loadReview])
 
   const currentReviewId = id || reviewId
+
+  // 分析完成后清除 sseUrl，防止刷新时重走 resumeReview 路径
+  const clearedRef = useRef(false)
+  useEffect(() => {
+    if (!isAnalyzing && !clearedRef.current && navigateState?.sseUrl && currentReviewId) {
+      clearedRef.current = true
+      navigate(`/review/${currentReviewId}`, { replace: true, state: null })
+    }
+  }, [isAnalyzing, navigateState, currentReviewId, navigate])
 
   const { selectedCount, totalCount, selectedIssueIds } = useMemo(() => {
     let sel = 0
@@ -130,7 +140,7 @@ export function ReviewPage() {
   const completedTasks = ANALYSIS_TYPES.filter(
     (t) => results[t]?.status === 'COMPLETED' || results[t]?.status === 'FAILED'
   )
-  const hasReview = isAnalyzing || completedTasks.length > 0
+  const hasReview = isAnalyzing || completedTasks.length > 0 || !!(navigateState?.sseUrl)
 
   const activeDiff = rawDiff || ''
 
