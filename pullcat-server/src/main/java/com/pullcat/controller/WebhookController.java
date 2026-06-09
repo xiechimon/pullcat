@@ -9,7 +9,6 @@ import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.analysis.WebhookService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,7 +24,7 @@ public class WebhookController {
     }
 
     @PostMapping("/github")
-    public ResponseEntity<Result<WebhookRespDTO>> handleGitHubWebhook(
+    public Result<WebhookRespDTO> handleGitHubWebhook(
             @RequestHeader("X-GitHub-Event") String eventType,
             @RequestBody WebhookEventReqDTO requestParam) {
 
@@ -35,7 +34,7 @@ public class WebhookController {
             WebhookRespDTO response = new WebhookRespDTO();
             response.setStatus("ignored");
             response.setReason("not a PR event");
-            return ResponseEntity.ok(Results.success(response));
+            return Results.success(response);
         }
 
         String action = requestParam.getAction();
@@ -43,7 +42,7 @@ public class WebhookController {
             WebhookRespDTO response = new WebhookRespDTO();
             response.setStatus("ignored");
             response.setAction(action);
-            return ResponseEntity.ok(Results.success(response));
+            return Results.success(response);
         }
 
         try {
@@ -52,7 +51,7 @@ public class WebhookController {
             WebhookRespDTO response = new WebhookRespDTO();
             response.setStatus("review_triggered");
             response.setPrUrl(prUrl);
-            return ResponseEntity.ok(Results.success(response));
+            return Results.success(response);
         } catch (Exception e) {
             log.error("Webhook processing failed: {}", e.getMessage(), e);
             throw new ServiceException(CommonErrorCodeEnum.SERVICE_ERROR.code(), e.getMessage() != null ? e.getMessage() : "Webhook 处理失败");

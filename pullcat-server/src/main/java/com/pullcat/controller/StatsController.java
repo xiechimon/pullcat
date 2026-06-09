@@ -5,7 +5,6 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.resp.RepoStatsRespDTO;
 import com.pullcat.dto.resp.StatsOverviewRespDTO;
 import com.pullcat.service.analysis.StatsService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,13 +18,13 @@ public class StatsController {
     }
 
     @GetMapping("/stats/overview")
-    public ResponseEntity<Result<StatsOverviewRespDTO>> getOverview() {
-        return ResponseEntity.ok(Results.success(statsService.getOverview()));
+    public Result<StatsOverviewRespDTO> getOverview() {
+        return Results.success(statsService.getOverview());
     }
 
     @GetMapping("/repos/{owner}/{repo}/stats")
-    public ResponseEntity<Result<RepoStatsRespDTO>> getRepoStats(
+    public Result<RepoStatsRespDTO> getRepoStats(
             @PathVariable String owner, @PathVariable String repo) {
-        return ResponseEntity.ok(Results.success(statsService.getRepoStats(owner, repo)));
+        return Results.success(statsService.getRepoStats(owner, repo));
     }
 }

@@ -9,7 +9,6 @@ import com.pullcat.dto.req.CreateRepoReqDTO;
 import com.pullcat.dto.resp.DeletedRespDTO;
 import com.pullcat.dto.resp.RepoRespDTO;
 import com.pullcat.service.analysis.RepoRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,12 +24,12 @@ public class RepoController {
     }
 
     @GetMapping
-    public ResponseEntity<Result<List<RepoRespDTO>>> listRepos() {
-        return ResponseEntity.ok(Results.success(repoRepository.findAll().stream().map(this::toRepoRespDTO).toList()));
+    public Result<List<RepoRespDTO>> listRepos() {
+        return Results.success(repoRepository.findAll().stream().map(this::toRepoRespDTO).toList());
     }
 
     @PostMapping
-    public ResponseEntity<Result<RepoRespDTO>> addRepo(@RequestBody CreateRepoReqDTO requestParam) {
+    public Result<RepoRespDTO> addRepo(@RequestBody CreateRepoReqDTO requestParam) {
         String owner = requestParam.getOwner();
         String repo = requestParam.getRepo();
         if (owner == null || repo == null) {
@@ -42,25 +41,25 @@ public class RepoController {
             r.setDescription(requestParam.getDescription());
         }
         repoRepository.save(r);
-        return ResponseEntity.ok(Results.success(toRepoRespDTO(r)));
+        return Results.success(toRepoRespDTO(r));
     }
 
     @DeleteMapping("/{owner}/{repo}")
-    public ResponseEntity<Result<DeletedRespDTO>> removeRepo(@PathVariable String owner, @PathVariable String repo) {
+    public Result<DeletedRespDTO> removeRepo(@PathVariable String owner, @PathVariable String repo) {
         if (!repoRepository.exists(owner, repo)) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
         repoRepository.delete(owner, repo);
-        return ResponseEntity.ok(Results.success(new DeletedRespDTO(true)));
+        return Results.success(new DeletedRespDTO(true));
     }
 
     @GetMapping("/{owner}/{repo}")
-    public ResponseEntity<Result<RepoRespDTO>> getRepo(@PathVariable String owner, @PathVariable String repo) {
+    public Result<RepoRespDTO> getRepo(@PathVariable String owner, @PathVariable String repo) {
         RepoDO r = repoRepository.findById(owner + "/" + repo);
         if (r == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
-        return ResponseEntity.ok(Results.success(toRepoRespDTO(r)));
+        return Results.success(toRepoRespDTO(r));
     }
 
     private RepoRespDTO toRepoRespDTO(RepoDO repoDO) {

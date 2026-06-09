@@ -9,7 +9,6 @@ import com.pullcat.dto.resp.*;
 import com.pullcat.service.analysis.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -45,61 +44,57 @@ public class ReviewController {
      * 创建审查会话并返回 SSE 地址
      */
     @PostMapping
-    public ResponseEntity<Result<CreateReviewRespDTO>> createReview(
+    public Result<CreateReviewRespDTO> createReview(
             @RequestBody CreateReviewReqDTO requestParam,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(Results.success(
-                reviewService.createReview(requestParam.getPrUrl(), extractLogin(principal))));
+        return Results.success(reviewService.createReview(requestParam.getPrUrl(), extractLogin(principal)));
     }
 
     /**
      * 分页查询审查列表
      */
     @GetMapping
-    public ResponseEntity<Result<ReviewListRespDTO>> listReviews(
+    public Result<ReviewListRespDTO> listReviews(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String repo,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(Results.success(
-                reviewService.listReviews(page, size, repo, extractLogin(principal))));
+        return Results.success(reviewService.listReviews(page, size, repo, extractLogin(principal)));
     }
 
     /**
      * 获取单条审查详情
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Result<ReviewSessionRespDTO>> getReview(
+    public Result<ReviewSessionRespDTO> getReview(
             @PathVariable String id,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(Results.success(
-                reviewService.getReview(id, extractLogin(principal))));
+        return Results.success(reviewService.getReview(id, extractLogin(principal)));
     }
 
     /**
      * 删除审查记录
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Result<DeletedRespDTO>> deleteReview(
+    public Result<DeletedRespDTO> deleteReview(
             @PathVariable String id,
             @AuthenticationPrincipal OAuth2User principal) {
         reviewService.deleteReview(id, extractLogin(principal));
-        return ResponseEntity.ok(Results.success(new DeletedRespDTO(true)));
+        return Results.success(new DeletedRespDTO(true));
     }
 
     /**
      * 提交问题反馈（接受或拒绝）
      */
     @PostMapping("/{reviewId}/issues/{issueId}/feedback")
-    public ResponseEntity<Result<StatusRespDTO>> submitFeedback(
+    public Result<StatusRespDTO> submitFeedback(
             @PathVariable String reviewId,
             @PathVariable String issueId,
             @RequestBody IssueFeedbackReqDTO requestParam,
             @AuthenticationPrincipal OAuth2User principal) {
         boolean accepted = Boolean.TRUE.equals(requestParam.getAccepted());
-        return ResponseEntity.ok(Results.success(
-                reviewService.submitFeedback(reviewId, issueId, accepted,
-                        requestParam.getReason(), extractLogin(principal))));
+        return Results.success(reviewService.submitFeedback(reviewId, issueId, accepted,
+                requestParam.getReason(), extractLogin(principal)));
     }
 
     /**
@@ -116,11 +111,10 @@ public class ReviewController {
      * 将审查结果发布到 PR 评论
      */
     @PostMapping("/{id}/publish")
-    public ResponseEntity<Result<PublishReviewRespDTO>> publishReview(
+    public Result<PublishReviewRespDTO> publishReview(
             @PathVariable String id,
             @RequestBody PublishReqDTO requestParam,
             @AuthenticationPrincipal OAuth2User principal) {
-        return ResponseEntity.ok(Results.success(
-                reviewService.publishReview(id, requestParam, extractLogin(principal))));
+        return Results.success(reviewService.publishReview(id, requestParam, extractLogin(principal)));
     }
 }

@@ -116,7 +116,7 @@ com.pullcat
 
 ### 统一响应
 
-所有 Controller 返回值统一使用 `Result<T>`，通过 `Results` 工厂方法构造。
+所有 Controller 返回值统一使用 `Result<T>`，通过 `Results` 工厂方法构造，**不使用 `ResponseEntity` 包装**。SSE 端点例外，直接返回 `SseEmitter`。
 
 ### 实体类
 

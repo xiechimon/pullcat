@@ -8,7 +8,6 @@ import com.pullcat.dto.resp.LogoutRespDTO;
 import com.pullcat.service.analysis.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -26,11 +25,11 @@ public class UserController {
     }
 
     @GetMapping("/api/user")
-    public ResponseEntity<Result<CurrentUserRespDTO>> currentUser(@AuthenticationPrincipal OAuth2User principal) {
+    public Result<CurrentUserRespDTO> currentUser(@AuthenticationPrincipal OAuth2User principal) {
         if (principal == null) {
             CurrentUserRespDTO response = new CurrentUserRespDTO();
             response.setAuthenticated(false);
-            return ResponseEntity.ok(Results.success(response));
+            return Results.success(response);
         }
         String login = principal.getAttribute("login");
         UserDO user = userRepository.findByLogin(login);
@@ -39,16 +38,16 @@ public class UserController {
         response.setLogin(login);
         response.setAvatarUrl(user != null ? user.getAvatarUrl() : principal.getAttribute("avatar_url"));
         response.setName(principal.getAttribute("name"));
-        return ResponseEntity.ok(Results.success(response));
+        return Results.success(response);
     }
 
     @PostMapping("/api/logout")
-    public ResponseEntity<Result<LogoutRespDTO>> logout(HttpServletRequest request) {
+    public Result<LogoutRespDTO> logout(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
         SecurityContextHolder.clearContext();
-        return ResponseEntity.ok(Results.success(new LogoutRespDTO("logged_out")));
+        return Results.success(new LogoutRespDTO("logged_out"));
     }
 }

@@ -7,7 +7,6 @@ import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.dto.req.CompareReviewsReqDTO;
 import com.pullcat.dto.resp.CompareReviewsRespDTO;
 import com.pullcat.service.analysis.CompareService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,11 +20,11 @@ public class CompareController {
     }
 
     @PostMapping("/reviews/compare")
-    public ResponseEntity<Result<CompareReviewsRespDTO>> compare(@RequestBody CompareReviewsReqDTO requestParam) {
+    public Result<CompareReviewsRespDTO> compare(@RequestBody CompareReviewsReqDTO requestParam) {
         var ids = requestParam.getReviewIds();
         if (ids == null || ids.size() != 2) {
             throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "必须提供 2 个 reviewIds");
         }
-        return ResponseEntity.ok(Results.success(compareService.compare(ids.get(0), ids.get(1))));
+        return Results.success(compareService.compare(ids.get(0), ids.get(1)));
     }
 }
