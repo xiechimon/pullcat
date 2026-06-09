@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.web;
 
 import com.pullcat.service.analysis.RateLimiter;
 import com.pullcat.service.analysis.RateLimiterInterceptor;
@@ -14,7 +14,7 @@ import java.time.Duration;
 
 @Configuration
 @Profile("prod")
-public class WebConfig implements WebMvcConfigurer {
+public class RateLimitWebConfig implements WebMvcConfigurer {
 
     @Value("${pullcat.rate-limit.default-max:60}")
     private int defaultMax;
@@ -35,7 +35,7 @@ public class WebConfig implements WebMvcConfigurer {
     private int statsWindowSeconds;
 
     private final RateLimiterInterceptor rateLimiterInterceptor;
-    public WebConfig(RateLimiter rateLimiter, MeterRegistry meterRegistry) {
+    public RateLimitWebConfig(RateLimiter rateLimiter, MeterRegistry meterRegistry) {
         Counter rejectionCounter = Counter.builder("rate_limit_rejections_total")
                 .description("Total number of rate-limited requests")
                 .register(meterRegistry);
