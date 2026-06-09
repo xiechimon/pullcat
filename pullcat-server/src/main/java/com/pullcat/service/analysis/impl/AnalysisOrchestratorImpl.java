@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 /**
  * 分析编排器，负责完整的 PR 审查流程：拉取数据、构建上下文、执行五个分析任务，
@@ -165,8 +164,12 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 final Map<String, String> finalVariables = contextBuilder.buildVariables(
                         prData.getMetadata(), prData.getFileTree(), prData.getFiles(), discussion, relatedFiles);
 
+                // 使用 base branch 拉取约定文件，确保获取目标分支（main/master/develop 等）而非 feature branch
+                GitHubApiService.PRUrl basePrUrl = new GitHubApiService.PRUrl(
+                        parsed.owner(), parsed.repo(), parsed.number(),
+                        metadata.getBaseBranch(), metadata.getBaseBranch());
                 List<String> conventionCandidates = detectConventionCandidates(prData.getFileTree());
-                String repoConventions = buildConventionContent(parsed, conventionCandidates);
+                String repoConventions = buildConventionContent(basePrUrl, conventionCandidates);
                 finalVariables.put("repo_conventions", repoConventions);
 
                 List<AnalysisType> types = List.of(
@@ -474,26 +477,20 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
         if (candidates.isEmpty()) return "";
 
-        List<CompletableFuture<String>> futures = candidates.stream()
-                .map(name -> CompletableFuture.supplyAsync(() -> {
-                    try {
-                        String content = gitHubApiService.fetchFileContent(prUrl, name).block();
-                        return (content != null && !content.isBlank())
-                                ? "--- 来自 " + name + " ---\n" + content
-                                : "";
-                    } catch (Exception e) {
-                        log.warn("Convention file fetch skipped: {} - {}", name, e.getMessage(), e);
-                        return "";
-                    }
-                }, analysisExecutor))
-                .toList();
+        // 顺序拉取（最多 3 个文件），避免向同一 analysisExecutor 提交子任务导致线程池死锁
+        List<String> parts = new ArrayList<>();
+        for (String name : candidates) {
+            try {
+                String content = gitHubApiService.fetchFileContent(prUrl, name).block();
+                if (content != null && !content.isBlank()) {
+                    parts.add("--- 来自 " + name + " ---\n" + content);
+                }
+            } catch (Exception e) {
+                log.warn("Convention file fetch skipped: {} - {}", name, e.getMessage(), e);
+            }
+        }
 
-        String combined = futures.stream()
-                .map(f -> {
-                    try { return f.get(); } catch (Exception e) { return ""; }
-                })
-                .filter(s -> !s.isBlank())
-                .collect(Collectors.joining("\n\n"));
+        String combined = String.join("\n\n", parts);
 
         if (combined.isBlank()) return "";
 
