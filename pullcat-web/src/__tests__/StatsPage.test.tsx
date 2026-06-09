@@ -44,7 +44,7 @@ describe('StatsPage', () => {
 
     renderStatsPage()
 
-    expect(await screen.findByText('统计只回答两个问题')).toBeInTheDocument()
+    expect(await screen.findByText('总审查')).toBeInTheDocument()
     expect(screen.getByText('总审查')).toBeInTheDocument()
     expect(screen.getByText('12')).toBeInTheDocument()
     expect(screen.getByText('高频问题')).toBeInTheDocument()

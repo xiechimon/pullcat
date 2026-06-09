@@ -32,10 +32,8 @@ export function StatsPage() {
     return (
       <div className="page-shell py-8">
         <div className="animate-pulse space-y-4">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1.15fr)_18rem]">
-            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-          </div>
+          <div className="h-48 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
           <div className="h-80 rounded-2xl bg-slate-200 dark:bg-slate-800" />
         </div>
       </div>
@@ -50,10 +48,10 @@ export function StatsPage() {
   }))
 
   const summaryItems = [
-    { label: '总审查', value: stats.totalReviews, hint: '累计会话数' },
-    { label: '总问题', value: stats.totalIssues, hint: '已识别问题' },
-    { label: '覆盖仓库', value: stats.repoCount, hint: '最近统计范围' },
-    { label: '平均问题', value: stats.avgIssuesPerReview.toFixed(1), hint: '每次审查' },
+    { label: '总审查', value: stats.totalReviews },
+    { label: '总问题', value: stats.totalIssues },
+    { label: '覆盖仓库', value: stats.repoCount },
+    { label: '平均问题', value: stats.avgIssuesPerReview.toFixed(1) },
   ]
 
   const severityList: Array<{ label: string; value: number; tone: string }> = [
@@ -64,57 +62,53 @@ export function StatsPage() {
 
   return (
     <div className="page-shell space-y-4 py-8 animate-fade-in">
-      <section className="surface-card overflow-hidden">
-        <div className="grid gap-0 md:grid-cols-[minmax(0,1.15fr)_18rem]">
-          <div className="px-5 py-5 md:px-6 md:py-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">统计只回答两个问题</h1>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {summaryItems.map(item => (
-                <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
-                  <div className="flex items-end justify-between gap-3">
-                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</div>
-                    <div className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</div>
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{item.hint}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5 max-w-3xl">
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">高频问题</div>
-              {issueTypeData.length > 0 ? (
-                <div className="mt-3 h-[320px] rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950/60">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={issueTypeData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.18)" />
-                      <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis type="category" dataKey="name" width={132} fontSize={12} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
-                      <Bar dataKey="count" fill="#047857" radius={[0, 6, 6, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/40">
-                  暂无问题类型数据
-                </div>
-              )}
-            </div>
+      <section className="surface-card px-5 py-5 md:px-6 md:py-6">
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {summaryItems.map(item => (
+              <div key={item.label} className="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900/60">
+                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</div>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
-            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">严重度分布</div>
-            <div className="mt-4 flex justify-center">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="surface-card px-5 py-5 md:px-6 md:py-6">
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">高频问题</div>
+            {issueTypeData.length > 0 ? (
+              <div className="h-[320px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={issueTypeData} layout="vertical" margin={{ left: 4, right: 12, top: 4, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(148,163,184,0.18)" />
+                    <XAxis type="number" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="name" width={132} fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)' }} />
+                    <Bar dataKey="count" fill="#047857" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/40">
+                暂无问题类型数据
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="surface-card px-5 py-5 md:px-6 md:py-6">
+          <div className="space-y-4">
+            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">严重度分布</div>
+            <div className="flex justify-center">
               <SeverityChart distribution={(stats.severityDistribution || {}) as Record<Severity, number>} size={190} />
             </div>
 
-            <div className="mt-5 space-y-2">
+            <div className="space-y-2">
               {severityList.map(item => (
-                <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3 dark:bg-slate-950/70">
+                <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-900/60">
                   <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${item.tone}`}>
                     {item.label}
                   </span>

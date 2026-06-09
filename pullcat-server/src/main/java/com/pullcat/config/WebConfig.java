@@ -43,14 +43,14 @@ public class WebConfig implements WebMvcConfigurer {
 
         this.rateLimiterInterceptor = new RateLimiterInterceptor(rateLimiter, rejectionCounter);
         this.rateLimiterInterceptor.addRule("default", defaultMax, Duration.ofSeconds(defaultWindowSeconds));
-        this.rateLimiterInterceptor.addRule("POST:/api/reviews", reviewCreateMax, Duration.ofSeconds(reviewCreateWindowSeconds));
-        this.rateLimiterInterceptor.addRule("GET:/api/stats", statsMax, Duration.ofSeconds(statsWindowSeconds));
+        this.rateLimiterInterceptor.addRule("POST:/api/pullcat/v1/reviews", reviewCreateMax, Duration.ofSeconds(reviewCreateWindowSeconds));
+        this.rateLimiterInterceptor.addRule("GET:/api/pullcat/v1/stats", statsMax, Duration.ofSeconds(statsWindowSeconds));
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimiterInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/user", "/api/reviews/**", "/api/webhooks/**", "/actuator/**");
+                .addPathPatterns("/api/pullcat/v1/**")
+                .excludePathPatterns("/api/pullcat/v1/user", "/api/pullcat/v1/reviews/**", "/api/pullcat/v1/webhooks/**", "/actuator/**");
     }
 }

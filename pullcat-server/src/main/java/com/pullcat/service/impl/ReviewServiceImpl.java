@@ -94,7 +94,7 @@ public class ReviewServiceImpl implements ReviewService {
         CreateReviewRespDTO response = new CreateReviewRespDTO();
         response.setReviewId(session.getId());
         response.setStatus(session.getStatus().name());
-        response.setSseUrl("/api/reviews/" + session.getId() + "/sse");
+        response.setSseUrl("/api/pullcat/v1/reviews/" + session.getId() + "/sse");
         return response;
     }
 

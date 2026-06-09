@@ -8,7 +8,7 @@ import com.pullcat.service.CompareService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/pullcat/v1")
 public class CompareController {
 
     private final CompareService compareService;

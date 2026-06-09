@@ -22,12 +22,12 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/api/user")
+    @GetMapping("/api/pullcat/v1/user")
     public Result<CurrentUserRespDTO> currentUser(@AuthenticationPrincipal OAuth2User principal) {
         return Results.success(userService.getCurrentUser(principal));
     }
 
-    @PostMapping("/api/logout")
+    @PostMapping("/api/pullcat/v1/logout")
     public Result<LogoutRespDTO> logout(HttpServletRequest request) {
         return Results.success(userService.logout(request));
     }

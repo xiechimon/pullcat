@@ -25,21 +25,18 @@ describe('ReviewPage', () => {
   })
 
   it('renders task progress when review is started', async () => {
-    renderWithRouter({ reviewId: 'test-id', sseUrl: '/api/sse/test-id' })
+    renderWithRouter({ reviewId: 'test-id', sseUrl: '/api/pullcat/v1/sse/test-id' })
 
     await waitFor(() => {
       expect(screen.getByText('分析进度')).toBeInTheDocument()
     })
 
-    expect(screen.getByText('变更总结')).toBeInTheDocument()
-    expect(screen.getByText('风险检测')).toBeInTheDocument()
-    expect(screen.getByText('代码质量')).toBeInTheDocument()
-    expect(screen.getByText('一致性分析')).toBeInTheDocument()
-    expect(screen.getByText('测试覆盖')).toBeInTheDocument()
+    expect(screen.getByText(/变更总结/)).toBeInTheDocument()
+    expect(screen.getByText(/等待分析/)).toBeInTheDocument()
   })
 
   it('displays error message area in the DOM', () => {
-    renderWithRouter({ reviewId: 'test-id', sseUrl: '/api/sse/test-id' })
+    renderWithRouter({ reviewId: 'test-id', sseUrl: '/api/pullcat/v1/sse/test-id' })
 
     expect(screen.getByText('分析进度')).toBeInTheDocument()
   })

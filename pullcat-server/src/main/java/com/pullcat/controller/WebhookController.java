@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/webhooks")
+@RequestMapping("/api/pullcat/v1/webhooks")
 public class WebhookController {
 
     private final WebhookService webhookService;

@@ -37,9 +37,14 @@ export function RepoPage() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 animate-pulse space-y-4">
-        <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+      <div className="page-shell py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1.16fr)_18rem]">
+            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-72 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        </div>
       </div>
     )
   }
@@ -52,79 +57,97 @@ export function RepoPage() {
     INFO: 0,
   }
   const maxSeverity = Math.max(...Object.values(severityDist), 1)
+  const summaryItems = [
+    { label: '审查次数', value: stats?.totalReviews ?? 0, hint: '累计结果' },
+    { label: '发现问题', value: stats?.totalIssues ?? 0, hint: '仓库范围' },
+    { label: '平均问题', value: (stats?.avgIssuesPerReview ?? 0).toFixed(1), hint: '每次审查' },
+  ]
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {stats?.totalReviews ?? 0} 次审查 · {stats?.totalIssues ?? 0} 个问题
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/')}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-        >
-          审查此仓库
-        </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: '审查次数', value: stats?.totalReviews ?? 0 },
-          { label: '发现问题', value: stats?.totalIssues ?? 0 },
-          { label: '平均问题数', value: (stats?.avgIssuesPerReview ?? 0).toFixed(1) },
-        ].map((c, i) => (
-          <div key={c.label} className={`p-4 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 animate-fade-up ${['delay-75','delay-150','delay-200'][i]}`}>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{c.value}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{c.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-6 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">严重度分布</h2>
-        <div className="space-y-3">
-          {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'] as Severity[]).map(s => (
-            <div key={s} className="flex items-center gap-3">
-              <span className="w-16 text-sm text-gray-600 dark:text-gray-400">{s}</span>
-              <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-[width] duration-700 ease-out"
-                  style={{
-                    width: `${maxSeverity > 0 ? ((severityDist[s] || 0) / maxSeverity) * 100 : 0}%`,
-                    backgroundColor: SEVERITY_BAR_COLORS[s],
-                  }}
-                />
-              </div>
-              <span className="w-10 text-sm text-right text-gray-600 dark:text-gray-400">{severityDist[s] || 0}</span>
+    <div className="page-shell space-y-4 py-8 animate-fade-in">
+      <section className="surface-card overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-[minmax(0,1.16fr)_18rem]">
+          <div className="px-5 py-5 md:px-6 md:py-6">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">审查记录</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {summaryItems.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{item.label}</div>
+                    <div className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{item.value}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{item.hint}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-500 dark:text-slate-400">最近结果</div>
+                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                    {reviews.length === 0 ? '还没有可回看的记录' : `${reviews.length} 条可追溯审查`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/')}
+                  className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
+                >
+                  审查此仓库
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">严重度分布</div>
+            <div className="mt-4 space-y-3">
+              {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'] as Severity[]).map(s => (
+                <div key={s} className="space-y-2 rounded-xl bg-white px-4 py-3 dark:bg-slate-950/70">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-slate-500 dark:text-slate-400">{s}</span>
+                    <span className="text-slate-950 dark:text-white">{severityDist[s] || 0}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div
+                      className="h-full rounded-full transition-[width] duration-700 ease-out"
+                      style={{
+                        width: `${maxSeverity > 0 ? ((severityDist[s] || 0) / maxSeverity) * 100 : 0}%`,
+                        backgroundColor: SEVERITY_BAR_COLORS[s],
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      </section>
+
+      <section className="surface-card overflow-hidden">
         {reviews.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">暂无审查记录</div>
+          <div className="px-5 py-10 text-center text-sm text-slate-400 dark:text-slate-500 md:px-6">
+            暂无审查记录
+          </div>
         ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="divide-y divide-slate-200 dark:divide-slate-800">
             {reviews.map(r => {
               const issueCount = Object.values(r.analyses).reduce((sum, a) => sum + (a.issues?.length || 0), 0)
               return (
                 <Link
                   key={r.id}
                   to={`/review/${r.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                  className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-950/50 md:px-6"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <div className="truncate text-sm font-medium text-slate-950 dark:text-white">
                       {r.prMetadata?.title || r.prUrl}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                       {new Date(r.createdAt).toLocaleDateString('zh-CN')} · {issueCount} issues
                     </div>
                   </div>
@@ -134,7 +157,7 @@ export function RepoPage() {
             })}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }

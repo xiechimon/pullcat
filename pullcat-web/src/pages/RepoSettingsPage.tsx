@@ -127,160 +127,181 @@ export function RepoSettingsPage() {
   const pendingSuggestions = suggestions.filter(s => !addedIds.has(s.id!))
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
-          <p className="text-sm text-gray-500 mt-1">仓库设置 · 自定义规则</p>
-        </div>
-        {activeTab === 'rules' && (
-          <button
-            onClick={() => { setEditing(null); setShowForm(!showForm) }}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm"
-          >
-            + 添加规则
-          </button>
-        )}
-      </div>
-
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {tabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-            {tab.badge != null && tab.badge > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full">
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'rules' && (
-        <>
-          {showForm && (
-            <RuleForm
-              rule={editing}
-              onSave={saveRule}
-              onCancel={() => { setShowForm(false); setEditing(null) }}
-            />
-          )}
-
-          {loading ? (
-            <div className="animate-pulse space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />)}</div>
-          ) : rules.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-              暂无自定义规则
+    <div className="page-shell space-y-4 py-8 animate-fade-in">
+      <section className="surface-card overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-[minmax(0,1.18fr)_18rem]">
+          <div className="px-5 py-5 md:px-6 md:py-6">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{fullName}</h1>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {rules.map(rule => (
-                <div key={rule.id} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
-                          {rule.enabled ? '启用' : '禁用'}
-                        </span>
-                        <span className="text-xs text-gray-400">{rule.type}</span>
-                        <span className="font-medium text-gray-900 dark:text-white">{rule.name}</span>
-                      </div>
-                      <code className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 block">{rule.pattern}</code>
-                      <div className="text-xs text-gray-500 mt-1">{rule.message}</div>
-                    </div>
-                    <div className="flex gap-1 ml-3">
-                      <button onClick={() => { setEditing(rule); setShowForm(true) }} className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700">编辑</button>
-                      <button onClick={() => toggleRule(rule)} className="text-xs px-2 py-1 text-gray-500 hover:text-gray-700">
-                        {rule.enabled ? '禁用' : '启用'}
-                      </button>
-                      <button onClick={() => rule.id && setDeleteTarget(rule.id)} className="text-xs px-2 py-1 text-red-400 hover:text-red-600">删除</button>
-                    </div>
-                  </div>
-                </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                      : 'bg-slate-100 text-slate-500 hover:text-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.badge != null && tab.badge > 0 && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === tab.key ? 'bg-white/15 text-white dark:bg-slate-200 dark:text-slate-950' : 'bg-white text-slate-500 dark:bg-slate-950 dark:text-slate-400'}`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
               ))}
             </div>
-          )}
-        </>
-      )}
 
-      {activeTab === 'suggestions' && (
-        <>
-          {suggestionsLoading ? (
-            <div className="animate-pulse space-y-3">{[...Array(3)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-            ))}</div>
-          ) : suggestions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-              暂无建议，对仓库进行更多次审查后 AI 将自动发现规则
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingSuggestions.length > 0 && (
+            {activeTab === 'rules' && (
+              <div className="mt-5 space-y-4">
                 <div className="flex justify-end">
                   <button
-                    onClick={adoptAllSuggestions}
-                    className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                    onClick={() => { setEditing(null); setShowForm(!showForm) }}
+                    className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
                   >
-                    一键添加全部 ({pendingSuggestions.length})
+                    添加规则
                   </button>
                 </div>
-              )}
-              <div className="space-y-3">
-                {suggestions.map(rule => {
-                  const isAdded = addedIds.has(rule.id!)
-                  return (
-                    <div key={rule.id} className={`bg-white dark:bg-slate-800 rounded-xl border p-4 transition-colors ${
-                      isAdded
-                        ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20'
-                        : 'border-gray-200 dark:border-gray-700'
-                    }`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-1.5 py-0.5 rounded ${
-                              rule.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
-                              rule.severity === 'HIGH' ? 'bg-orange-100 text-orange-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {rule.severity}
-                            </span>
-                            <span className="text-xs text-gray-400">AI 建议</span>
-                            <span className="font-medium text-gray-900 dark:text-white">{rule.name}</span>
+
+                {showForm && (
+                  <RuleForm
+                    rule={editing}
+                    onSave={saveRule}
+                    onCancel={() => { setShowForm(false); setEditing(null) }}
+                  />
+                )}
+
+                {loading ? (
+                  <div className="animate-pulse space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-slate-200 dark:bg-slate-800" />)}</div>
+                ) : rules.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    暂无自定义规则
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {rules.map(rule => (
+                      <div key={rule.id} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${rule.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                {rule.enabled ? '启用' : '禁用'}
+                              </span>
+                              <span className="text-xs text-slate-400 dark:text-slate-500">{rule.type}</span>
+                              <span className="text-sm font-medium text-slate-950 dark:text-white">{rule.name}</span>
+                            </div>
+                            <code className="mt-2 block break-all text-xs text-emerald-700 dark:text-emerald-400">{rule.pattern}</code>
+                            <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{rule.message}</div>
                           </div>
-                          <code className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 block">{rule.pattern}</code>
-                          <div className="text-xs text-gray-500 mt-1">{rule.message}</div>
-                          {rule.suggestion && (
-                            <div className="text-xs text-gray-400 mt-1">{rule.suggestion}</div>
-                          )}
+                          <div className="flex shrink-0 gap-2">
+                            <button onClick={() => { setEditing(rule); setShowForm(true) }} className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">编辑</button>
+                            <button onClick={() => toggleRule(rule)} className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                              {rule.enabled ? '禁用' : '启用'}
+                            </button>
+                            <button onClick={() => rule.id && setDeleteTarget(rule.id)} className="text-xs font-medium text-red-500 transition-colors hover:text-red-600">删除</button>
+                          </div>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'suggestions' && (
+              <div className="mt-5 space-y-4">
+                {suggestionsLoading ? (
+                  <div className="animate-pulse space-y-3">{[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-24 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+                  ))}</div>
+                ) : suggestions.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-10 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                    暂无建议
+                  </div>
+                ) : (
+                  <>
+                    {pendingSuggestions.length > 0 && (
+                      <div className="flex justify-end">
                         <button
-                          onClick={() => adoptSuggestion(rule)}
-                          disabled={isAdded}
-                          className={`ml-3 px-3 py-1.5 text-xs rounded-lg ${
-                            isAdded
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          }`}
+                          onClick={adoptAllSuggestions}
+                          className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
                         >
-                          {isAdded ? '已添加' : '添加此规则'}
+                          一键添加 {pendingSuggestions.length} 条
                         </button>
                       </div>
+                    )}
+                    <div className="space-y-3">
+                      {suggestions.map(rule => {
+                        const isAdded = addedIds.has(rule.id!)
+                        return (
+                          <div key={rule.id} className={`rounded-2xl border px-4 py-4 transition-colors ${
+                            isAdded
+                              ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20'
+                              : 'border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50'
+                          }`}>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                                    rule.severity === 'CRITICAL' ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300' :
+                                    rule.severity === 'HIGH' ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' :
+                                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-300'
+                                  }`}>
+                                    {rule.severity}
+                                  </span>
+                                  <span className="text-sm font-medium text-slate-950 dark:text-white">{rule.name}</span>
+                                </div>
+                                <code className="mt-2 block break-all text-xs text-emerald-700 dark:text-emerald-400">{rule.pattern}</code>
+                                <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">{rule.message}</div>
+                                {rule.suggestion && (
+                                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{rule.suggestion}</div>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => adoptSuggestion(rule)}
+                                disabled={isAdded}
+                                className={`shrink-0 rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
+                                  isAdded
+                                    ? 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                    : 'bg-emerald-700 text-white hover:bg-emerald-800'
+                                }`}
+                              >
+                                {isAdded ? '已添加' : '添加'}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">工作台摘要</div>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl bg-white px-4 py-4 dark:bg-slate-950/70">
+                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">现有规则</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{rules.length}</div>
+              </div>
+              <div className="rounded-xl bg-white px-4 py-4 dark:bg-slate-950/70">
+                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">待采纳建议</div>
+                <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{pendingSuggestions.length}</div>
+              </div>
+              <div className="rounded-xl bg-white px-4 py-4 text-sm text-slate-500 dark:bg-slate-950/70 dark:text-slate-400">
+                规则会在仓库审查时自动执行
               </div>
             </div>
-          )}
-        </>
-      )}
+          </div>
+        </div>
+      </section>
 
       <ConfirmDialog
         open={deleteTarget !== null}
@@ -300,15 +321,15 @@ function RuleForm({ rule, onSave, onCancel }: { rule: RuleRespDTO | null; onSave
   })
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-emerald-300 dark:border-emerald-700 p-6 space-y-3">
-      <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" placeholder="规则名称" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+    <div className="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-5 space-y-3 dark:border-emerald-800 dark:bg-emerald-950/20">
+      <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="规则名称" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
       <div className="flex gap-2">
-        <select className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleRespDTO['type'] })}>
+        <select className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" value={form.type} onChange={e => setForm({ ...form, type: e.target.value as RuleRespDTO['type'] })}>
           <option value="CODE_PATTERN">代码匹配</option>
           <option value="FORBIDDEN_API">禁用 API</option>
           <option value="FILE_PATH_MATCH">文件路径匹配</option>
         </select>
-        <select className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" value={form.severity} onChange={e => setForm({ ...form, severity: e.target.value as Severity })}>
+        <select className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" value={form.severity} onChange={e => setForm({ ...form, severity: e.target.value as Severity })}>
           <option value="CRITICAL">CRITICAL</option>
           <option value="HIGH">HIGH</option>
           <option value="MEDIUM">MEDIUM</option>
@@ -316,12 +337,12 @@ function RuleForm({ rule, onSave, onCancel }: { rule: RuleRespDTO | null; onSave
           <option value="INFO">INFO</option>
         </select>
       </div>
-      <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm font-mono" placeholder="正则表达式" value={form.pattern} onChange={e => setForm({ ...form, pattern: e.target.value })} />
-      <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" placeholder="问题描述" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
-      <input className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm" placeholder="修复建议" value={form.suggestion} onChange={e => setForm({ ...form, suggestion: e.target.value })} />
+      <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="正则表达式" value={form.pattern} onChange={e => setForm({ ...form, pattern: e.target.value })} />
+      <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="问题描述" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} />
+      <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-950 outline-none transition focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white" placeholder="修复建议" value={form.suggestion} onChange={e => setForm({ ...form, suggestion: e.target.value })} />
       <div className="flex gap-2 justify-end">
-        <button onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">取消</button>
-        <button onClick={() => onSave(form)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">保存</button>
+        <button onClick={onCancel} className="px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">取消</button>
+        <button onClick={() => onSave(form)} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800">保存</button>
       </div>
     </div>
   )

@@ -52,8 +52,8 @@ describe('ComparePage', () => {
     })
     renderComparePage('?r1=1&r2=2')
     await waitFor(() => {
-      expect(screen.getByText('Review 对比')).toBeInTheDocument()
+      expect(screen.getByText('两次审查，差异一眼看清')).toBeInTheDocument()
     })
-    expect(screen.getByText('已修复的问题')).toBeInTheDocument()
+    expect(screen.getByText('已修复')).toBeInTheDocument()
   })
 })

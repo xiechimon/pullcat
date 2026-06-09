@@ -36,30 +36,39 @@ export function ComparePage() {
 
   if (!r1 || !r2) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Review 对比</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">
-          请从审查历史中选择两次 Review 进行对比
-        </p>
-        <Link
-          to="/history"
-          className="inline-block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-        >
-          前往审查历史
-        </Link>
+      <div className="page-shell py-8">
+        <section className="surface-card px-5 py-10 text-center md:px-6">
+          <div className="mx-auto max-w-md space-y-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">选择两次审查再比较</h1>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              从历史记录里勾选两次结果，这里只负责看变化。
+            </p>
+            <Link
+              to="/history"
+              className="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800"
+            >
+              前往审查历史
+            </Link>
+          </div>
+        </section>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20">
+      <div className="page-shell py-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48" />
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="grid grid-cols-3 gap-4 animate-fade-up delay-150">
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1.12fr)_18rem]">
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+            <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+              <div key={i} className="h-28 rounded-2xl bg-slate-200 dark:bg-slate-800" />
             ))}
           </div>
         </div>
@@ -70,99 +79,104 @@ export function ComparePage() {
   if (!data) return null
 
   const issueDelta = (data.totalIssues2 ?? 0) - (data.totalIssues1 ?? 0)
+  const reviewCards = [
+    {
+      label: 'Review A',
+      url: data.review1?.prUrl || r1,
+      value: data.totalIssues1 ?? '-',
+      hint: '基线结果',
+    },
+    {
+      label: 'Review B',
+      url: data.review2?.prUrl || r2,
+      value: data.totalIssues2 ?? '-',
+      hint: '当前结果',
+    },
+  ]
+
+  const changeCards = [
+    { label: '新引入', value: data.newCount ?? 0, tone: 'text-red-600 dark:text-red-400', note: '当前新增' },
+    { label: '已修复', value: data.fixedCount ?? 0, tone: 'text-emerald-600 dark:text-emerald-400', note: '当前消失' },
+    { label: '持续存在', value: data.persistentCount ?? 0, tone: 'text-amber-600 dark:text-amber-400', note: '两次都在' },
+  ]
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white animate-fade-up">Review 对比</h1>
+    <div className="page-shell space-y-4 py-8 animate-fade-in">
+      <section className="surface-card overflow-hidden">
+        <div className="grid gap-0 md:grid-cols-[minmax(0,1.12fr)_18rem]">
+          <div className="px-5 py-5 md:px-6 md:py-6">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">当前关注点</div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">两次审查，差异一眼看清</h1>
+            </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Review A</div>
-          <a
-            href={data.review1?.prUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-emerald-600 hover:underline font-medium break-all"
-          >
-            {data.review1?.prUrl || r1}
-          </a>
-          <div className="text-2xl font-bold mt-2 text-gray-900 dark:text-white">
-            {data.totalIssues1 ?? '-'}
-            <span className="text-xs font-normal text-gray-500 ml-1">个问题</span>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {reviewCards.map((card) => (
+                <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/50">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</div>
+                      <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{card.hint}</div>
+                    </div>
+                    <div className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">{card.value}</div>
+                  </div>
+                  <a
+                    href={card.url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 block break-all text-sm font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  >
+                    {card.url}
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-500 dark:text-slate-400">问题总数变化</div>
+                  <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">只看净变化，不重复解释</div>
+                </div>
+                <div className="flex items-center gap-3 text-slate-950 dark:text-white">
+                  <span className="text-xl font-semibold">{data.totalIssues1 ?? '-'}</span>
+                  <span className="text-sm text-slate-400">
+                    {issueDelta > 0 ? '↗' : issueDelta < 0 ? '↘' : '→'}
+                  </span>
+                  <span className="text-xl font-semibold">{data.totalIssues2 ?? '-'}</span>
+                  <span className={`text-sm font-medium ${issueDelta > 0 ? 'text-red-600 dark:text-red-400' : issueDelta < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                    {issueDelta > 0 ? '+' : ''}{issueDelta}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-200 bg-slate-50/70 px-5 py-5 dark:border-slate-800 dark:bg-slate-900/50 md:border-l md:border-t-0 md:px-6">
+            <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">变化拆分</div>
+            <div className="mt-4 space-y-3">
+              {changeCards.map((card) => (
+                <div key={card.label} className="rounded-xl bg-white px-4 py-4 dark:bg-slate-950/70">
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{card.label}</div>
+                      <div className="mt-1 text-xs text-slate-400 dark:text-slate-500">{card.note}</div>
+                    </div>
+                    <div className={`text-2xl font-semibold tracking-tight ${card.tone}`}>{card.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Link
+              to="/history"
+              className="mt-4 inline-flex text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
+            >
+              返回审查历史
+            </Link>
           </div>
         </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Review B</div>
-          <a
-            href={data.review2?.prUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-emerald-600 hover:underline font-medium break-all"
-          >
-            {data.review2?.prUrl || r2}
-          </a>
-          <div className="text-2xl font-bold mt-2 text-gray-900 dark:text-white">
-            {data.totalIssues2 ?? '-'}
-            <span className="text-xs font-normal text-gray-500 ml-1">个问题</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 animate-fade-up delay-150">
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-l-4 border-l-red-500 p-4">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">新引入的问题</div>
-          <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-            {data.newCount ?? 0}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Review B 中新出现</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-l-4 border-l-emerald-500 p-4">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">已修复的问题</div>
-          <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-            {data.fixedCount ?? 0}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Review B 中已消失</div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-l-4 border-l-amber-500 p-4">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">持续存在的问题</div>
-          <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-            {data.persistentCount ?? 0}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">两次均存在</div>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-center">
-        <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">问题总数变化</div>
-        <div className="flex items-center justify-center gap-3">
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">
-            {data.totalIssues1 ?? '-'}
-          </span>
-          <span className="text-gray-400 text-xl">
-            {issueDelta > 0 ? '↗' : issueDelta < 0 ? '↘' : '→'}
-          </span>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">
-            {data.totalIssues2 ?? '-'}
-          </span>
-          {issueDelta !== 0 && (
-            <span className={`text-sm font-medium ${issueDelta > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-              {issueDelta > 0 ? '+' : ''}{issueDelta}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="text-center">
-        <Link
-          to="/history"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-        >
-          ← 返回审查历史
-        </Link>
-      </div>
+      </section>
     </div>
   )
 }

@@ -23,7 +23,7 @@ public class AutoPublishController {
     /**
      * 查询所有已启用自动发布的仓库
      */
-    @GetMapping("/api/auto-publish")
+    @GetMapping("/api/pullcat/v1/auto-publish")
     public Result<List<AutoPublishRepoRespDTO>> list() {
         return Results.success(autoPublishService.listAutoPublishRepos());
     }
@@ -31,7 +31,7 @@ public class AutoPublishController {
     /**
      * 查询指定仓库的自动发布状态
      */
-    @GetMapping("/api/repos/{owner}/{repo}/auto-publish")
+    @GetMapping("/api/pullcat/v1/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> get(@PathVariable String owner, @PathVariable String repo) {
         return Results.success(autoPublishService.getStatus(owner, repo));
     }
@@ -39,7 +39,7 @@ public class AutoPublishController {
     /**
      * 设置指定仓库的自动发布状态
      */
-    @PutMapping("/api/repos/{owner}/{repo}/auto-publish")
+    @PutMapping("/api/pullcat/v1/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> set(@PathVariable String owner, @PathVariable String repo,
                                             @RequestBody AutoPublishToggleReqDTO requestParam) {
         return Results.success(autoPublishService.setEnabled(owner, repo, requestParam.getEnabled()));
@@ -48,7 +48,7 @@ public class AutoPublishController {
     /**
      * 禁用指定仓库的自动发布
      */
-    @DeleteMapping("/api/repos/{owner}/{repo}/auto-publish")
+    @DeleteMapping("/api/pullcat/v1/repos/{owner}/{repo}/auto-publish")
     public Result<BooleanStatusRespDTO> disable(@PathVariable String owner, @PathVariable String repo) {
         return Results.success(autoPublishService.setEnabled(owner, repo, false));
     }

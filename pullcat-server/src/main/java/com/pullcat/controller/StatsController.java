@@ -8,7 +8,7 @@ import com.pullcat.service.StatsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/pullcat/v1")
 public class StatsController {
 
     private final StatsService statsService;

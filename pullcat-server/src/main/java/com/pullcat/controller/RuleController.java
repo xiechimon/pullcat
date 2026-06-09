@@ -16,7 +16,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/repos/{owner}/{repo}/rules")
+@RequestMapping("/api/pullcat/v1/repos/{owner}/{repo}/rules")
 public class RuleController {
 
     private final RuleService ruleService;
