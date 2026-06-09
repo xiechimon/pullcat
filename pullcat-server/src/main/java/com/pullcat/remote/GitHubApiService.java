@@ -1,8 +1,7 @@
 package com.pullcat.remote;
 
 import com.pullcat.common.convention.exception.GitHubForbiddenException;
-import com.pullcat.config.GitHubConfig;
-import com.pullcat.config.RetryConfig;
+import com.pullcat.config.infra.GitHubConfig;
 import com.pullcat.dto.resp.FileContentRespDTO;
 import com.pullcat.remote.dto.req.GitHubCommitStatusReqDTO;
 import com.pullcat.remote.dto.req.GitHubReviewCommentReqDTO;
@@ -15,6 +14,7 @@ import com.pullcat.remote.dto.resp.GitHubTreeNodeRespDTO;
 import com.pullcat.remote.dto.resp.GitHubTreeRespDTO;
 import com.pullcat.dto.resp.PRDataRespDTO;
 import com.pullcat.dto.resp.PRMetadataRespDTO;
+import com.pullcat.toolkit.RetryPolicy;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -162,7 +162,7 @@ public class GitHubApiService {
                 .uri("/repos/{owner}/{repo}/pulls/{number}", prUrl.owner(), prUrl.repo(), prUrl.number())
                 .retrieve()
                 .bodyToMono(GitHubPullRequestRespDTO.class)
-                .retryWhen(RetryConfig.githubRetry())
+                .retryWhen(RetryPolicy.githubRetry())
                 .map(response -> mapToPRMetadata(prUrl, response))
                 .doOnSuccess(meta -> {
                     recordApiCall("pulls", "success");
@@ -220,7 +220,9 @@ public class GitHubApiService {
         String user = comment.getUser() != null && comment.getUser().getLogin() != null
                 ? comment.getUser().getLogin() : "unknown";
         String body = comment.getBody() != null ? comment.getBody() : "";
-        if (body.length() > 500) body = body.substring(0, 500) + "...";
+        if (body.length() > 500) {
+            body = body.substring(0, 500) + "...";
+        }
         return String.format("@%s: %s", user, body);
     }
 
@@ -235,7 +237,7 @@ public class GitHubApiService {
                 .header("Accept", "application/vnd.github.v3.raw")
                 .retrieve()
                 .bodyToMono(String.class)
-                .retryWhen(RetryConfig.githubRetry())
+                .retryWhen(RetryPolicy.githubRetry())
                 .onErrorReturn("");
     }
 
@@ -443,7 +445,7 @@ public class GitHubApiService {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(GitHubReviewRespDTO.class)
-                .retryWhen(RetryConfig.githubRetry())
+                .retryWhen(RetryPolicy.githubRetry())
                 .map(GitHubReviewRespDTO::getId);
     }
 

@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.infra;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;

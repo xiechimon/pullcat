@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.security;
 
 import com.pullcat.common.biz.user.CurrentLoginArgumentResolver;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.toolkit;
 
 import com.pullcat.common.convention.exception.GitHubForbiddenException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -6,9 +6,9 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 
-public final class RetryConfig {
+public final class RetryPolicy {
 
-    private RetryConfig() {}
+    private RetryPolicy() {}
 
     public static Retry githubRetry() {
         return Retry.backoff(3, Duration.ofSeconds(1))
@@ -32,4 +32,3 @@ public final class RetryConfig {
         return false;
     }
 }
-

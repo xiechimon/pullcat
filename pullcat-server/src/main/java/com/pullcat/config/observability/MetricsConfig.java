@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.observability;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.context.annotation.Configuration;

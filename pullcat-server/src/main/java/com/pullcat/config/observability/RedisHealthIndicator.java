@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.observability;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;

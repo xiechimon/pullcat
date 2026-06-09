@@ -1,4 +1,4 @@
-package com.pullcat.config;
+package com.pullcat.config.infra;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;

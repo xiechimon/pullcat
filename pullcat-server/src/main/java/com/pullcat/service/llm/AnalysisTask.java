@@ -1,11 +1,11 @@
 package com.pullcat.service.llm;
 
-import com.pullcat.config.RetryConfig;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.toolkit.JsonOutputParser;
+import com.pullcat.toolkit.RetryPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import reactor.core.publisher.Mono;
@@ -63,7 +63,7 @@ public abstract class AnalysisTask implements AnalysisService {
             result.setCompletedAt(Instant.now());
 
             return result;
-        }).retryWhen(RetryConfig.llmRetry())
+        }).retryWhen(RetryPolicy.llmRetry())
           .onErrorResume(e -> {
             log.warn("Analysis task {} failed after retries: {}", analysisType, e.getMessage());
             result.setStatus(AnalysisStatus.FAILED);

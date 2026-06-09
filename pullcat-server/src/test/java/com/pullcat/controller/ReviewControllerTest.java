@@ -2,8 +2,7 @@ package com.pullcat.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pullcat.common.biz.user.CurrentLoginArgumentResolver;
-import com.pullcat.config.WebMvcConfig;
-import com.pullcat.dto.resp.CreateReviewRespDTO;
+import com.pullcat.config.security.WebMvcConfig;
 import com.pullcat.service.ReviewService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
