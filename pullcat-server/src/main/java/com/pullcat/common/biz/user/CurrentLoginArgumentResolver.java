@@ -3,7 +3,6 @@ package com.pullcat.common.biz.user;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -46,9 +45,6 @@ public class CurrentLoginArgumentResolver implements HandlerMethodArgumentResolv
         if (principal instanceof OAuth2User oauthUser) {
             String login = oauthUser.getAttribute("login");
             return login != null ? login : authentication.getName();
-        }
-        if (authentication instanceof OAuth2AuthenticationToken oauth) {
-            return oauth.getName();
         }
         return authentication.getName();
     }
