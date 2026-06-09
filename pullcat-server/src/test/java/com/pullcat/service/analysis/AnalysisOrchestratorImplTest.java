@@ -13,10 +13,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,6 +64,39 @@ class AnalysisOrchestratorImplTest {
         } finally {
             executorService.shutdownNow();
         }
+    }
+
+    @Test
+    void detectConventionCandidates_returnsEmptyForNullOrBlankTree() {
+        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates(null)).isEmpty();
+        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates("")).isEmpty();
+        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates("   ")).isEmpty();
+    }
+
+    @Test
+    void detectConventionCandidates_excludesKnownNonConventionFiles() {
+        String tree = "./\n  README.md\n  CHANGELOG.md\n  LICENSE.md\n  AGENTS.md\n\nsrc/\n  Main.java\n";
+        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        assertThat(result).containsExactly("AGENTS.md");
+        assertThat(result).doesNotContain("README.md", "CHANGELOG.md", "LICENSE.md");
+    }
+
+    @Test
+    void detectConventionCandidates_sortsByPriorityThenLimitsToThree() {
+        // CONTRIBUTING.md 优先级低于 AGENTS.md/CLAUDE.md
+        String tree = "./\n  CONTRIBUTING.md\n  CLAUDE.md\n  AGENTS.md\n  DEVELOPMENT.md\n  CONVENTIONS.md\n\n";
+        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        assertThat(result).hasSize(3);
+        assertThat(result.get(0)).isEqualTo("AGENTS.md");
+        assertThat(result.get(1)).isEqualTo("CLAUDE.md");
+        assertThat(result.get(2)).isEqualTo("CONTRIBUTING.md");
+    }
+
+    @Test
+    void detectConventionCandidates_caseInsensitiveExclusion() {
+        String tree = "./\n  readme.md\n  changelog.MD\n  AGENTS.md\n\n";
+        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        assertThat(result).containsExactly("AGENTS.md");
     }
 
     private static final class StubAnalysisTask extends AnalysisTask implements AnalysisService {
