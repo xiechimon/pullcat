@@ -3,21 +3,18 @@ package com.pullcat.service.analysis;
 import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * Webhook 业务服务
  */
 @Service
+@RequiredArgsConstructor
 public class WebhookService {
 
     private final AnalysisOrchestrator orchestrator;
     private final ReviewRepository reviewRepository;
-
-    public WebhookService(AnalysisOrchestrator orchestrator, ReviewRepository reviewRepository) {
-        this.orchestrator = orchestrator;
-        this.reviewRepository = reviewRepository;
-    }
 
     /**
      * 处理 GitHub Webhook 事件，返回处理结果

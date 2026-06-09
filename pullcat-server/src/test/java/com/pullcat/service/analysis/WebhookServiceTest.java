@@ -60,6 +60,7 @@ class WebhookServiceTest {
         assertEquals("review_triggered", result.getStatus());
         assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
         verify(orchestrator).startReviewAsync(session);
+        verify(reviewRepository).save(session);
     }
 
     @Test
@@ -78,5 +79,6 @@ class WebhookServiceTest {
 
         assertEquals("review_triggered", result.getStatus());
         verify(reviewRepository).save(session);
+        verify(orchestrator).startReviewAsync(session);
     }
 }
