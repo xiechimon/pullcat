@@ -21,7 +21,7 @@ class WebhookServiceTest {
     AnalysisOrchestrator orchestrator;
 
     @Mock
-    ReviewRepository reviewRepository;
+    ReviewSessionService reviewSessionService;
 
     @InjectMocks
     WebhookServiceImpl webhookService;
@@ -61,7 +61,7 @@ class WebhookServiceTest {
         assertEquals("review_triggered", result.getStatus());
         assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
         verify(orchestrator).startReviewAsync(session);
-        verify(reviewRepository).save(session);
+        verify(reviewSessionService).save(session);
     }
 
     @Test
@@ -79,7 +79,7 @@ class WebhookServiceTest {
         WebhookRespDTO result = webhookService.handle("pull_request", req);
 
         assertEquals("review_triggered", result.getStatus());
-        verify(reviewRepository).save(session);
+        verify(reviewSessionService).save(session);
         verify(orchestrator).startReviewAsync(session);
     }
 }

@@ -18,14 +18,14 @@ import static org.mockito.Mockito.*;
 class AutoPublishServiceTest {
 
     @Mock
-    ReviewRepository reviewRepository;
+    ReviewSessionService reviewSessionService;
 
     @InjectMocks
     AutoPublishServiceImpl autoPublishService;
 
     @Test
     void listAutoPublishRepos_returnsMappedDTOs() {
-        when(reviewRepository.listAutoPublishRepos()).thenReturn(List.of("owner1/repo1", "owner2/repo2"));
+        when(reviewSessionService.listAutoPublishRepos()).thenReturn(List.of("owner1/repo1", "owner2/repo2"));
         List<AutoPublishRepoRespDTO> result = autoPublishService.listAutoPublishRepos();
         assertEquals(2, result.size());
         assertEquals("owner1", result.get(0).getOwner());
@@ -35,13 +35,13 @@ class AutoPublishServiceTest {
 
     @Test
     void listAutoPublishRepos_empty_returnsEmptyList() {
-        when(reviewRepository.listAutoPublishRepos()).thenReturn(List.of());
+        when(reviewSessionService.listAutoPublishRepos()).thenReturn(List.of());
         assertTrue(autoPublishService.listAutoPublishRepos().isEmpty());
     }
 
     @Test
     void listAutoPublishRepos_invalidFormat_skipsEntry() {
-        when(reviewRepository.listAutoPublishRepos()).thenReturn(List.of("invalid-no-slash", "owner/repo"));
+        when(reviewSessionService.listAutoPublishRepos()).thenReturn(List.of("invalid-no-slash", "owner/repo"));
         List<AutoPublishRepoRespDTO> result = autoPublishService.listAutoPublishRepos();
         assertEquals(1, result.size());
         assertEquals("owner", result.get(0).getOwner());
@@ -50,28 +50,28 @@ class AutoPublishServiceTest {
 
     @Test
     void getStatus_delegatesToRepository() {
-        when(reviewRepository.isAutoPublishEnabled("owner", "repo")).thenReturn(true);
+        when(reviewSessionService.isAutoPublishEnabled("owner", "repo")).thenReturn(true);
         assertTrue(autoPublishService.getStatus("owner", "repo").isEnabled());
     }
 
     @Test
     void setEnabled_true_savesAndReturnsTrue() {
         BooleanStatusRespDTO result = autoPublishService.setEnabled("owner", "repo", Boolean.TRUE);
-        verify(reviewRepository).setAutoPublishEnabled("owner", "repo", true);
+        verify(reviewSessionService).setAutoPublishEnabled("owner", "repo", true);
         assertTrue(result.isEnabled());
     }
 
     @Test
     void setEnabled_false_savesAndReturnsFalse() {
         BooleanStatusRespDTO result = autoPublishService.setEnabled("owner", "repo", Boolean.FALSE);
-        verify(reviewRepository).setAutoPublishEnabled("owner", "repo", false);
+        verify(reviewSessionService).setAutoPublishEnabled("owner", "repo", false);
         assertFalse(result.isEnabled());
     }
 
     @Test
     void setEnabled_null_treatsAsFalse() {
         BooleanStatusRespDTO result = autoPublishService.setEnabled("owner", "repo", null);
-        verify(reviewRepository).setAutoPublishEnabled("owner", "repo", false);
+        verify(reviewSessionService).setAutoPublishEnabled("owner", "repo", false);
         assertFalse(result.isEnabled());
     }
 }

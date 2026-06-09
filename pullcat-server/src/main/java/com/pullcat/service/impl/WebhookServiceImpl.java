@@ -5,7 +5,7 @@ import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.WebhookService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class WebhookServiceImpl implements WebhookService {
 
     private final AnalysisOrchestrator orchestrator;
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
 
     @Override
     public WebhookRespDTO handle(String eventType, WebhookEventReqDTO requestParam) {
@@ -42,7 +42,7 @@ public class WebhookServiceImpl implements WebhookService {
 
     private void triggerReview(String prUrl) {
         ReviewSessionRespDTO session = orchestrator.createSession(prUrl, null);
-        reviewRepository.save(session);
+        reviewSessionService.save(session);
         orchestrator.startReviewAsync(session);
     }
 }

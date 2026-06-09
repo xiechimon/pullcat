@@ -8,7 +8,7 @@ import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewRefRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.CompareService;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CompareServiceImpl implements CompareService {
 
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
 
     @Override
     public CompareReviewsRespDTO compare(List<String> reviewIds) {
@@ -32,8 +32,8 @@ public class CompareServiceImpl implements CompareService {
 
     @Override
     public CompareReviewsRespDTO compare(String reviewId1, String reviewId2) {
-        ReviewSessionRespDTO r1 = reviewRepository.findById(reviewId1);
-        ReviewSessionRespDTO r2 = reviewRepository.findById(reviewId2);
+        ReviewSessionRespDTO r1 = reviewSessionService.findById(reviewId1);
+        ReviewSessionRespDTO r2 = reviewSessionService.findById(reviewId2);
 
         if (r1 == null || r2 == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");

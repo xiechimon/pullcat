@@ -7,7 +7,7 @@ import com.pullcat.dto.resp.RepoStatsRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.StatsOverviewRespDTO;
 import com.pullcat.service.StatsService;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +20,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StatsServiceImpl implements StatsService {
 
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
 
     @Override
     public StatsOverviewRespDTO getOverview() {
-        List<ReviewSessionRespDTO> all = reviewRepository.findAllReviews();
+        List<ReviewSessionRespDTO> all = reviewSessionService.findAllReviews();
 
         int totalReviews = all.size();
         int totalIssues = 0;
@@ -77,7 +77,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public RepoStatsRespDTO getRepoStats(String owner, String repo) {
         String fullName = owner + "/" + repo;
-        List<ReviewSessionRespDTO> repoReviews = reviewRepository.findByRepo(fullName, 0, Integer.MAX_VALUE);
+        List<ReviewSessionRespDTO> repoReviews = reviewSessionService.findByRepo(fullName, 0, Integer.MAX_VALUE);
 
         int totalReviews = repoReviews.size();
         int totalIssues = 0;

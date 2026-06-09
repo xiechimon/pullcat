@@ -21,7 +21,7 @@ import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ResultAggregator;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.RuleEngine;
 import com.pullcat.service.analysis.RuleSuggestionService;
 import com.pullcat.service.analysis.StreamContext;
@@ -63,7 +63,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final GitHubApiService gitHubApiService;
     private final PromptLoader promptLoader;
     private final ContextBuilder contextBuilder;
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
     private final ChatClient lightChatClient;
     private final ChatClient heavyChatClient;
     private final ExecutorService analysisExecutor;
@@ -81,7 +81,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     public AnalysisOrchestratorImpl(GitHubApiService gitHubApiService,
                                     PromptLoader promptLoader,
                                     ContextBuilder contextBuilder,
-                                    ReviewRepository reviewRepository,
+                                    ReviewSessionService reviewSessionService,
                                     @Qualifier("lightChatClient") ChatClient lightChatClient,
                                     @Qualifier("heavyChatClient") ChatClient heavyChatClient,
                                     @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
@@ -92,7 +92,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
         this.contextBuilder = contextBuilder;
-        this.reviewRepository = reviewRepository;
+        this.reviewSessionService = reviewSessionService;
         this.lightChatClient = lightChatClient;
         this.heavyChatClient = heavyChatClient;
         this.analysisExecutor = analysisExecutor;
@@ -130,7 +130,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 session.setRawDiff(prData.getDiff());
                 session.setStatus(SessionStatus.ANALYZING);
                 session.setRepositoryFullName(parsed.owner() + "/" + parsed.repo());
-                reviewRepository.save(session);
+                reviewSessionService.save(session);
 
                 GitHubApiService.PRUrl enrichedPrUrl = new GitHubApiService.PRUrl(
                         parsed.owner(), parsed.repo(), parsed.number(),
@@ -217,7 +217,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                         .count();
                 session.setStatus(completedCount > 0 ? SessionStatus.COMPLETED : SessionStatus.FAILED);
                 session.setCompletedAt(Instant.now());
-                reviewRepository.save(session);
+                reviewSessionService.save(session);
 
                 boolean autoPublished = tryAutoPublish(session);
 
@@ -255,7 +255,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
             } catch (Exception e) {
                 log.error("Review failed: {}", e.getMessage(), e);
                 session.setStatus(SessionStatus.FAILED);
-                reviewRepository.save(session);
+                reviewSessionService.save(session);
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
                         .description("Duration of PR review analysis")
@@ -320,7 +320,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
     @Override
     public ReviewSessionRespDTO publishReview(String reviewId, PublishReqDTO requestParam) {
-        ReviewSessionRespDTO session = reviewRepository.findById(reviewId);
+        ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
         if (session == null) {
             throw new IllegalArgumentException("Review session not found: " + reviewId);
         }
@@ -350,7 +350,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         Long commentId = gitHubApiService.publishReviewWithComments(parsed, summary, comments).block();
         session.setStatus(SessionStatus.PUBLISHED);
         session.setPublishedCommentId(commentId);
-        reviewRepository.save(session);
+        reviewSessionService.save(session);
 
         return session;
     }
@@ -443,7 +443,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
             return false;
         }
 
-        if (reviewRepository.isAutoPublishEnabled(parts[0], parts[1])) {
+        if (reviewSessionService.isAutoPublishEnabled(parts[0], parts[1])) {
             try {
                 publishAutoReview(session);
                 log.info("Auto-published review {} to PR {}", session.getId(), session.getPrUrl());
@@ -462,7 +462,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         String summary = buildPublishSummary(dedupedIssues, session);
         gitHubApiService.publishReview(parsed, summary).block();
         session.setStatus(SessionStatus.PUBLISHED);
-        reviewRepository.save(session);
+        reviewSessionService.save(session);
     }
 
     private String extractSummaryText(String content) {

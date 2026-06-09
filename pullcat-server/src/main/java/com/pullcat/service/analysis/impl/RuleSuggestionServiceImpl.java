@@ -5,7 +5,7 @@ import com.pullcat.common.enums.Severity;
 import com.pullcat.dao.entity.RuleDO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.RuleSuggestionService;
 import com.pullcat.service.impl.RuleServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -32,16 +32,16 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
     private static final String CACHE_PREFIX = "rule-suggestions:";
     private static final Duration CACHE_TTL = Duration.ofHours(1);
 
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
     private final RuleServiceImpl ruleService;
     private final ChatClient lightChatClient;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public RuleSuggestionServiceImpl(ReviewRepository reviewRepository,
+    public RuleSuggestionServiceImpl(ReviewSessionService reviewSessionService,
                                      RuleServiceImpl ruleService,
                                      @Qualifier("lightChatClient") ChatClient lightChatClient,
                                      RedisTemplate<String, Object> redisTemplate) {
-        this.reviewRepository = reviewRepository;
+        this.reviewSessionService = reviewSessionService;
         this.ruleService = ruleService;
         this.lightChatClient = lightChatClient;
         this.redisTemplate = redisTemplate;
@@ -57,7 +57,7 @@ public class RuleSuggestionServiceImpl implements RuleSuggestionService {
             return cachedList;
         }
 
-        List<ReviewSessionRespDTO> sessions = reviewRepository.findByRepo(owner + "/" + repo, 0, 10);
+        List<ReviewSessionRespDTO> sessions = reviewSessionService.findByRepo(owner + "/" + repo, 0, 10);
         if (sessions.size() < 2) {
             return Collections.emptyList();
         }

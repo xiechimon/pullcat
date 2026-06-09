@@ -8,12 +8,13 @@ import com.pullcat.dao.entity.ReviewDO;
 import com.pullcat.dao.mapper.RepoAutoPublishMapper;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
+import com.pullcat.service.analysis.impl.ReviewSessionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.util.List;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ReviewRepositoryTest {
+class ReviewSessionServiceTest {
 
     @Mock
     ReviewMapper reviewMapper;
@@ -37,11 +38,11 @@ class ReviewRepositoryTest {
     @Mock
     RepoAutoPublishMapper repoAutoPublishMapper;
 
-    private ReviewRepository reviewRepository;
+    private ReviewSessionService reviewSessionService;
 
     @BeforeEach
     void setUp() {
-        reviewRepository = new ReviewRepository(
+        reviewSessionService = new ReviewSessionServiceImpl(
                 reviewMapper,
                 repoAutoPublishMapper,
                 new ObjectMapper().registerModule(new JavaTimeModule())
@@ -53,7 +54,7 @@ class ReviewRepositoryTest {
         ReviewSessionRespDTO session = review("r1", "owner/repo", "xmon");
         when(reviewMapper.selectById("r1")).thenReturn(null);
 
-        reviewRepository.save(session);
+        reviewSessionService.save(session);
 
         ArgumentCaptor<ReviewDO> captor = ArgumentCaptor.forClass(ReviewDO.class);
         verify(reviewMapper).insert(captor.capture());
@@ -73,7 +74,7 @@ class ReviewRepositoryTest {
         reviewDO.setSnapshotJson("{\"id\":\"r1\",\"prUrl\":\"https://github.com/o/r/pull/1\",\"status\":\"COMPLETED\"}");
         when(reviewMapper.selectById("r1")).thenReturn(reviewDO);
 
-        ReviewSessionRespDTO result = reviewRepository.findById("r1");
+        ReviewSessionRespDTO result = reviewSessionService.findById("r1");
 
         assertEquals("r1", result.getId());
         assertEquals("https://github.com/o/r/pull/1", result.getPrUrl());
@@ -85,7 +86,7 @@ class ReviewRepositoryTest {
         RepoAutoPublishDO config = new RepoAutoPublishDO("owner", "repo", true);
         when(repoAutoPublishMapper.selectList(any())).thenReturn(List.of(config));
 
-        List<String> result = reviewRepository.listAutoPublishRepos();
+        List<String> result = reviewSessionService.listAutoPublishRepos();
 
         assertEquals(List.of("owner/repo"), result);
     }
@@ -94,15 +95,15 @@ class ReviewRepositoryTest {
     void isAutoPublishEnabled_returnsFlagFromDatabase() {
         when(repoAutoPublishMapper.selectById("owner/repo")).thenReturn(new RepoAutoPublishDO("owner", "repo", true));
 
-        assertTrue(reviewRepository.isAutoPublishEnabled("owner", "repo"));
-        assertFalse(reviewRepository.isAutoPublishEnabled("owner", "missing"));
+        assertTrue(reviewSessionService.isAutoPublishEnabled("owner", "repo"));
+        assertFalse(reviewSessionService.isAutoPublishEnabled("owner", "missing"));
     }
 
     @Test
     void setAutoPublishEnabled_true_insertsWhenMissing() {
         when(repoAutoPublishMapper.selectById("owner/repo")).thenReturn(null);
 
-        reviewRepository.setAutoPublishEnabled("owner", "repo", true);
+        reviewSessionService.setAutoPublishEnabled("owner", "repo", true);
 
         verify(repoAutoPublishMapper).insert(any(RepoAutoPublishDO.class));
         verify(repoAutoPublishMapper, never()).deleteById(anyString());
@@ -110,7 +111,7 @@ class ReviewRepositoryTest {
 
     @Test
     void setAutoPublishEnabled_false_deletesConfig() {
-        reviewRepository.setAutoPublishEnabled("owner", "repo", false);
+        reviewSessionService.setAutoPublishEnabled("owner", "repo", false);
 
         verify(repoAutoPublishMapper).deleteById("owner/repo");
     }

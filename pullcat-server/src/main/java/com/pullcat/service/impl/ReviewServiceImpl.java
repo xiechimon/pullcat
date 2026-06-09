@@ -16,7 +16,7 @@ import com.pullcat.dto.resp.SsePrInfoRespDTO;
 import com.pullcat.dto.resp.StatusRespDTO;
 import com.pullcat.service.ReviewService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ import java.util.Map;
 public class ReviewServiceImpl implements ReviewService {
 
     private final AnalysisOrchestrator orchestrator;
-    private final ReviewRepository reviewRepository;
+    private final ReviewSessionService reviewSessionService;
 
     @Override
     public ReviewListRespDTO listReviews(int page, int size, String repo, String login) {
@@ -41,14 +41,14 @@ public class ReviewServiceImpl implements ReviewService {
         long total;
 
         if (repo != null && !repo.isBlank()) {
-            reviews = reviewRepository.findByRepo(repo, page, size);
-            total = reviewRepository.countByRepo(repo);
+            reviews = reviewSessionService.findByRepo(repo, page, size);
+            total = reviewSessionService.countByRepo(repo);
         } else if (login != null) {
-            reviews = reviewRepository.findByLogin(login, page, size);
-            total = reviewRepository.countByLogin(login);
+            reviews = reviewSessionService.findByLogin(login, page, size);
+            total = reviewSessionService.countByLogin(login);
         } else {
-            reviews = reviewRepository.findAnonymous(page, size);
-            total = reviewRepository.countAnonymous();
+            reviews = reviewSessionService.findAnonymous(page, size);
+            total = reviewSessionService.countAnonymous();
         }
 
         ReviewListRespDTO response = new ReviewListRespDTO();
@@ -61,7 +61,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public ReviewSessionRespDTO getReview(String id, String login) {
-        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        ReviewSessionRespDTO session = reviewSessionService.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
         }
@@ -73,14 +73,14 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void deleteReview(String id, String login) {
-        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        ReviewSessionRespDTO session = reviewSessionService.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
         }
         if (!isOwner(session, login)) {
             throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权删除此审查");
         }
-        reviewRepository.delete(id);
+        reviewSessionService.delete(id);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
         }
         ReviewSessionRespDTO session = orchestrator.createSession(prUrl, login);
-        reviewRepository.save(session);
+        reviewSessionService.save(session);
 
         CreateReviewRespDTO response = new CreateReviewRespDTO();
         response.setReviewId(session.getId());
@@ -100,7 +100,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public StatusRespDTO submitFeedback(String reviewId, String issueId, boolean accepted, String reason, String login) {
-        ReviewSessionRespDTO session = reviewRepository.findById(reviewId);
+        ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
         }
@@ -114,7 +114,7 @@ public class ReviewServiceImpl implements ReviewService {
                     if (issue.getId() != null && issue.getId().equals(issueId)) {
                         issue.setFeedback(accepted ? "ACCEPTED" : "REJECTED");
                         issue.setFeedbackReason(reason);
-                        reviewRepository.save(session);
+                        reviewSessionService.save(session);
                         return new StatusRespDTO("ok");
                     }
                 }
@@ -125,7 +125,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public PublishReviewRespDTO publishReview(String id, PublishReqDTO requestParam, String login) {
-        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        ReviewSessionRespDTO session = reviewSessionService.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
         }
@@ -144,7 +144,7 @@ public class ReviewServiceImpl implements ReviewService {
     public SseEmitter startSseStream(String id, String login) {
         SseEmitter emitter = new SseEmitter(10 * 60 * 1000L);
 
-        ReviewSessionRespDTO session = reviewRepository.findById(id);
+        ReviewSessionRespDTO session = reviewSessionService.findById(id);
         if (session == null) {
             sendErrorAndComplete(emitter, "Review session not found");
             return emitter;

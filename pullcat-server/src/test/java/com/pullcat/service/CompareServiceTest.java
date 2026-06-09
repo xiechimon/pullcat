@@ -5,7 +5,7 @@ import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.CompareReviewsRespDTO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
-import com.pullcat.service.analysis.ReviewRepository;
+import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.impl.CompareServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 class CompareServiceTest {
 
     @Mock
-    private ReviewRepository reviewRepository;
+    private ReviewSessionService reviewSessionService;
 
     @InjectMocks
     private CompareServiceImpl compareService;
@@ -46,8 +46,8 @@ class CompareServiceTest {
 
     @Test
     void compare_missingReview_throwsClientExceptionWithExpectedMessage() {
-        when(reviewRepository.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
-        when(reviewRepository.findById("r2")).thenReturn(null);
+        when(reviewSessionService.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
+        when(reviewSessionService.findById("r2")).thenReturn(null);
 
         ClientException exception = assertThrows(ClientException.class, () -> compareService.compare("r1", "r2"));
 
@@ -56,8 +56,8 @@ class CompareServiceTest {
 
     @Test
     void compare_twoReviewIds_delegatesToNormalComparison() {
-        when(reviewRepository.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
-        when(reviewRepository.findById("r2")).thenReturn(review(
+        when(reviewSessionService.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
+        when(reviewSessionService.findById("r2")).thenReturn(review(
                 "https://github.com/o/r/pull/2",
                 issue("A.java", 10, "same issue"),
                 issue("B.java", 20, "new issue")
@@ -76,8 +76,8 @@ class CompareServiceTest {
 
     @Test
     void compare_twoReviewIdsByString_returnsComparisonResult() {
-        when(reviewRepository.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
-        when(reviewRepository.findById("r2")).thenReturn(review(
+        when(reviewSessionService.findById("r1")).thenReturn(review("https://github.com/o/r/pull/1", issue("A.java", 10, "same issue")));
+        when(reviewSessionService.findById("r2")).thenReturn(review(
                 "https://github.com/o/r/pull/2",
                 issue("A.java", 10, "same issue"),
                 issue("B.java", 20, "new issue")

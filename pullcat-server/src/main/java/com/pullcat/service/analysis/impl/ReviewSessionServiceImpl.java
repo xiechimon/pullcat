@@ -1,4 +1,4 @@
-package com.pullcat.service.analysis;
+package com.pullcat.service.analysis.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -10,13 +10,14 @@ import com.pullcat.dao.entity.ReviewDO;
 import com.pullcat.dao.mapper.RepoAutoPublishMapper;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
-import org.springframework.stereotype.Repository;
+import com.pullcat.service.analysis.ReviewSessionService;
+import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 
-@Repository
-public class ReviewRepository {
+@Service
+public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     private final ReviewMapper reviewMapper;
 
@@ -24,14 +25,15 @@ public class ReviewRepository {
 
     private final ObjectMapper objectMapper;
 
-    public ReviewRepository(ReviewMapper reviewMapper,
-                            RepoAutoPublishMapper repoAutoPublishMapper,
-                            ObjectMapper objectMapper) {
+    public ReviewSessionServiceImpl(ReviewMapper reviewMapper,
+                                    RepoAutoPublishMapper repoAutoPublishMapper,
+                                    ObjectMapper objectMapper) {
         this.reviewMapper = reviewMapper;
         this.repoAutoPublishMapper = repoAutoPublishMapper;
         this.objectMapper = objectMapper;
     }
 
+    @Override
     public void save(ReviewSessionRespDTO session) {
         ReviewDO reviewDO = toDO(session);
         if (reviewMapper.selectById(session.getId()) == null) {
@@ -41,10 +43,12 @@ public class ReviewRepository {
         }
     }
 
+    @Override
     public ReviewSessionRespDTO findById(String id) {
         return toDTO(reviewMapper.selectById(id));
     }
 
+    @Override
     public List<ReviewSessionRespDTO> findAll(int page, int size) {
         return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .orderByDesc(ReviewDO::getCreatedAt)
@@ -54,6 +58,7 @@ public class ReviewRepository {
                 .toList();
     }
 
+    @Override
     public List<ReviewSessionRespDTO> findByRepo(String fullName, int page, int size) {
         return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .eq(ReviewDO::getRepositoryFullName, fullName)
@@ -64,6 +69,7 @@ public class ReviewRepository {
                 .toList();
     }
 
+    @Override
     public List<ReviewSessionRespDTO> findByLogin(String login, int page, int size) {
         return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .eq(ReviewDO::getUserId, login)
@@ -74,11 +80,13 @@ public class ReviewRepository {
                 .toList();
     }
 
+    @Override
     public long countByLogin(String login) {
         return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .eq(ReviewDO::getUserId, login));
     }
 
+    @Override
     public List<ReviewSessionRespDTO> findAnonymous(int page, int size) {
         return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .isNull(ReviewDO::getUserId)
@@ -89,20 +97,24 @@ public class ReviewRepository {
                 .toList();
     }
 
+    @Override
     public long countAnonymous() {
         return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .isNull(ReviewDO::getUserId));
     }
 
+    @Override
     public long count() {
         return reviewMapper.selectCount(null);
     }
 
+    @Override
     public long countByRepo(String fullName) {
         return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .eq(ReviewDO::getRepositoryFullName, fullName));
     }
 
+    @Override
     public List<ReviewSessionRespDTO> findAllReviews() {
         return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .orderByDesc(ReviewDO::getCreatedAt))
@@ -111,19 +123,23 @@ public class ReviewRepository {
                 .toList();
     }
 
+    @Override
     public void delete(String id) {
         reviewMapper.deleteById(id);
     }
 
+    @Override
     public boolean exists(String id) {
         return reviewMapper.selectById(id) != null;
     }
 
+    @Override
     public boolean isAutoPublishEnabled(String owner, String repo) {
         RepoAutoPublishDO config = repoAutoPublishMapper.selectById(owner + "/" + repo);
         return config != null && config.isEnabled();
     }
 
+    @Override
     public void setAutoPublishEnabled(String owner, String repo, boolean enabled) {
         String fullName = owner + "/" + repo;
         if (enabled) {
@@ -143,6 +159,7 @@ public class ReviewRepository {
         }
     }
 
+    @Override
     public List<String> listAutoPublishRepos() {
         return repoAutoPublishMapper.selectList(new LambdaQueryWrapper<RepoAutoPublishDO>()
                         .eq(RepoAutoPublishDO::isEnabled, true)
