@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 /**
  * 分析编排器，负责完整的 PR 审查流程：拉取数据、构建上下文、执行五个分析任务，
@@ -167,6 +168,10 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
                 final Map<String, String> finalVariables = contextBuilder.buildVariables(
                         prData.getMetadata(), prData.getFileTree(), prData.getFiles(), discussion, relatedFiles);
+
+                List<String> conventionCandidates = detectConventionCandidates(prData.getFileTree());
+                String repoConventions = buildConventionContent(parsed, conventionCandidates);
+                finalVariables.put("repo_conventions", repoConventions);
 
                 List<AnalysisType> types = List.of(
                         AnalysisType.SUMMARY, AnalysisType.RISK, AnalysisType.QUALITY,
@@ -465,6 +470,41 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
     private AnalysisTask createTask(AnalysisType type) {
         return taskFactory.create(type);
+    }
+
+    /**
+     * 并行拉取约定文件内容，合并并截断至 8000 字符；任一文件拉取失败则静默跳过
+     */
+    private String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
+        if (candidates.isEmpty()) return "";
+
+        List<CompletableFuture<String>> futures = candidates.stream()
+                .map(name -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        String content = gitHubApiService.fetchFileContent(prUrl, name).block();
+                        return (content != null && !content.isBlank())
+                                ? "--- 来自 " + name + " ---\n" + content
+                                : "";
+                    } catch (Exception e) {
+                        log.warn("Convention file fetch skipped: {} - {}", name, e.getMessage());
+                        return "";
+                    }
+                }, analysisExecutor))
+                .toList();
+
+        String combined = futures.stream()
+                .map(f -> {
+                    try { return f.get(); } catch (Exception e) { return ""; }
+                })
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.joining("\n\n"));
+
+        if (combined.isBlank()) return "";
+
+        if (combined.length() > 8000) {
+            combined = combined.substring(0, 8000);
+        }
+        return "## 仓库约定（必须遵守）\n\n" + combined;
     }
 
     /**
