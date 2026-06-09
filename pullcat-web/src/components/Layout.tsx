@@ -13,16 +13,17 @@ interface LayoutProps {
 }
 
 const NAV_ITEMS = [
+  { path: '/', label: '新建审查' },
   { path: '/dashboard', label: '仪表盘' },
   { path: '/history', label: '历史' },
   { path: '/stats', label: '统计' },
-  { path: '/', label: '新建审查' },
 ]
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [user, setUser] = useState<CurrentUserRespDTO>({ authenticated: false })
+  const [mobileMenuState, setMobileMenuState] = useState({ open: false, path: '/' })
 
   useEffect(() => {
     let cancelled = false
@@ -30,119 +31,170 @@ export function Layout({ children }: LayoutProps) {
     return () => { cancelled = true }
   }, [])
 
+  const mobileMenuOpen = mobileMenuState.open && mobileMenuState.path === location.pathname
+
+  const activePath = location.pathname === '/'
+    ? '/'
+    : NAV_ITEMS.find(item => item.path !== '/' && location.pathname.startsWith(item.path))?.path ?? null
+
   return (
     <Tooltip.Provider delayDuration={500}>
-    <div className="min-h-screen font-sans transition-colors duration-300">
-      <header className="fixed h-[60px] md:h-[80px] top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-emerald-700/30 flex flex-row items-center justify-between px-4 lg:px-16">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/cat.png" alt="Pullcat" className="h-7 md:h-10 w-auto object-contain" />
-            <span className="font-serif font-bold text-2xl tracking-tighter text-emerald-700">Pullcat</span>
-          </Link>
-          <nav className="hidden sm:flex items-center gap-1">
-            {NAV_ITEMS.map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  location.pathname === item.path
-                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href="https://github.com/xiechimon/pullcat"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="View on GitHub"
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-            </svg>
-          </a>
-          <ThemeToggle />
-          {user.authenticated ? (
-            <DropdownMenu.Root>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <DropdownMenu.Trigger asChild>
-                    <button className="flex items-center gap-2">
-                      {user.avatarUrl ? (
-                        <img src={user.avatarUrl} alt="" className="w-7 h-7 rounded-full ring-2 ring-emerald-200" />
-                      ) : (
-                        <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
-                          {user.login?.[0]?.toUpperCase()}
-                        </span>
-                      )}
-                    </button>
-                  </DropdownMenu.Trigger>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    className="px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded shadow-lg z-50"
-                    sideOffset={5}
-                  >
-                    {user.login}
-                    <Tooltip.Arrow className="fill-gray-900 dark:fill-gray-100" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  className="min-w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50"
-                  sideOffset={5}
-                  align="end"
-                >
-                  <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 dark:border-gray-700">
-                    {user.login}
-                  </div>
-                  <DropdownMenu.Item asChild>
-                    <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none">
-                      设置
-                    </Link>
-                  </DropdownMenu.Item>
-                  <DropdownMenu.Item asChild>
-                    <a
-                      href="/logout"
-                      onClick={async (e) => {
-                        e.preventDefault()
-                        try {
-                          await logout()
-                          setUser({ authenticated: false })
-                          toast.success('已退出登录')
-                          navigate('/login')
-                        } catch {
-                          toast.error('退出失败')
-                        }
-                      }}
-                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none"
-                    >
-                      退出
-                    </a>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
-          ) : (
-            <Link to="/login" className="text-sm font-medium text-emerald-700 hover:underline">
-              登录
+      <div className="min-h-screen font-sans transition-colors duration-300">
+        <header className="app-header">
+          <div className="app-header__brand">
+            <Link to="/" className="app-brand">
+              <img src="/cat.png" alt="Pullcat" className="h-7 w-auto object-contain md:h-9" />
+              <span className="app-brand__wordmark">Pullcat</span>
             </Link>
-          )}
-        </div>
-      </header>
+            <nav className="app-nav app-nav--desktop" aria-label="主导航">
+              {NAV_ITEMS.map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`app-nav__link ${activePath === item.path ? 'app-nav__link--active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
 
-      <main className="pt-[80px] pb-20">
-        {children}
-      </main>
-      <Toaster richColors position="top-center" />
-    </div>
+          <div className="app-header__actions">
+            <a
+              href="https://github.com/xiechimon/pullcat"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View on GitHub"
+              className="app-header__icon-button"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+              </svg>
+            </a>
+            <ThemeToggle />
+            {user.authenticated ? (
+              <DropdownMenu.Root>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <DropdownMenu.Trigger asChild>
+                      <button className="flex items-center gap-2 rounded-full">
+                        {user.avatarUrl ? (
+                          <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full ring-2 ring-emerald-200" />
+                        ) : (
+                          <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                            {user.login?.[0]?.toUpperCase()}
+                          </span>
+                        )}
+                      </button>
+                    </DropdownMenu.Trigger>
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      className="px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded shadow-lg z-50"
+                      sideOffset={5}
+                    >
+                      {user.login}
+                      <Tooltip.Arrow className="fill-gray-900 dark:fill-gray-100" />
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    className="min-w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50"
+                    sideOffset={5}
+                    align="end"
+                  >
+                    <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-100 dark:border-gray-700">
+                      {user.login}
+                    </div>
+                    <DropdownMenu.Item asChild>
+                      <Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none">
+                        设置
+                      </Link>
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item asChild>
+                      <a
+                        href="/logout"
+                        onClick={async (e) => {
+                          e.preventDefault()
+                          try {
+                            await logout()
+                            setUser({ authenticated: false })
+                            toast.success('已退出登录')
+                            navigate('/login')
+                          } catch {
+                            toast.error('退出失败')
+                          }
+                        }}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer outline-none"
+                      >
+                        退出
+                      </a>
+                    </DropdownMenu.Item>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            ) : (
+              <Link to="/login" className="app-login-link">
+                登录
+              </Link>
+            )}
+            <button
+              type="button"
+              className="app-nav-trigger sm:hidden"
+              aria-label="打开导航菜单"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuState(state => ({
+                open: state.path === location.pathname ? !state.open : true,
+                path: location.pathname,
+              }))}
+            >
+              <span className="app-nav-trigger__line" />
+              <span className="app-nav-trigger__line" />
+              <span className="app-nav-trigger__line" />
+            </button>
+          </div>
+        </header>
+
+        {mobileMenuOpen && (
+          <div className="app-mobile-nav sm:hidden" role="dialog" aria-label="移动端导航">
+            <nav className="app-mobile-nav__list" aria-label="移动端导航链接">
+              {NAV_ITEMS.map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`app-mobile-nav__link ${activePath === item.path ? 'app-mobile-nav__link--active' : ''}`}
+                  onClick={() => setMobileMenuState({ open: false, path: item.path })}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              {user.authenticated ? (
+                <Link
+                  to="/settings"
+                  className="app-mobile-nav__link"
+                  onClick={() => setMobileMenuState({ open: false, path: '/settings' })}
+                >
+                  设置
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="app-mobile-nav__link"
+                  onClick={() => setMobileMenuState({ open: false, path: '/login' })}
+                >
+                  登录
+                </Link>
+              )}
+            </nav>
+          </div>
+        )}
+
+        <main className="pt-[88px] pb-20 md:pt-[96px]">
+          {children}
+        </main>
+        <Toaster richColors position="top-center" />
+      </div>
     </Tooltip.Provider>
   )
 }

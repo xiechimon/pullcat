@@ -50,6 +50,160 @@ body {
   min-height: 100vh;
 }
 
+.app-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1rem;
+  background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+.app-header__brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.app-brand__wordmark {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--color-primary);
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.app-nav--desktop {
+  display: none;
+}
+
+.app-nav__link {
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.8rem;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.app-nav__link:hover {
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-surface));
+  color: var(--color-text);
+}
+
+.app-nav__link--active {
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-header__icon-button,
+.app-nav-trigger {
+  display: inline-flex;
+  height: 40px;
+  width: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  background: transparent;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.app-header__icon-button:hover,
+.app-nav-trigger:hover {
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-surface));
+  color: var(--color-text);
+}
+
+.app-login-link {
+  padding: 0.55rem 0.75rem;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-nav-trigger {
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.app-nav-trigger__line {
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.app-mobile-nav {
+  position: fixed;
+  inset: 72px 0 auto;
+  z-index: 45;
+  padding: 0.85rem 1rem 1rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.app-mobile-nav__list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.app-mobile-nav__link {
+  display: block;
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.9rem;
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-mobile-nav__link--active {
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-surface));
+  color: var(--color-primary);
+}
+
+.page-shell {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.surface-card {
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  background: var(--color-surface);
+}
+
 .input-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -141,5 +295,11 @@ body {
     animation: none;
     opacity: 1;
     transform: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .app-nav--desktop {
+    display: flex;
   }
 }
