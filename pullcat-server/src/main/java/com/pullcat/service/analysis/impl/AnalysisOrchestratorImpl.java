@@ -486,7 +486,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                                 ? "--- 来自 " + name + " ---\n" + content
                                 : "";
                     } catch (Exception e) {
-                        log.warn("Convention file fetch skipped: {} - {}", name, e.getMessage());
+                        log.warn("Convention file fetch skipped: {} - {}", name, e.getMessage(), e);
                         return "";
                     }
                 }, analysisExecutor))
@@ -503,6 +503,10 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
         if (combined.length() > 8000) {
             combined = combined.substring(0, 8000);
+            // 若截断位置落在 UTF-16 高代理字符上，移除孤立代理避免编码异常
+            if (Character.isHighSurrogate(combined.charAt(combined.length() - 1))) {
+                combined = combined.substring(0, combined.length() - 1);
+            }
         }
         return "## 仓库约定（必须遵守）\n\n" + combined;
     }
