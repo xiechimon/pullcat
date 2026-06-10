@@ -70,6 +70,9 @@ public interface ReviewService {
 
     /**
      * Webhook 触发审查
+     *
+     * @param prUrl PR 链接
+     * @param installationId GitHub App 安装 ID
      */
     void triggerReview(String prUrl, Long installationId);
 }
