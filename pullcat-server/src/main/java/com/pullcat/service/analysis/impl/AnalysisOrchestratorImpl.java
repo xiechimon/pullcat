@@ -3,6 +3,7 @@ package com.pullcat.service.analysis.impl;
 import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.common.enums.SessionStatus;
+import com.pullcat.config.infra.GitHubConfig;
 import com.pullcat.dto.resp.*;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.analysis.*;
@@ -44,6 +45,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final ExecutorService analysisExecutor;
     private final MeterRegistry meterRegistry;
     private final ReviewPublisher reviewPublisher;
+    private final GitHubConfig gitHubConfig;
 
     @Override
     public void startAsync(ReviewSessionRespDTO session) {
@@ -123,9 +125,18 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                         .count();
                 session.setStatus(completedCount > 0 ? SessionStatus.COMPLETED : SessionStatus.FAILED);
                 session.setCompletedAt(Instant.now());
+
+                if (completedCount > 0) {
+                    runAggregation(session, finalVariables);
+                }
                 reviewSessionService.save(session);
 
-                boolean autoPublished = reviewPublisher.tryAutoPublish(session);
+                boolean autoPublished = false;
+                if (session.getHeadSha() != null && !session.getHeadSha().isBlank()) {
+                    postCompletionStatusAndComment(session, apiService, parsed);
+                } else {
+                    autoPublished = reviewPublisher.tryAutoPublish(session);
+                }
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
                         .description("Duration of PR review analysis")
@@ -147,6 +158,17 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 log.error("Review failed: {}", e.getMessage(), e);
                 session.setStatus(SessionStatus.FAILED);
                 reviewSessionService.save(session);
+
+                if (session.getHeadSha() != null && !session.getHeadSha().isBlank()) {
+                    try {
+                        GitHubApiService apiService = resolveGitHubApiService(session);
+                        GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(session.getPrUrl());
+                        apiService.updateCommitStatus(parsed, session.getHeadSha(), "error",
+                                "pullcat \u5ba1\u67e5\u51fa\u9519", null).block();
+                    } catch (Exception ex) {
+                        log.warn("Failed to post error commit status: {}", ex.getMessage());
+                    }
+                }
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
                         .description("Duration of PR review analysis")
@@ -269,6 +291,59 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 ctx.emitter().send(SseEmitter.event().name("review_error").data(new SseMessageRespDTO(message)));
                 ctx.emitter().complete();
             } catch (IOException | IllegalStateException ignored) {
+            }
+        }
+    }
+
+    private void runAggregation(ReviewSessionRespDTO session, Map<String, String> baseVariables) {
+        try {
+            Map<String, String> aggVars = new java.util.HashMap<>(baseVariables);
+            aggVars.put("summary",     getAnalysisContent(session, "summary"));
+            aggVars.put("risk",        getAnalysisContent(session, "risk"));
+            aggVars.put("quality",     getAnalysisContent(session, "quality"));
+            aggVars.put("consistency", getAnalysisContent(session, "consistency"));
+            aggVars.put("testing",     getAnalysisContent(session, "testing"));
+
+            AnalysisResultRespDTO aggResult = executeTask(AnalysisType.AGGREGATION, aggVars, session.getId());
+            session.getAnalyses().put("aggregation", aggResult);
+        } catch (Exception e) {
+            log.warn("Aggregation analysis failed: {}", e.getMessage());
+        }
+    }
+
+    private String getAnalysisContent(ReviewSessionRespDTO session, String key) {
+        AnalysisResultRespDTO result = session.getAnalyses().get(key);
+        if (result == null || result.getContent() == null) return "（无数据）";
+        return result.getContent();
+    }
+
+    private void postCompletionStatusAndComment(ReviewSessionRespDTO session,
+                                                 GitHubApiService apiService,
+                                                 GitHubApiService.PRUrl parsed) {
+        String headSha = session.getHeadSha();
+        String detailsUrl = gitHubConfig.getBaseUrl() + "/dashboard?review=" + session.getId();
+
+        long issueCount = session.getAnalyses().values().stream()
+                .filter(r -> r.getIssues() != null)
+                .mapToLong(r -> r.getIssues().size())
+                .sum();
+        String description = issueCount > 0 ? "发现 " + issueCount + " 个问题" : "审查通过，未发现明显问题";
+
+        try {
+            apiService.updateCommitStatus(parsed, headSha, "success", description, detailsUrl).block();
+        } catch (Exception e) {
+            log.warn("Failed to post success commit status for review {}: {}", session.getId(), e.getMessage());
+        }
+
+        AnalysisResultRespDTO aggResult = session.getAnalyses().get("aggregation");
+        if (aggResult != null && aggResult.getContent() != null && !aggResult.getContent().isBlank()) {
+            String commentBody = aggResult.getContent()
+                    + "\n\n---\n*由 [pullcat](" + gitHubConfig.getBaseUrl() + ") 自动生成 · "
+                    + "[查看完整报告](" + detailsUrl + ")*";
+            try {
+                apiService.postIssueComment(parsed, commentBody).block();
+            } catch (Exception e) {
+                log.error("Failed to post aggregation comment for review {}: {}", session.getId(), e.getMessage());
             }
         }
     }
