@@ -64,8 +64,6 @@ pullcat:
     webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
 
   base-url: ${PULLCAT_BASE_URL:http://localhost:5173}
-  cors:
-    allowed-origins: ${PULLCAT_CORS_ALLOWED_ORIGINS:http://localhost:*}
 
   # --- LLM 模型配置 ---
   llm:
