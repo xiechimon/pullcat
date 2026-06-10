@@ -93,6 +93,7 @@ pullcat:
 # --- 服务器配置 ---
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 # 静默 SSE 断连时的 Broken pipe 日志噪音
 logging:
