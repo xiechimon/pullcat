@@ -4,6 +4,7 @@ import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.service.analysis.impl.AnalysisOrchestratorImpl;
+import com.pullcat.toolkit.ConventionUtil;
 import com.pullcat.service.llm.AnalysisService;
 import com.pullcat.service.llm.AnalysisTask;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -66,22 +67,22 @@ class AnalysisOrchestratorImplTest {
 
     @Test
     void detectConventionCandidates_returnsEmptyForNullOrBlankTree() {
-        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates(null)).isEmpty();
-        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates("")).isEmpty();
-        assertThat(AnalysisOrchestratorImpl.detectConventionCandidates("   ")).isEmpty();
+        assertThat(ConventionUtil.detectConventionCandidates(null)).isEmpty();
+        assertThat(ConventionUtil.detectConventionCandidates("")).isEmpty();
+        assertThat(ConventionUtil.detectConventionCandidates("   ")).isEmpty();
     }
 
     @Test
     void detectConventionCandidates_excludesKnownNonConventionFiles() {
         String tree = "./\n  README.md\n  CHANGELOG.md\n  LICENSE.md\n  AGENTS.md\n\nsrc/\n  Main.java\n";
-        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        List<String> result = ConventionUtil.detectConventionCandidates(tree);
         assertThat(result).containsExactly("AGENTS.md");
     }
 
     @Test
     void detectConventionCandidates_returnsAllWhenFewerThanThree() {
         String tree = "./\n  AGENTS.md\n  CONTRIBUTING.md\n\n";
-        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        List<String> result = ConventionUtil.detectConventionCandidates(tree);
         assertThat(result).containsExactly("AGENTS.md", "CONTRIBUTING.md");
     }
 
@@ -89,7 +90,7 @@ class AnalysisOrchestratorImplTest {
     void detectConventionCandidates_sortsByPriorityThenLimitsToThree() {
         // 优先级：AGENTS.md(0) > CLAUDE.md(1) > CONTRIBUTING.md(5)；DEVELOPMENT.md(8)/CONVENTIONS.md(6) 被截断
         String tree = "./\n  CONTRIBUTING.md\n  CLAUDE.md\n  AGENTS.md\n  DEVELOPMENT.md\n  CONVENTIONS.md\n\n";
-        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        List<String> result = ConventionUtil.detectConventionCandidates(tree);
         assertThat(result).hasSize(3);
         assertThat(result.get(0)).isEqualTo("AGENTS.md");
         assertThat(result.get(1)).isEqualTo("CLAUDE.md");
@@ -99,7 +100,7 @@ class AnalysisOrchestratorImplTest {
     @Test
     void detectConventionCandidates_caseInsensitiveExclusion() {
         String tree = "./\n  readme.md\n  changelog.MD\n  AGENTS.md\n\n";
-        List<String> result = AnalysisOrchestratorImpl.detectConventionCandidates(tree);
+        List<String> result = ConventionUtil.detectConventionCandidates(tree);
         assertThat(result).containsExactly("AGENTS.md");
     }
 
