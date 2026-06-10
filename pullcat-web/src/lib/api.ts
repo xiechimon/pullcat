@@ -10,7 +10,6 @@ import type {
   RepoStatsRespDTO,
   ReviewListRespDTO,
   ReviewSessionRespDTO,
-  RuleRespDTO,
   StatsOverviewRespDTO,
   StatusRespDTO,
 } from '../types/review'
@@ -155,40 +154,6 @@ export async function setAutoPublish(owner: string, repo: string, enabled: boole
 
 export async function disableAutoPublish(owner: string, repo: string): Promise<BooleanStatusRespDTO> {
   return request<BooleanStatusRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}/auto-publish`, {
-    method: 'DELETE',
-  })
-}
-
-export async function getRules(owner: string, repo: string): Promise<RuleRespDTO[]> {
-  return request<RuleRespDTO[]>(`${API_PREFIX}/repos/${owner}/${repo}/rules`)
-}
-
-export async function getRuleSuggestions(owner: string, repo: string): Promise<RuleRespDTO[]> {
-  return request<RuleRespDTO[]>(`${API_PREFIX}/repos/${owner}/${repo}/rules/suggestions`)
-}
-
-export async function createRule(owner: string, repo: string, rule: RuleRespDTO): Promise<RuleRespDTO> {
-  return request<RuleRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}/rules`, {
-    method: 'POST',
-    body: JSON.stringify(rule),
-  })
-}
-
-export async function updateRule(owner: string, repo: string, ruleId: string, rule: RuleRespDTO): Promise<RuleRespDTO> {
-  return request<RuleRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}/rules/${ruleId}`, {
-    method: 'PUT',
-    body: JSON.stringify(rule),
-  })
-}
-
-export async function toggleRule(owner: string, repo: string, ruleId: string): Promise<RuleRespDTO> {
-  return request<RuleRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}/rules/${ruleId}/toggle`, {
-    method: 'PUT',
-  })
-}
-
-export async function deleteRule(owner: string, repo: string, ruleId: string): Promise<DeletedRespDTO> {
-  return request<DeletedRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}/rules/${ruleId}`, {
     method: 'DELETE',
   })
 }

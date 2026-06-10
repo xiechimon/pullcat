@@ -41,11 +41,6 @@ public final class RedisKeys {
     public static final String REPO_INDEX = "repo:index";
 
     /**
-     * 规则缓存 key 前缀，格式: rule:{owner}/{repo}
-     */
-    public static final String RULE_PREFIX = "rule:";
-
-    /**
      * 用户缓存 key 前缀，格式: user:{id}
      */
     public static final String USER_PREFIX = "user:";
@@ -74,10 +69,6 @@ public final class RedisKeys {
      */
     public static String repoKey(String fullName) {
         return REPO_PREFIX + fullName;
-    }
-
-    public static String ruleKey(String owner, String repo) {
-        return RULE_PREFIX + owner + "/" + repo;
     }
 
     public static String userKey(String id) {

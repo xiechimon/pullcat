@@ -104,17 +104,6 @@ export interface BooleanStatusRespDTO {
   enabled: boolean
 }
 
-export interface RuleRespDTO {
-  id?: string
-  name: string
-  type: 'FILE_PATH_MATCH' | 'CODE_PATTERN' | 'FORBIDDEN_API'
-  pattern: string
-  severity: Severity
-  message: string
-  suggestion: string
-  enabled: boolean
-}
-
 export interface StatsOverviewRespDTO {
   totalReviews: number
   totalIssues: number

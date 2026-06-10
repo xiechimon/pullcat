@@ -14,7 +14,6 @@ import com.pullcat.dto.resp.SseAutoPublishRespDTO;
 import com.pullcat.dto.resp.SseCompletionRespDTO;
 import com.pullcat.dto.resp.SseMessageRespDTO;
 import com.pullcat.dto.resp.SsePrInfoRespDTO;
-import com.pullcat.dto.resp.SseRuleSuggestionRespDTO;
 import com.pullcat.dto.resp.SseTaskProgressRespDTO;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
@@ -23,7 +22,6 @@ import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ResultAggregator;
 import com.pullcat.service.analysis.ReviewSessionService;
-import com.pullcat.service.analysis.RuleSuggestionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
 import com.pullcat.service.llm.AnalysisTask;
@@ -63,7 +61,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final AnalysisTaskFactory taskFactory;
     private final ExecutorService analysisExecutor;
     private final ResultAggregator resultAggregator;
-    private final RuleSuggestionService ruleSuggestionService;
     private final MeterRegistry meterRegistry;
 
     public AnalysisOrchestratorImpl(GitHubApiService gitHubApiService,
@@ -73,7 +70,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                                     AnalysisTaskFactory taskFactory,
                                     @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
                                     ResultAggregator resultAggregator,
-                                    RuleSuggestionService ruleSuggestionService,
                                     MeterRegistry meterRegistry) {
         this.gitHubApiService = gitHubApiService;
         this.promptLoader = promptLoader;
@@ -82,7 +78,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         this.taskFactory = taskFactory;
         this.analysisExecutor = analysisExecutor;
         this.resultAggregator = resultAggregator;
-        this.ruleSuggestionService = ruleSuggestionService;
         this.meterRegistry = meterRegistry;
     }
 
@@ -238,7 +233,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                         }
                         finalCtx.emitter().send(SseEmitter.event().name("all_complete")
                                 .data(new SseCompletionRespDTO("completed")));
-                        checkAndNotifyRuleSuggestions(session, finalCtx);
                         finalCtx.emitter().complete();
                     } catch (IOException | IllegalStateException e) {
                         log.debug("SSE send all_complete error: {}", e.getMessage());
@@ -401,28 +395,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         sb.append(issue.getSuggestionCode());
         sb.append("\n```\n");
         return sb.toString();
-    }
-
-    private void checkAndNotifyRuleSuggestions(ReviewSessionRespDTO session, StreamContext ctx) {
-        try {
-            String fullName = session.getRepositoryFullName();
-            if (fullName == null) {
-                return;
-            }
-            String[] parts = fullName.split("/", 2);
-            if (parts.length != 2) {
-                return;
-            }
-
-            if (ruleSuggestionService.hasNewSuggestions(parts[0], parts[1])) {
-                SseRuleSuggestionRespDTO suggestion = new SseRuleSuggestionRespDTO();
-                suggestion.setMessage("发现潜在规则建议");
-                suggestion.setUrl("/settings/repos/" + parts[0] + "/" + parts[1]);
-                ctx.emitter().send(SseEmitter.event().name("rule_suggestion").data(suggestion));
-            }
-        } catch (Exception e) {
-            log.debug("Failed to check rule suggestions: {}", e.getMessage());
-        }
     }
 
     private boolean tryAutoPublish(ReviewSessionRespDTO session) {

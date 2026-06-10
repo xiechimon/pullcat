@@ -20,7 +20,6 @@ interface ReviewState {
   error: string | null
   tasks: TaskStateRespDTO[]
   results: Record<string, AnalysisResultRespDTO | null>
-  ruleSuggestionUrl: string | null
 }
 
 type Action =
@@ -35,7 +34,6 @@ type Action =
   | { type: 'SSE_CONNECT'; reviewId: string }
   | { type: 'PR_INFO'; prUrl: string; title: string; owner: string; repo: string; pullNumber: number; fileCount: number; additions: number; deletions: number; diff: string }
   | { type: 'LOAD_REVIEW'; session: ReviewSessionRespDTO }
-  | { type: 'RULE_SUGGESTION'; url: string }
 
 function createInitialTasks(): TaskStateRespDTO[] {
   return ANALYSIS_TYPES.map((name) => ({
@@ -214,12 +212,6 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
       }
     }
 
-    case 'RULE_SUGGESTION':
-      return {
-        ...state,
-        ruleSuggestionUrl: action.url,
-      }
-
     default:
       return state
   }
@@ -242,7 +234,6 @@ function createInitialState(): ReviewState {
     error: null,
     tasks: createInitialTasks(),
     results: {},
-    ruleSuggestionUrl: null,
   }
 }
 
@@ -262,13 +253,11 @@ interface UseReviewReducerReturn {
   isAnalyzing: boolean
   tasks: TaskStateRespDTO[]
   results: Record<string, AnalysisResultRespDTO | null>
-  ruleSuggestionUrl: string | null
   startReview: (prUrl: string) => Promise<void>
   resumeReview: (reviewId: string, sseUrl: string) => void
   loadReview: (reviewId: string) => Promise<void>
   toggleIssue: (issueId: string) => void
   submitFeedback: (reviewId: string, issueId: string, accepted: boolean, reason?: string) => Promise<void>
-  dismissRuleSuggestion: () => void
 }
 
 export function useReviewReducer(): UseReviewReducerReturn {
@@ -341,17 +330,6 @@ export function useReviewReducer(): UseReviewReducerReturn {
         eventSourceRef.current.close()
         eventSourceRef.current = null
       }
-    })
-
-    es.addEventListener('rule_suggestion', (event) => {
-      const data = JSON.parse((event as MessageEvent).data)
-      dispatch({ type: 'RULE_SUGGESTION', url: data.url || '' })
-      toast.info(data.message || '发现潜在规则建议', {
-        action: {
-          label: '查看',
-          onClick: () => window.location.href = data.url,
-        },
-      })
     })
 
     es.addEventListener('review_error', (event) => {
@@ -434,10 +412,6 @@ export function useReviewReducer(): UseReviewReducerReturn {
     }
   }, [])
 
-  const dismissRuleSuggestion = useCallback(() => {
-    dispatch({ type: 'RULE_SUGGESTION', url: '' })
-  }, [])
-
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -462,12 +436,10 @@ export function useReviewReducer(): UseReviewReducerReturn {
     isAnalyzing: state.isAnalyzing,
     tasks: state.tasks,
     results: state.results,
-    ruleSuggestionUrl: state.ruleSuggestionUrl,
     startReview,
     resumeReview,
     loadReview,
     toggleIssue,
     submitFeedback,
-    dismissRuleSuggestion,
   }
 }

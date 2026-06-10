@@ -41,7 +41,6 @@ class AnalysisOrchestratorImplTest {
                     Mockito.mock(AnalysisTaskFactory.class),
                     executorService,
                     Mockito.mock(ResultAggregator.class),
-                    Mockito.mock(RuleSuggestionService.class),
                     new SimpleMeterRegistry()
             );
 
