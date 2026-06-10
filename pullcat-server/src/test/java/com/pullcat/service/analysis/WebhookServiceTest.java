@@ -6,6 +6,7 @@ import com.pullcat.dto.req.WebhookPullRequestReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.analysis.GitHubInstallationService;
+import com.pullcat.service.analysis.impl.ReviewOrchestrator;
 import com.pullcat.service.impl.WebhookServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +21,7 @@ import static org.mockito.Mockito.*;
 class WebhookServiceTest {
 
     @Mock
-    AnalysisOrchestrator orchestrator;
+    ReviewOrchestrator orchestrator;
 
     @Mock
     ReviewSessionService reviewSessionService;
