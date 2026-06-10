@@ -1,6 +1,7 @@
 package com.pullcat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.constant.RedisKeys;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
@@ -18,14 +19,13 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class RepoServiceImpl implements RepoService {
+public class RepoServiceImpl extends ServiceImpl<RepoMapper, RepoDO> implements RepoService {
 
-    private final RepoMapper repoMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public List<RepoRespDTO> listRepos() {
-        return repoMapper.selectList(null).stream().map(this::toRespDTO).toList();
+        return baseMapper.selectList(null).stream().map(this::toRespDTO).toList();
     }
 
     @Override
@@ -40,7 +40,7 @@ public class RepoServiceImpl implements RepoService {
         if (req.getDescription() != null) {
             repoDO.setDescription(req.getDescription());
         }
-        repoMapper.insert(repoDO);
+        baseMapper.insert(repoDO);
         redisTemplate.opsForValue().set(RedisKeys.repoKey(repoDO.getFullName()), repoDO);
         return toRespDTO(repoDO);
     }
@@ -48,11 +48,11 @@ public class RepoServiceImpl implements RepoService {
     @Override
     public DeletedRespDTO removeRepo(String owner, String repo) {
         String fullName = owner + "/" + repo;
-        if (repoMapper.selectById(fullName) == null) {
+        if (baseMapper.selectById(fullName) == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");
         }
 
-        repoMapper.deleteById(fullName);
+        baseMapper.deleteById(fullName);
         redisTemplate.delete(RedisKeys.repoKey(fullName));
         return new DeletedRespDTO(true);
     }
@@ -61,7 +61,7 @@ public class RepoServiceImpl implements RepoService {
     public RepoRespDTO getRepo(String owner, String repo) {
         String fullName = owner + "/" + repo;
         Object cached = redisTemplate.opsForValue().get(RedisKeys.repoKey(fullName));
-        RepoDO repoDO = cached instanceof RepoDO ? (RepoDO) cached : repoMapper.selectOne(
+        RepoDO repoDO = cached instanceof RepoDO ? (RepoDO) cached : baseMapper.selectOne(
                 new LambdaQueryWrapper<RepoDO>().eq(RepoDO::getFullName, fullName));
         if (repoDO == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "仓库不存在");

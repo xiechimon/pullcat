@@ -1,5 +1,8 @@
 package com.pullcat.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.pullcat.dao.entity.ReviewDO;
+import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.ReviewService;
@@ -10,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class WebhookServiceImpl implements WebhookService {
+public class WebhookServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements WebhookService {
 
     private final ReviewService reviewService;
     private final GitHubInstallationService gitHubInstallationService;

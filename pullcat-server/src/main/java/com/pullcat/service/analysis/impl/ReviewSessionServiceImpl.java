@@ -2,6 +2,7 @@ package com.pullcat.service.analysis.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pullcat.common.convention.exception.ServiceException;
@@ -11,46 +12,38 @@ import com.pullcat.dao.mapper.RepoAutoPublishMapper;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.analysis.ReviewSessionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 
 @Service
-public class ReviewSessionServiceImpl implements ReviewSessionService {
-
-    private final ReviewMapper reviewMapper;
+@RequiredArgsConstructor
+public class ReviewSessionServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements ReviewSessionService {
 
     private final RepoAutoPublishMapper repoAutoPublishMapper;
 
     private final ObjectMapper objectMapper;
 
-    public ReviewSessionServiceImpl(ReviewMapper reviewMapper,
-                                    RepoAutoPublishMapper repoAutoPublishMapper,
-                                    ObjectMapper objectMapper) {
-        this.reviewMapper = reviewMapper;
-        this.repoAutoPublishMapper = repoAutoPublishMapper;
-        this.objectMapper = objectMapper;
-    }
-
     @Override
     public void save(ReviewSessionRespDTO session) {
         ReviewDO reviewDO = toDO(session);
-        if (reviewMapper.selectById(session.getId()) == null) {
-            reviewMapper.insert(reviewDO);
+        if (baseMapper.selectById(session.getId()) == null) {
+            baseMapper.insert(reviewDO);
         } else {
-            reviewMapper.updateById(reviewDO);
+            baseMapper.updateById(reviewDO);
         }
     }
 
     @Override
     public ReviewSessionRespDTO findById(String id) {
-        return toDTO(reviewMapper.selectById(id));
+        return toDTO(baseMapper.selectById(id));
     }
 
     @Override
     public List<ReviewSessionRespDTO> findAll(int page, int size) {
-        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .orderByDesc(ReviewDO::getCreatedAt)
                         .last(limitClause(page, size)))
                 .stream()
@@ -60,7 +53,7 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     @Override
     public List<ReviewSessionRespDTO> findByRepo(String fullName, int page, int size) {
-        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .eq(ReviewDO::getRepositoryFullName, fullName)
                         .orderByDesc(ReviewDO::getCreatedAt)
                         .last(limitClause(page, size)))
@@ -71,7 +64,7 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     @Override
     public List<ReviewSessionRespDTO> findByLogin(String login, int page, int size) {
-        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .eq(ReviewDO::getUserId, login)
                         .orderByDesc(ReviewDO::getCreatedAt)
                         .last(limitClause(page, size)))
@@ -82,13 +75,13 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     @Override
     public long countByLogin(String login) {
-        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .eq(ReviewDO::getUserId, login));
     }
 
     @Override
     public List<ReviewSessionRespDTO> findAnonymous(int page, int size) {
-        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .isNull(ReviewDO::getUserId)
                         .orderByDesc(ReviewDO::getCreatedAt)
                         .last(limitClause(page, size)))
@@ -99,24 +92,24 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     @Override
     public long countAnonymous() {
-        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .isNull(ReviewDO::getUserId));
     }
 
     @Override
     public long count() {
-        return reviewMapper.selectCount(null);
+        return baseMapper.selectCount(null);
     }
 
     @Override
     public long countByRepo(String fullName) {
-        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
                 .eq(ReviewDO::getRepositoryFullName, fullName));
     }
 
     @Override
     public List<ReviewSessionRespDTO> findAllReviews() {
-        return reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
+        return baseMapper.selectList(Wrappers.<ReviewDO>lambdaQuery()
                         .orderByDesc(ReviewDO::getCreatedAt))
                 .stream()
                 .map(this::toDTO)
@@ -125,12 +118,12 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     @Override
     public void delete(String id) {
-        reviewMapper.deleteById(id);
+        baseMapper.deleteById(id);
     }
 
     @Override
     public boolean exists(String id) {
-        return reviewMapper.selectById(id) != null;
+        return baseMapper.selectById(id) != null;
     }
 
     @Override

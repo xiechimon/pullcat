@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -43,10 +44,10 @@ class ReviewSessionServiceTest {
     @BeforeEach
     void setUp() {
         reviewSessionService = new ReviewSessionServiceImpl(
-                reviewMapper,
                 repoAutoPublishMapper,
                 new ObjectMapper().registerModule(new JavaTimeModule())
         );
+        ReflectionTestUtils.setField(reviewSessionService, "baseMapper", reviewMapper);
     }
 
     @Test

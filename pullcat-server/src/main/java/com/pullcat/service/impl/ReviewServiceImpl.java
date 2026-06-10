@@ -1,10 +1,13 @@
 package com.pullcat.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.common.enums.SessionStatus;
+import com.pullcat.dao.entity.ReviewDO;
+import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.CreateReviewRespDTO;
@@ -57,7 +60,7 @@ import java.util.concurrent.ExecutorService;
  */
 @Slf4j
 @Service
-public class ReviewServiceImpl implements ReviewService {
+public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements ReviewService {
 
     private final GitHubApiService gitHubApiService;
     private final PromptLoader promptLoader;
@@ -193,12 +196,12 @@ public class ReviewServiceImpl implements ReviewService {
 
         try {
             emitter.send(SseEmitter.event()
-                    .name("connected")
-                    .data(new SseConnectedRespDTO(id)));
+                                 .name("connected")
+                                 .data(new SseConnectedRespDTO(id)));
 
             if (session.getStatus() == SessionStatus.FAILED) {
                 emitter.send(SseEmitter.event().name("review_error")
-                        .data(new SseMessageRespDTO("Review previously failed. Please start a new review.")));
+                                     .data(new SseMessageRespDTO("Review previously failed. Please start a new review.")));
                 emitter.complete();
                 return emitter;
             }
@@ -216,15 +219,15 @@ public class ReviewServiceImpl implements ReviewService {
                     emitter.send(SseEmitter.event().name("task_result").data(entry.getValue()));
                 }
                 emitter.send(SseEmitter.event().name("all_complete")
-                        .data(new SseCompletionRespDTO("completed")));
+                                     .data(new SseCompletionRespDTO("completed")));
                 emitter.complete();
                 return emitter;
             }
 
             emitter.send(SseEmitter.event()
-                    .name("analysis_started")
-                    .data(new SseAnalysisStartedRespDTO(Arrays.asList(
-                            "summary", "risk", "quality", "consistency", "testing"))));
+                                 .name("analysis_started")
+                                 .data(new SseAnalysisStartedRespDTO(Arrays.asList(
+                                         "summary", "risk", "quality", "consistency", "testing"))));
 
             if (session.getStatus() == SessionStatus.FETCHING) {
                 startReviewAsync(session);
@@ -282,7 +285,8 @@ public class ReviewServiceImpl implements ReviewService {
 
                 GitHubApiService.PRUrl enrichedPrUrl = new GitHubApiService.PRUrl(
                         parsed.owner(), parsed.repo(), parsed.number(),
-                        metadata.getHeadBranch(), metadata.getHeadBranch());
+                        metadata.getHeadBranch(), metadata.getHeadBranch()
+                );
 
                 sendPrInfoSSE(session.getId(), session.getPrUrl(), prData.getMetadata(), prData.getDiff());
 
@@ -295,14 +299,16 @@ public class ReviewServiceImpl implements ReviewService {
 
                 GitHubApiService.PRUrl basePrUrl = new GitHubApiService.PRUrl(
                         parsed.owner(), parsed.repo(), parsed.number(),
-                        metadata.getBaseBranch(), metadata.getBaseBranch());
+                        metadata.getBaseBranch(), metadata.getBaseBranch()
+                );
                 List<String> conventionCandidates = ConventionUtil.detectConventionCandidates(prData.getFileTree());
                 String repoConventions = reviewPublisher.buildConventionContent(basePrUrl, conventionCandidates);
                 finalVariables.put("repo_conventions", repoConventions);
 
                 List<AnalysisType> types = List.of(
                         AnalysisType.SUMMARY, AnalysisType.RISK, AnalysisType.QUALITY,
-                        AnalysisType.CONSISTENCY, AnalysisType.TESTING);
+                        AnalysisType.CONSISTENCY, AnalysisType.TESTING
+                );
 
                 List<CompletableFuture<AnalysisResultRespDTO>> futures = types.stream()
                         .map(type -> CompletableFuture
@@ -342,15 +348,17 @@ public class ReviewServiceImpl implements ReviewService {
                 boolean autoPublished = reviewPublisher.tryAutoPublish(session);
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
-                        .description("Duration of PR review analysis")
-                        .register(meterRegistry));
+                                    .description("Duration of PR review analysis")
+                                    .register(meterRegistry));
                 meterRegistry.counter("reviews_total", "status", session.getStatus().name()).increment();
 
                 for (AnalysisResultRespDTO analysisResult : session.getAnalyses().values()) {
                     if (analysisResult.getStatus() == AnalysisStatus.COMPLETED) {
-                        meterRegistry.counter("llm_requests_total",
+                        meterRegistry.counter(
+                                "llm_requests_total",
                                 "model", analysisResult.getModel() != null ? analysisResult.getModel() : "unknown",
-                                "status", "success").increment();
+                                "status", "success"
+                        ).increment();
                     } else {
                         meterRegistry.counter("llm_requests_total", "model", "unknown", "status", "failed").increment();
                     }
@@ -363,8 +371,8 @@ public class ReviewServiceImpl implements ReviewService {
                 reviewSessionService.save(session);
 
                 sample.stop(Timer.builder("reviews_duration_seconds")
-                        .description("Duration of PR review analysis")
-                        .register(meterRegistry));
+                                    .description("Duration of PR review analysis")
+                                    .register(meterRegistry));
                 meterRegistry.counter("reviews_total", "status", SessionStatus.FAILED.name()).increment();
                 sendErrorSSE(session.getId(), e.getMessage());
             } finally {
@@ -421,8 +429,8 @@ public class ReviewServiceImpl implements ReviewService {
                 prInfo.setMetadata(metadata);
                 prInfo.setDiff(diff != null ? diff : "");
                 ctx.emitter().send(SseEmitter.event()
-                        .name("pr_info")
-                        .data(prInfo));
+                                           .name("pr_info")
+                                           .data(prInfo));
             } catch (IOException | IllegalStateException e) {
                 log.debug("SSE send pr_info error: {}", e.getMessage());
             }
@@ -435,11 +443,11 @@ public class ReviewServiceImpl implements ReviewService {
             try {
                 if (autoPublished) {
                     ctx.emitter().send(SseEmitter.event()
-                            .name("auto_publish")
-                            .data(new SseAutoPublishRespDTO(prUrl)));
+                                               .name("auto_publish")
+                                               .data(new SseAutoPublishRespDTO(prUrl)));
                 }
                 ctx.emitter().send(SseEmitter.event().name("all_complete")
-                        .data(new SseCompletionRespDTO("completed")));
+                                           .data(new SseCompletionRespDTO("completed")));
                 ctx.emitter().complete();
             } catch (IOException | IllegalStateException e) {
                 log.debug("SSE send all_complete error: {}", e.getMessage());
@@ -452,7 +460,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (ctx != null) {
             try {
                 ctx.emitter().send(SseEmitter.event().name("review_error")
-                        .data(new SseMessageRespDTO(message)));
+                                           .data(new SseMessageRespDTO(message)));
                 ctx.emitter().complete();
             } catch (IOException | IllegalStateException ignored) {
             }

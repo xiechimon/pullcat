@@ -1,6 +1,7 @@
 package com.pullcat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.common.constant.RedisKeys;
 import com.pullcat.dao.entity.UserDO;
 import com.pullcat.dao.mapper.UserMapper;
@@ -16,11 +17,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
 
     private static final String ANONYMOUS_LOGIN = "anonymousUser";
 
-    private final UserMapper userMapper;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        UserDO user = userMapper.selectOne(new LambdaQueryWrapper<UserDO>()
+        UserDO user = baseMapper.selectOne(new LambdaQueryWrapper<UserDO>()
                 .eq(UserDO::getGithubLogin, login));
         if (user != null) {
             redisTemplate.opsForValue().set(RedisKeys.userKey(user.getId()), user);

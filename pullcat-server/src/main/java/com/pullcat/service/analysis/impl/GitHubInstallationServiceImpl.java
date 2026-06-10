@@ -1,6 +1,7 @@
 package com.pullcat.service.analysis.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.dao.entity.GitHubInstallationDO;
 import com.pullcat.dao.entity.UserDO;
 import com.pullcat.dao.mapper.GitHubInstallationMapper;
@@ -17,14 +18,13 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
-public class GitHubInstallationServiceImpl implements GitHubInstallationService {
+public class GitHubInstallationServiceImpl extends ServiceImpl<GitHubInstallationMapper, GitHubInstallationDO> implements GitHubInstallationService {
 
-    private final GitHubInstallationMapper gitHubInstallationMapper;
     private final UserMapper userMapper;
 
     @Override
     public void saveInstallation(long installationId, String accountLogin, String accountType) {
-        GitHubInstallationDO record = gitHubInstallationMapper.selectById(installationId);
+        GitHubInstallationDO record = baseMapper.selectById(installationId);
         Instant now = Instant.now();
         if (record == null) {
             record = new GitHubInstallationDO();
@@ -34,10 +34,10 @@ public class GitHubInstallationServiceImpl implements GitHubInstallationService 
         record.setAccountLogin(accountLogin);
         record.setAccountType(accountType);
         record.setSuspendedAt(null);
-        if (gitHubInstallationMapper.selectById(installationId) == null) {
-            gitHubInstallationMapper.insert(record);
+        if (baseMapper.selectById(installationId) == null) {
+            baseMapper.insert(record);
         } else {
-            gitHubInstallationMapper.updateById(record);
+            baseMapper.updateById(record);
         }
 
         if ("User".equals(accountType) && accountLogin != null && !accountLogin.isBlank()) {
@@ -52,17 +52,17 @@ public class GitHubInstallationServiceImpl implements GitHubInstallationService 
 
     @Override
     public void suspendInstallation(long installationId) {
-        GitHubInstallationDO record = gitHubInstallationMapper.selectById(installationId);
+        GitHubInstallationDO record = baseMapper.selectById(installationId);
         if (record == null) {
             return;
         }
         record.setSuspendedAt(Instant.now());
-        gitHubInstallationMapper.updateById(record);
+        baseMapper.updateById(record);
     }
 
     @Override
     public Optional<Long> findInstallationIdByLogin(String login) {
-        GitHubInstallationDO record = gitHubInstallationMapper.selectOne(new LambdaQueryWrapper<GitHubInstallationDO>()
+        GitHubInstallationDO record = baseMapper.selectOne(new LambdaQueryWrapper<GitHubInstallationDO>()
                 .eq(GitHubInstallationDO::getAccountLogin, login)
                 .isNull(GitHubInstallationDO::getSuspendedAt)
                 .last("LIMIT 1"));
