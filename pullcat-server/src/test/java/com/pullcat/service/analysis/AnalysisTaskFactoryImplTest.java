@@ -3,6 +3,7 @@ package com.pullcat.service.analysis;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.service.analysis.impl.AnalysisTaskFactoryImpl;
 import com.pullcat.service.llm.AnalysisTask;
+import com.pullcat.service.llm.impl.AggregationAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.ConsistencyAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.QualityAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.RiskAnalysisServiceImpl;
@@ -69,5 +70,13 @@ class AnalysisTaskFactoryImplTest {
         assertInstanceOf(TestingGapAnalysisServiceImpl.class, task);
         assertEquals(AnalysisType.TESTING, task.getType());
         assertEquals("testing", task.getTemplateName());
+    }
+
+    @Test
+    void create_aggregation_returnsAggregationTask() {
+        AnalysisTask task = factory.create(AnalysisType.AGGREGATION);
+        assertInstanceOf(AggregationAnalysisServiceImpl.class, task);
+        assertEquals(AnalysisType.AGGREGATION, task.getType());
+        assertEquals("aggregation", task.getTemplateName());
     }
 }

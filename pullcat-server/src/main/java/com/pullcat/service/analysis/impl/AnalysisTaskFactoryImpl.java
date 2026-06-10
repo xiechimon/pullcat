@@ -7,6 +7,7 @@ import com.pullcat.service.llm.impl.ConsistencyAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.QualityAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.RiskAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.SummaryAnalysisServiceImpl;
+import com.pullcat.service.llm.impl.AggregationAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.TestingGapAnalysisServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -40,7 +41,7 @@ public class AnalysisTaskFactoryImpl implements AnalysisTaskFactory {
             case QUALITY -> new QualityAnalysisServiceImpl(heavyChatClient, heavyModelName);
             case CONSISTENCY -> new ConsistencyAnalysisServiceImpl(heavyChatClient, heavyModelName);
             case TESTING -> new TestingGapAnalysisServiceImpl(lightChatClient, lightModelName);
-            case AGGREGATION -> throw new UnsupportedOperationException("AGGREGATION analysis not yet implemented");
+            case AGGREGATION -> new AggregationAnalysisServiceImpl(lightChatClient, lightModelName);
         };
     }
 }
