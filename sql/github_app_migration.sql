@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS `github_installation`
 
 -- user 表新增 installation_id 字段
 ALTER TABLE `user`
-    ADD COLUMN `installation_id` bigint NULL COMMENT 'GitHub App Installation ID' AFTER `created_at`;
+    ADD COLUMN IF NOT EXISTS `installation_id` bigint NULL COMMENT 'GitHub App Installation ID' AFTER `created_at`;
 
 -- review 表新增 installation_id 字段
 ALTER TABLE `review`
-    ADD COLUMN `installation_id` bigint NULL COMMENT 'GitHub App Installation ID（webhook 触发时填充，与 user_id 互斥）' AFTER `user_id`;
+    ADD COLUMN IF NOT EXISTS `installation_id` bigint NULL COMMENT 'GitHub App Installation ID（webhook 触发时填充，与 user_id 互斥）' AFTER `user_id`;
