@@ -78,7 +78,7 @@ export function ReviewPage() {
     }
   }, [isAnalyzing, navigateState, currentReviewId, navigate])
 
-  const { selectedCount, totalCount, selectedIssueIds } = useMemo(() => {
+  const { selectedCount, totalCount } = useMemo(() => {
     let sel = 0
     let total = 0
     const ids: string[] = []
