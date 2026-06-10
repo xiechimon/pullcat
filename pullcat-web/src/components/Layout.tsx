@@ -18,7 +18,8 @@ const NAV_ITEMS = [
   { path: '/stats', label: '统计' },
 ]
 
-const GITHUB_APP_INSTALL_URL = import.meta.env.VITE_GITHUB_APP_INSTALL_URL as string | undefined
+const GITHUB_APP_INSTALL_URL = (import.meta.env.VITE_GITHUB_APP_INSTALL_URL as string | undefined)
+  ?? 'https://github.com/apps/pullkitty/installations/new'
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
