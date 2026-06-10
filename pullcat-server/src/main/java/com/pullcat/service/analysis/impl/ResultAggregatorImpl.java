@@ -4,6 +4,7 @@ import com.pullcat.common.enums.Severity;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.service.analysis.ResultAggregator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class ResultAggregatorImpl implements ResultAggregator {
 
     @Override

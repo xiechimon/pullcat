@@ -1,21 +1,19 @@
 package com.pullcat.service.analysis.impl;
 
 import com.pullcat.service.analysis.RateLimiter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
 @Component
+@RequiredArgsConstructor
 public class RateLimiterImpl implements RateLimiter {
 
     private static final String KEY_PREFIX = "rate:v2:";
 
     private final RedisTemplate<String, String> redisTemplate;
-
-    public RateLimiterImpl(RedisTemplate<String, String> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
 
     @Override
     public boolean isAllowed(String key, int maxRequests, Duration window) {

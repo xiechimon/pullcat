@@ -37,6 +37,7 @@ import com.pullcat.service.llm.AnalysisTask;
 import com.pullcat.toolkit.ConventionUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.context.SecurityContext;
@@ -60,6 +61,7 @@ import java.util.concurrent.ExecutorService;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements ReviewService {
 
     private final GitHubApiService gitHubApiService;
@@ -67,27 +69,10 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
     private final ContextBuilder contextBuilder;
     private final ReviewSessionService reviewSessionService;
     private final AnalysisTaskFactory taskFactory;
+    @Qualifier("analysisExecutor")
     private final ExecutorService analysisExecutor;
     private final MeterRegistry meterRegistry;
     private final ReviewPublisher reviewPublisher;
-
-    public ReviewServiceImpl(GitHubApiService gitHubApiService,
-                             PromptLoader promptLoader,
-                             ContextBuilder contextBuilder,
-                             ReviewSessionService reviewSessionService,
-                             AnalysisTaskFactory taskFactory,
-                             @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
-                             MeterRegistry meterRegistry,
-                             ReviewPublisher reviewPublisher) {
-        this.gitHubApiService = gitHubApiService;
-        this.promptLoader = promptLoader;
-        this.contextBuilder = contextBuilder;
-        this.reviewSessionService = reviewSessionService;
-        this.taskFactory = taskFactory;
-        this.analysisExecutor = analysisExecutor;
-        this.meterRegistry = meterRegistry;
-        this.reviewPublisher = reviewPublisher;
-    }
 
     @Override
     public CreateReviewRespDTO createReview(String prUrl, String login) {

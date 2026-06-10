@@ -5,6 +5,7 @@ import com.pullcat.dto.resp.PRMetadataRespDTO;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.TokenBudgetManager;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
+@RequiredArgsConstructor
 public class ContextBuilderImpl implements ContextBuilder {
 
     private static final Pattern JAVA_IMPORT = Pattern.compile("^import\\s+([\\w.]+\\*?)\\s*;");
@@ -27,11 +29,6 @@ public class ContextBuilderImpl implements ContextBuilder {
 
     private final GitHubApiService gitHubApiService;
     private final TokenBudgetManager tokenBudgetManager;
-
-    public ContextBuilderImpl(GitHubApiService gitHubApiService, TokenBudgetManager tokenBudgetManager) {
-        this.gitHubApiService = gitHubApiService;
-        this.tokenBudgetManager = tokenBudgetManager;
-    }
 
     @Override
     public String buildPRInfo(PRMetadataRespDTO meta) {

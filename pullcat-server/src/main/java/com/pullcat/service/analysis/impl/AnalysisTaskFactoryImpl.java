@@ -8,6 +8,7 @@ import com.pullcat.service.llm.impl.QualityAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.RiskAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.SummaryAnalysisServiceImpl;
 import com.pullcat.service.llm.impl.TestingGapAnalysisServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,9 +18,12 @@ import org.springframework.stereotype.Service;
  * 分析任务工厂实现，持有 LLM 客户端与模型名称配置
  */
 @Service
+@RequiredArgsConstructor
 public class AnalysisTaskFactoryImpl implements AnalysisTaskFactory {
 
+    @Qualifier("lightChatClient")
     private final ChatClient lightChatClient;
+    @Qualifier("heavyChatClient")
     private final ChatClient heavyChatClient;
 
     @Value("${pullcat.llm.light-model:deepseek-chat}")
@@ -27,13 +31,6 @@ public class AnalysisTaskFactoryImpl implements AnalysisTaskFactory {
 
     @Value("${pullcat.llm.heavy-model:deepseek-reasoner}")
     private String heavyModelName;
-
-    public AnalysisTaskFactoryImpl(
-            @Qualifier("lightChatClient") ChatClient lightChatClient,
-            @Qualifier("heavyChatClient") ChatClient heavyChatClient) {
-        this.lightChatClient = lightChatClient;
-        this.heavyChatClient = heavyChatClient;
-    }
 
     @Override
     public AnalysisTask create(AnalysisType type) {

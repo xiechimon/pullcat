@@ -1,6 +1,7 @@
 package com.pullcat.service.analysis.impl;
 
 import com.pullcat.service.analysis.PromptLoader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -10,18 +11,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-/**
- * Prompt 模板加载器，从 classpath 读取模板文件并执行变量替换
- */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class PromptLoaderImpl implements PromptLoader {
 
     private final ResourcePatternResolver resolver;
-
-    public PromptLoaderImpl(ResourcePatternResolver resolver) {
-        this.resolver = resolver;
-    }
 
     @Override
     public String loadTemplate(String templateName) {
