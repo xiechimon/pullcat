@@ -141,7 +141,12 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
         if (reviewDO == null) {
             return null;
         }
-        return readSnapshot(reviewDO.getSnapshotJson());
+        ReviewSessionRespDTO session = readSnapshot(reviewDO.getSnapshotJson());
+        // installationId 被 @JsonIgnore 排除在 snapshot 外，从 DB 列恢复
+        if (session.getInstallationId() == null && reviewDO.getInstallationId() != null) {
+            session.setInstallationId(reviewDO.getInstallationId());
+        }
+        return session;
     }
 
     private String writeSnapshot(ReviewSessionRespDTO session) {

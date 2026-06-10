@@ -1,5 +1,6 @@
 package com.pullcat.dto.resp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.pullcat.common.enums.SessionStatus;
 import lombok.Data;
 
@@ -69,7 +70,8 @@ public class ReviewSessionRespDTO {
     private String rawDiff;
 
     /**
-     * GitHub App Installation ID，webhook 触发时填充
+     * GitHub App Installation ID，webhook 触发时填充，不对外暴露
      */
+    @JsonIgnore
     private Long installationId;
 }
