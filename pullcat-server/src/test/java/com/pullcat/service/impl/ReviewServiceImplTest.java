@@ -1,4 +1,4 @@
-package com.pullcat.service.analysis.impl;
+package com.pullcat.service.impl;
 
 import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
@@ -7,6 +7,7 @@ import com.pullcat.service.analysis.AnalysisTaskFactory;
 import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ReviewSessionService;
+import com.pullcat.service.analysis.impl.ReviewPublisher;
 import com.pullcat.service.llm.AnalysisService;
 import com.pullcat.service.llm.AnalysisTask;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -24,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class ReviewOrchestratorTest {
+class ReviewServiceImplTest {
 
     @Test
     void executeTask_usesTaskTemplateNameInsteadOfAnalysisTypeTemplateName() {
@@ -34,7 +35,7 @@ class ReviewOrchestratorTest {
             when(promptLoader.loadTemplate("custom-template")).thenReturn("template body");
             when(promptLoader.populateTemplate("template body", Map.of("key", "value"))).thenReturn("final prompt");
 
-            ReviewOrchestrator orchestrator = new ReviewOrchestrator(
+            ReviewServiceImpl service = new ReviewServiceImpl(
                     Mockito.mock(com.pullcat.remote.GitHubApiService.class),
                     promptLoader,
                     Mockito.mock(ContextBuilder.class),
@@ -48,7 +49,7 @@ class ReviewOrchestratorTest {
             AnalysisTask task = new StubAnalysisTask();
 
             AnalysisResultRespDTO result = (AnalysisResultRespDTO) ReflectionTestUtils.invokeMethod(
-                    orchestrator,
+                    service,
                     "executeTask",
                     task,
                     Map.of("key", "value"),

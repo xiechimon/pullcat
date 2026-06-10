@@ -3,10 +3,9 @@ package com.pullcat.service.analysis;
 import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.req.WebhookEventReqDTO.InstallationReqDTO;
 import com.pullcat.dto.req.WebhookPullRequestReqDTO;
-import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
+import com.pullcat.service.ReviewService;
 import com.pullcat.service.analysis.GitHubInstallationService;
-import com.pullcat.service.analysis.impl.ReviewOrchestrator;
 import com.pullcat.service.impl.WebhookServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,10 +20,7 @@ import static org.mockito.Mockito.*;
 class WebhookServiceTest {
 
     @Mock
-    ReviewOrchestrator orchestrator;
-
-    @Mock
-    ReviewSessionService reviewSessionService;
+    ReviewService reviewService;
 
     @Mock
     GitHubInstallationService gitHubInstallationService;
@@ -37,7 +33,7 @@ class WebhookServiceTest {
         WebhookRespDTO result = webhookService.handle("push", new WebhookEventReqDTO());
         assertEquals("ignored", result.getStatus());
         assertEquals("not a PR event", result.getReason());
-        verifyNoInteractions(orchestrator);
+        verifyNoInteractions(reviewService);
     }
 
     @Test
@@ -47,7 +43,7 @@ class WebhookServiceTest {
         WebhookRespDTO result = webhookService.handle("pull_request", req);
         assertEquals("ignored", result.getStatus());
         assertEquals("closed", result.getAction());
-        verifyNoInteractions(orchestrator);
+        verifyNoInteractions(reviewService);
     }
 
     @Test
@@ -61,17 +57,11 @@ class WebhookServiceTest {
         installation.setId(1001L);
         req.setInstallation(installation);
 
-        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
-        session.setId("s1");
-        when(orchestrator.createSession("https://github.com/a/b/pull/1", null)).thenReturn(session);
-
         WebhookRespDTO result = webhookService.handle("pull_request", req);
 
         assertEquals("review_triggered", result.getStatus());
         assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
-        assertEquals(1001L, session.getInstallationId());
-        verify(orchestrator).startReviewAsync(session);
-        verify(reviewSessionService).save(session);
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/1", 1001L);
     }
 
     @Test
@@ -85,16 +75,10 @@ class WebhookServiceTest {
         installation.setId(1002L);
         req.setInstallation(installation);
 
-        ReviewSessionRespDTO session = new ReviewSessionRespDTO();
-        session.setId("s2");
-        when(orchestrator.createSession("https://github.com/a/b/pull/2", null)).thenReturn(session);
-
         WebhookRespDTO result = webhookService.handle("pull_request", req);
 
         assertEquals("review_triggered", result.getStatus());
-        assertEquals(1002L, session.getInstallationId());
-        verify(reviewSessionService).save(session);
-        verify(orchestrator).startReviewAsync(session);
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/2", 1002L);
     }
 
     @Test
@@ -112,7 +96,7 @@ class WebhookServiceTest {
 
         assertEquals("installation_processed", result.getStatus());
         verify(gitHubInstallationService).saveInstallation(3001L, "octo-org", "Organization");
-        verifyNoInteractions(orchestrator, reviewSessionService);
+        verifyNoInteractions(reviewService);
     }
 
     @Test
@@ -127,6 +111,6 @@ class WebhookServiceTest {
 
         assertEquals("installation_processed", result.getStatus());
         verify(gitHubInstallationService).suspendInstallation(3002L);
-        verifyNoInteractions(orchestrator, reviewSessionService);
+        verifyNoInteractions(reviewService);
     }
 }

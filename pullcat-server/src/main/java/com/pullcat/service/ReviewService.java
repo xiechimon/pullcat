@@ -45,4 +45,9 @@ public interface ReviewService {
      * SSE 流式推送分析进度与结果
      */
     SseEmitter startSseStream(String id, String login);
+
+    /**
+     * Webhook 触发审查
+     */
+    void triggerReview(String prUrl, Long installationId);
 }

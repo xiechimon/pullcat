@@ -1,12 +1,10 @@
 package com.pullcat.service.impl;
 
 import com.pullcat.dto.req.WebhookEventReqDTO;
-import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
+import com.pullcat.service.ReviewService;
 import com.pullcat.service.WebhookService;
-import com.pullcat.service.analysis.impl.ReviewOrchestrator;
 import com.pullcat.service.analysis.GitHubInstallationService;
-import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,8 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class WebhookServiceImpl implements WebhookService {
 
-    private final ReviewOrchestrator reviewOrchestrator;
-    private final ReviewSessionService reviewSessionService;
+    private final ReviewService reviewService;
     private final GitHubInstallationService gitHubInstallationService;
 
     @Override
@@ -44,7 +41,7 @@ public class WebhookServiceImpl implements WebhookService {
 
         String prUrl = requestParam.getPullRequest().getHtmlUrl();
         Long installationId = requestParam.getInstallation() != null ? requestParam.getInstallation().getId() : null;
-        triggerReview(prUrl, installationId);
+        reviewService.triggerReview(prUrl, installationId);
         response.setStatus("review_triggered");
         response.setPrUrl(prUrl);
         return response;
@@ -65,12 +62,5 @@ public class WebhookServiceImpl implements WebhookService {
         if ("deleted".equals(action) || "suspend".equals(action)) {
             gitHubInstallationService.suspendInstallation(installation.getId());
         }
-    }
-
-    private void triggerReview(String prUrl, Long installationId) {
-        ReviewSessionRespDTO session = reviewOrchestrator.createSession(prUrl, null);
-        session.setInstallationId(installationId);
-        reviewSessionService.save(session);
-        reviewOrchestrator.startReviewAsync(session);
     }
 }

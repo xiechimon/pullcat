@@ -74,7 +74,7 @@ public class ReviewPublisher {
         return session;
     }
 
-    boolean tryAutoPublish(ReviewSessionRespDTO session) {
+    public boolean tryAutoPublish(ReviewSessionRespDTO session) {
         String fullName = session.getRepositoryFullName();
         if (fullName == null) {
             return false;
@@ -153,7 +153,7 @@ public class ReviewPublisher {
         return sb.toString();
     }
 
-    String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
+    public String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
         if (candidates.isEmpty()) return "";
 
         List<String> parts = new ArrayList<>();
