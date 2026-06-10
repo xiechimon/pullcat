@@ -81,10 +81,9 @@ export async function deleteReview(id: string): Promise<DeletedRespDTO> {
 }
 
 
-export async function publishReview(id: string, includeSummary: boolean, selectedIssueIds: string[]): Promise<PublishReviewRespDTO> {
+export async function publishReview(id: string): Promise<PublishReviewRespDTO> {
   return request<PublishReviewRespDTO>(`${API_PREFIX}/reviews/${id}/publish`, {
     method: 'POST',
-    body: JSON.stringify({ includeSummary, selectedIssueIds }),
   })
 }
 

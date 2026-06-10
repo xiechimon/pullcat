@@ -126,11 +126,11 @@ export function ReviewPage() {
 
   const handlePublish = useCallback(async () => {
     if (!currentReviewId) return
-    const ok = await publish(currentReviewId, true, selectedIssueIds)
+    const ok = await publish(currentReviewId)
     if (ok) {
       toast.success('发布成功！')
     }
-  }, [currentReviewId, selectedIssueIds, publish])
+  }, [currentReviewId, publish])
 
   const completedTasks = ANALYSIS_TYPES.filter(
     (t) => results[t]?.status === 'COMPLETED' || results[t]?.status === 'FAILED'

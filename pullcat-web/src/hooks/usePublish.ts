@@ -7,7 +7,7 @@ interface UsePublishReturn {
   published: boolean
   commentId: number | null
   prUrl: string | null
-  publish: (reviewId: string, includeSummary: boolean, selectedIssueIds: string[]) => Promise<boolean>
+  publish: (reviewId: string) => Promise<boolean>
   reset: () => void
 }
 
@@ -18,11 +18,11 @@ export function usePublish(): UsePublishReturn {
   const [commentId, setCommentId] = useState<number | null>(null)
   const [prUrl, setPrUrl] = useState<string | null>(null)
 
-  const publish = useCallback(async (reviewId: string, includeSummary: boolean, selectedIssueIds: string[]) => {
+  const publish = useCallback(async (reviewId: string) => {
     setPublishing(true)
     setPublishError(null)
     try {
-      const result = await publishReview(reviewId, includeSummary, selectedIssueIds)
+      const result = await publishReview(reviewId)
       setPublished(true)
       setCommentId(result.commentId)
       setPrUrl(result.prUrl)

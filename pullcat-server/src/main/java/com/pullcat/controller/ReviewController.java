@@ -4,7 +4,6 @@ import com.pullcat.common.biz.user.CurrentLogin;
 import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.CreateReviewReqDTO;
-import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.*;
 import com.pullcat.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -81,8 +80,7 @@ public class ReviewController {
     @PostMapping("/{id}/publish")
     public Result<PublishReviewRespDTO> publishReview(
             @PathVariable String id,
-            @RequestBody PublishReqDTO requestParam,
             @CurrentLogin String login) {
-        return Results.success(reviewService.publishReview(id, requestParam, login));
+        return Results.success(reviewService.publishReview(id, login));
     }
 }

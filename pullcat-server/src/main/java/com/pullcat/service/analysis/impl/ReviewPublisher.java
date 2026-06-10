@@ -1,7 +1,6 @@
 package com.pullcat.service.analysis.impl;
 
 import com.pullcat.common.enums.SessionStatus;
-import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
@@ -37,7 +36,7 @@ public class ReviewPublisher {
     /**
      * 发布审查结果到 PR，支持选择性发布和摘要配置
      */
-    public ReviewSessionRespDTO publishReview(String reviewId, PublishReqDTO requestParam) {
+    public ReviewSessionRespDTO publishReview(String reviewId) {
         ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
         if (session == null) {
             throw new IllegalArgumentException("Review session not found: " + reviewId);
@@ -48,16 +47,8 @@ public class ReviewPublisher {
 
         List<AnalysisResultRespDTO> allResults = new ArrayList<>(session.getAnalyses().values());
         List<IssueRespDTO> dedupedIssues = resultAggregator.mergeResults(allResults);
-        if (requestParam.getSelectedIssueIds() != null && !requestParam.getSelectedIssueIds().isEmpty()) {
-            dedupedIssues = dedupedIssues.stream()
-                    .filter(issue -> requestParam.getSelectedIssueIds().contains(issue.getId()))
-                    .toList();
-        }
 
         String summary = buildPublishSummary(dedupedIssues, session);
-        if (!requestParam.isIncludeSummary()) {
-            summary = buildIssuesOnlySummary(dedupedIssues);
-        }
 
         List<GitHubApiService.ReviewComment> comments = dedupedIssues.stream()
                 .filter(issue -> issue.getSuggestionCode() != null && !issue.getSuggestionCode().isBlank())
@@ -134,21 +125,6 @@ public class ReviewPublisher {
             sb.append("代码修复建议已作为 inline comment 发布到对应行，可直接在 PR Files Changed 页面查看并一键应用\n\n");
         }
 
-        sb.append("\n---\n*由 [pullcat](https://xmon.me) 自动生成*");
-        return sb.toString();
-    }
-
-    private String buildIssuesOnlySummary(List<IssueRespDTO> dedupedIssues) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("## AI 代码审查\n\n");
-        sb.append("### 问题概览（").append(dedupedIssues.size()).append(" 个）\n\n");
-        sb.append("| 严重度 | 文件 | 行号 | 问题 |\n|--------|------|------|------|\n");
-        for (IssueRespDTO issue : dedupedIssues) {
-            sb.append("| ").append(issue.getSeverity()).append(" | ")
-                    .append(issue.getFile() != null ? issue.getFile() : "-").append(" | ")
-                    .append(issue.getLine() != null ? issue.getLine() : "-").append(" | ")
-                    .append(issue.getTitle()).append(" |\n");
-        }
         sb.append("\n---\n*由 [pullcat](https://xmon.me) 自动生成*");
         return sb.toString();
     }

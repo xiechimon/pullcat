@@ -5,7 +5,6 @@ import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.common.enums.SessionStatus;
-import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.CreateReviewRespDTO;
 import com.pullcat.dto.resp.FileContentRespDTO;
@@ -73,12 +72,16 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public CreateReviewRespDTO createReview(String prUrl, String login) {
+        // 基本参数校验
         if (prUrl == null || prUrl.isBlank()) {
             throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
         }
+
+        // 创建审查会话并保存
         ReviewSessionRespDTO session = createSession(prUrl, login);
         reviewSessionService.save(session);
 
+        // 创建审查会话后并返回前端
         CreateReviewRespDTO response = new CreateReviewRespDTO();
         response.setReviewId(session.getId());
         response.setStatus(session.getStatus().name());
@@ -143,7 +146,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public PublishReviewRespDTO publishReview(String id, PublishReqDTO requestParam, String login) {
+    public PublishReviewRespDTO publishReview(String id, String login) {
         ReviewSessionRespDTO session = reviewSessionService.findById(id);
         if (session == null) {
             throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
@@ -151,7 +154,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (!isOwner(session, login)) {
             throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权发布此审查");
         }
-        ReviewSessionRespDTO updated = reviewPublisher.publishReview(id, requestParam);
+        ReviewSessionRespDTO updated = reviewPublisher.publishReview(id);
         PublishReviewRespDTO response = new PublishReviewRespDTO();
         response.setStatus(updated.getStatus().name());
         response.setCommentId(updated.getPublishedCommentId());
