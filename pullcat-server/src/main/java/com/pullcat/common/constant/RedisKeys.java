@@ -106,4 +106,16 @@ public final class RedisKeys {
     public static String autoPublishKey(String owner, String repo) {
         return REPO_AUTO_PUBLISH_PREFIX + owner + "/" + repo;
     }
+
+    /**
+     * GitHub App Installation Token 缓存前缀，格式: github:installation:{installationId}:token
+     */
+    public static final String INSTALLATION_TOKEN_PREFIX = "github:installation:";
+
+    /**
+     * 根据 installation_id 构造 token 缓存 key
+     */
+    public static String installationTokenKey(long installationId) {
+        return INSTALLATION_TOKEN_PREFIX + installationId + ":token";
+    }
 }

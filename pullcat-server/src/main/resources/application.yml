@@ -52,6 +52,16 @@ pullcat:
     # Personal Access Token，可选。OAuth 登录后无需配置，无用户 session 时（webhook）需要。
     # 生成地址：https://github.com/settings/tokens
     token: ${GITHUB_TOKEN:}
+    # GitHub App 配置（OAuth App 升级为 GitHub App 后填写）
+    # App ID，在 GitHub App 设置页的 App ID 字段获取
+    app-id: ${GITHUB_APP_ID:}
+    # 私钥（PKCS#8 PEM 格式）
+    # 从 GitHub App 设置页下载私钥（.pem 文件），执行以下命令转为 PKCS#8：
+    #   openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in private-key.pem -out private-key-pkcs8.pem
+    # 将 private-key-pkcs8.pem 内容（含首尾 -----BEGIN/END PRIVATE KEY-----）设为此环境变量
+    private-key: ${GITHUB_APP_PRIVATE_KEY:}
+    # Webhook Secret，在 GitHub App 设置页配置的 Webhook Secret 值
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
 
   # --- LLM 模型配置 ---
   llm:
