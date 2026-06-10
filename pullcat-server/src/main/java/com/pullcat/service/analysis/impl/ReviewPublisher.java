@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 审查结果发布到 GitHub PR
+ */
 @Slf4j
 @Component
 public class ReviewPublisher {
@@ -31,6 +34,9 @@ public class ReviewPublisher {
         this.resultAggregator = resultAggregator;
     }
 
+    /**
+     * 发布审查结果到 PR，支持选择性发布和摘要配置
+     */
     public ReviewSessionRespDTO publishReview(String reviewId, PublishReqDTO requestParam) {
         ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
         if (session == null) {
