@@ -236,11 +236,13 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     }
 
     @Override
-    public Mono<Void> updateCommitStatus(PRUrl prUrl, String sha, String state, String description) {
+    public Mono<Void> updateCommitStatus(PRUrl prUrl, String sha, String state,
+                                          String description, String targetUrl) {
         GitHubCommitStatusReqDTO body = new GitHubCommitStatusReqDTO();
         body.setState(state);
         body.setDescription(description);
         body.setContext("pullcat/code-review");
+        body.setTargetUrl(targetUrl);
 
         return webClient.post()
                 .uri("/repos/{owner}/{repo}/statuses/{sha}", prUrl.owner(), prUrl.repo(), sha)
@@ -448,6 +450,17 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     @Override
     public Mono<Long> publishReview(PRUrl prUrl, String summaryBody) {
         return publishReviewWithComments(prUrl, summaryBody, List.of());
+    }
+
+    @Override
+    public Mono<Long> postIssueComment(PRUrl prUrl, String body) {
+        return webClient.post()
+                .uri("/repos/{owner}/{repo}/issues/{number}/comments",
+                        prUrl.owner(), prUrl.repo(), prUrl.number())
+                .bodyValue(Map.of("body", body))
+                .retrieve()
+                .bodyToMono(GitHubCommentRespDTO.class)
+                .map(GitHubCommentRespDTO::getId);
     }
 
     private void recordApiCall(String endpoint, String status) {

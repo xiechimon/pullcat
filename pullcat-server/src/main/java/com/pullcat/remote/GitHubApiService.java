@@ -22,7 +22,7 @@ public interface GitHubApiService {
 
     Mono<String> fetchFileContent(PRUrl prUrl, String path);
 
-    Mono<Void> updateCommitStatus(PRUrl prUrl, String sha, String state, String description);
+    Mono<Void> updateCommitStatus(PRUrl prUrl, String sha, String state, String description, String targetUrl);
 
     Mono<String> fetchHeadSha(PRUrl prUrl);
 
@@ -44,6 +44,11 @@ public interface GitHubApiService {
     Mono<Long> publishReviewWithComments(PRUrl prUrl, String summaryBody, List<ReviewComment> comments);
 
     Mono<Long> publishReview(PRUrl prUrl, String summaryBody);
+
+    /**
+     * 在 PR issue 评论区发布一条评论
+     */
+    Mono<Long> postIssueComment(PRUrl prUrl, String body);
 
     /**
      * 行级审查评论

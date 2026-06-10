@@ -9,6 +9,11 @@ import lombok.Data;
 public class GitHubCommentRespDTO {
 
     /**
+     * 评论 ID
+     */
+    private Long id;
+
+    /**
      * 评论用户
      */
     private GitHubUserRespDTO user;
