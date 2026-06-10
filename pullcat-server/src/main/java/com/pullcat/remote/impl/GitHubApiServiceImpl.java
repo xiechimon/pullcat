@@ -123,7 +123,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     private ExchangeFilterFunction authFilter() {
         return ExchangeFilterFunction.ofRequestProcessor(request -> {
             String token = resolveToken();
-            if (token != null) {
+            if (token != null && !token.isBlank()) {
                 return Mono.just(ClientRequest.from(request)
                         .headers(h -> h.setBearerAuth(token))
                         .build());
