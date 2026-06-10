@@ -1,5 +1,6 @@
 package com.pullcat.remote.dto.req;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
@@ -22,4 +23,10 @@ public class GitHubCommitStatusReqDTO {
      * 状态上下文
      */
     private String context;
+
+    /**
+     * 状态详情页 URL
+     */
+    @JsonProperty("target_url")
+    private String targetUrl;
 }

@@ -18,7 +18,10 @@ public enum AnalysisType {
     CONSISTENCY("consistency"),
 
     /** 测试覆盖率分析 */
-    TESTING("testing");
+    TESTING("testing"),
+
+    /** 聚合汇总分析 */
+    AGGREGATION("aggregation");
 
     private final String templateName;
 

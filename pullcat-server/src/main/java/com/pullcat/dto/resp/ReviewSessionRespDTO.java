@@ -74,4 +74,10 @@ public class ReviewSessionRespDTO {
      */
     @JsonIgnore
     private Long installationId;
+
+    /**
+     * PR head commit SHA，webhook 触发时填充，用于 commit status 回写
+     */
+    @JsonIgnore
+    private String headSha;
 }

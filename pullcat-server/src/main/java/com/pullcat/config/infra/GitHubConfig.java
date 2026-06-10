@@ -1,5 +1,6 @@
 package com.pullcat.config.infra;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,6 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "pullcat.github")
 public class GitHubConfig {
+
+    @Value("${pullcat.base-url:http://localhost:5173}")
+    private String baseUrl;
 
     private String token;
 
@@ -26,6 +30,9 @@ public class GitHubConfig {
      * GitHub App Webhook Secret
      */
     private String webhookSecret;
+
+    public String getBaseUrl() { return baseUrl; }
+    public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
 
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }

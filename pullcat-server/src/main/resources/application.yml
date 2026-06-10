@@ -63,6 +63,8 @@ pullcat:
     # Webhook Secret，在 GitHub App 设置页配置的 Webhook Secret 值
     webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
 
+  base-url: ${PULLCAT_BASE_URL:http://localhost:5173}
+
   # --- LLM 模型配置 ---
   llm:
     # 轻量模型：用于摘要、测试覆盖等快速分析

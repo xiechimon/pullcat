@@ -40,6 +40,7 @@ public class AnalysisTaskFactoryImpl implements AnalysisTaskFactory {
             case QUALITY -> new QualityAnalysisServiceImpl(heavyChatClient, heavyModelName);
             case CONSISTENCY -> new ConsistencyAnalysisServiceImpl(heavyChatClient, heavyModelName);
             case TESTING -> new TestingGapAnalysisServiceImpl(lightChatClient, lightModelName);
+            case AGGREGATION -> throw new UnsupportedOperationException("AGGREGATION analysis not yet implemented");
         };
     }
 }
