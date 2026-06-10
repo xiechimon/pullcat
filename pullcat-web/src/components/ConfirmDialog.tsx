@@ -34,7 +34,13 @@ export function ConfirmDialog({
           </Dialog.Description>
           <div className="mt-6 flex justify-end gap-3">
             <Dialog.Close asChild>
-              <button className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              <button
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                style={{ transition: 'box-shadow 0.1s, background 0.1s' }}
+                onMouseDown={e => (e.currentTarget.style.boxShadow = '0px 0px 0px 4px rgba(0,0,0,0.1)')}
+                onMouseUp={e => (e.currentTarget.style.boxShadow = '')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
+              >
                 {cancelLabel}
               </button>
             </Dialog.Close>
@@ -48,6 +54,10 @@ export function ConfirmDialog({
                   ? 'bg-red-600 hover:bg-red-700'
                   : 'bg-emerald-600 hover:bg-emerald-700'
               }`}
+              style={{ transition: 'box-shadow 0.1s, transform 0.1s, background-color 0.15s' }}
+              onMouseDown={e => { e.currentTarget.style.boxShadow = destructive ? '0px 0px 0px 4px rgba(220,38,38,0.25)' : '0px 0px 0px 4px rgba(4,120,87,0.25)'; e.currentTarget.style.transform = 'scale(0.97)' }}
+              onMouseUp={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
             >
               {confirmLabel}
             </button>

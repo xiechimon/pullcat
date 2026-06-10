@@ -55,6 +55,10 @@ export function PRInput({ onSubmit, loading, compact = false }: PRInputProps) {
               type="submit"
               disabled={loading}
               className="home-review-form__submit"
+              style={{ transition: 'box-shadow 0.1s, transform 0.1s' }}
+              onMouseDown={e => { if (!loading) { e.currentTarget.style.boxShadow = '0px 0px 0px 4px rgba(0,0,0,0.15)'; e.currentTarget.style.transform = 'scale(0.97)' } }}
+              onMouseUp={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
             >
               {loading ? (
                 <>

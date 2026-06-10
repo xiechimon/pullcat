@@ -111,6 +111,10 @@ function AnalysisTaskCard({ task, result, isActive, onClick }: AnalysisTaskCardP
           ? 'shadow-md scale-[1.02]'
           : 'hover:shadow-sm hover:scale-[1.01]'
       }`}
+      style={{ transition: 'box-shadow 0.1s, transform 0.3s' }}
+      onMouseDown={e => (e.currentTarget.style.boxShadow = '0px 0px 0px 4px rgba(0,0,0,0.1)')}
+      onMouseUp={e => (e.currentTarget.style.boxShadow = '')}
+      onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
     >
       <div className={`text-xl font-bold flex items-center justify-center h-6 ${style.color}`}>
         {style.icon}

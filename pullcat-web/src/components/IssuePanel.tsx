@@ -74,15 +74,23 @@ export function IssuePanel({
           className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-slate-800"
         />
         <div className="flex items-center gap-1 flex-wrap">
-          <button onClick={onSelectAll} className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800">
-            全选
-          </button>
-          <button onClick={onDeselectAll} className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800">
-            取消全选
-          </button>
-          <button onClick={onSelectHighAbove} className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800">
-            仅选 HIGH+
-          </button>
+          {([
+            { label: '全选', handler: onSelectAll },
+            { label: '取消全选', handler: onDeselectAll },
+            { label: '仅选 HIGH+', handler: onSelectHighAbove },
+          ] as { label: string; handler: () => void }[]).map(({ label, handler }) => (
+            <button
+              key={label}
+              onClick={handler}
+              className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+              style={{ transition: 'box-shadow 0.1s' }}
+              onMouseDown={e => (e.currentTarget.style.boxShadow = '0px 0px 0px 3px rgba(0,0,0,0.1)')}
+              onMouseUp={e => (e.currentTarget.style.boxShadow = '')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
+            >
+              {label}
+            </button>
+          ))}
           <span className="ml-auto text-xs text-gray-500">{selectedCount}/{issues.length}</span>
         </div>
         <div className="flex gap-1">
@@ -91,6 +99,10 @@ export function IssuePanel({
               key={m}
               onClick={() => setGroupMode(m)}
               className={`text-xs px-2 py-0.5 rounded ${groupMode === m ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              style={{ transition: 'box-shadow 0.1s' }}
+              onMouseDown={e => (e.currentTarget.style.boxShadow = '0px 0px 0px 3px rgba(0,0,0,0.1)')}
+              onMouseUp={e => (e.currentTarget.style.boxShadow = '')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
             >
               {m === 'severity' ? '按严重度' : m === 'file' ? '按文件' : '列表'}
             </button>

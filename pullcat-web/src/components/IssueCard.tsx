@@ -27,7 +27,14 @@ export function IssueCard({
   id, severity, file, line, title, description, suggestion, suggestionCode, confidence, selected, onToggle,
 }: IssueCardProps) {
   return (
-    <div className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md ${SEVERITY_BG[severity]} ${selected ? 'ring-2 ring-amber-400' : ''}`}> 
+    <div
+      className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${SEVERITY_BG[severity]} ${selected ? 'ring-2 ring-amber-400' : ''}`}
+      style={{ transition: 'box-shadow 0.1s, transform 0.1s' }}
+      onMouseDown={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0px 0px 0px 3px rgba(0,0,0,0.1)'; (e.currentTarget as HTMLElement).style.transform = 'scale(0.995)' }}
+      onMouseUp={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = '' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = ''; (e.currentTarget as HTMLElement).style.transform = '' }}
+      onClick={() => onToggle(id)}
+    > 
       <div className="flex items-start gap-3">
         <input
           type="checkbox"

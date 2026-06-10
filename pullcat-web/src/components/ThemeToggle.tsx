@@ -9,7 +9,11 @@ export function ThemeToggle() {
       <Tooltip.Trigger asChild>
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-all duration-200 active:scale-90"
+          className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-none transition-all duration-200"
+          style={{ transition: 'box-shadow 0.1s, background 0.1s' }}
+          onMouseDown={e => (e.currentTarget.style.boxShadow = '0px 0px 0px 4px rgba(0,0,0,0.12)')}
+          onMouseUp={e => (e.currentTarget.style.boxShadow = '')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}
           aria-label="Toggle theme"
         >
           {theme === 'light' ? (

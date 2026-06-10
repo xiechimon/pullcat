@@ -37,7 +37,11 @@ export function ActionBar({
             <button
               onClick={onPublish}
               disabled={publishing || disabled}
-              className="px-5 py-2 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors active:scale-[0.97] border-2 border-[#047857]"
+              className="px-5 py-2 bg-[#047857] hover:bg-[#064e3b] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors border-2 border-[#047857]"
+              style={{ transition: 'box-shadow 0.1s, transform 0.1s, background-color 0.15s' }}
+              onMouseDown={e => { if (!publishing && !disabled) { e.currentTarget.style.boxShadow = '0px 0px 0px 4px rgba(4,120,87,0.3)'; e.currentTarget.style.transform = 'scale(0.97)' } }}
+              onMouseUp={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
             >
               {publishing ? '发布中...' : disabled ? '分析中...' : '发布到 PR'}
             </button>
