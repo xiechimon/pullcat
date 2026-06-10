@@ -1,11 +1,17 @@
 package com.pullcat.toolkit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pullcat.dto.resp.IssueRespDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Markdown 与审查内容格式化工具
  */
 public final class MarkdownUtil {
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(MarkdownUtil.class);
 
     private MarkdownUtil() {
     }
@@ -16,9 +22,10 @@ public final class MarkdownUtil {
     public static String extractSummaryText(String content) {
         try {
             String json = JsonOutputParser.extractJson(content);
-            var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+            var node = objectMapper.readTree(json);
             return node.has("summary") ? node.get("summary").asText("") : content;
         } catch (Exception e) {
+            log.warn("提取 summary 文本失败: {}", e.getMessage());
             return content;
         }
     }
