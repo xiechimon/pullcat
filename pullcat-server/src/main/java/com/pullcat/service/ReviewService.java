@@ -29,6 +29,10 @@ public interface ReviewService {
 
     /**
      * 创建审查会话并返回初始信息
+     *
+     * @param prUrl PR 链接
+     * @param login 当前登录用户
+     * @return 审查会话信息响应实体，包括会话 ID 和 SSE 地址
      */
     CreateReviewRespDTO createReview(String prUrl, String login);
 
