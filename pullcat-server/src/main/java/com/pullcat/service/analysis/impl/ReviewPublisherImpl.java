@@ -5,6 +5,7 @@ import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.remote.GitHubApiService;
+import com.pullcat.service.AutoPublishService;
 import com.pullcat.service.analysis.ResultAggregator;
 import com.pullcat.service.analysis.ReviewPublisher;
 import com.pullcat.service.analysis.ReviewSessionService;
@@ -25,13 +26,16 @@ public class ReviewPublisherImpl implements ReviewPublisher {
     private final GitHubApiService gitHubApiService;
     private final ReviewSessionService reviewSessionService;
     private final ResultAggregator resultAggregator;
+    private final AutoPublishService autoPublishService;
 
     public ReviewPublisherImpl(GitHubApiService gitHubApiService,
                                ReviewSessionService reviewSessionService,
-                               ResultAggregator resultAggregator) {
+                               ResultAggregator resultAggregator,
+                               AutoPublishService autoPublishService) {
         this.gitHubApiService = gitHubApiService;
         this.reviewSessionService = reviewSessionService;
         this.resultAggregator = resultAggregator;
+        this.autoPublishService = autoPublishService;
     }
 
     /**
@@ -78,7 +82,7 @@ public class ReviewPublisherImpl implements ReviewPublisher {
             return false;
         }
 
-        if (reviewSessionService.isAutoPublishEnabled(parts[0], parts[1])) {
+        if (autoPublishService.getStatus(parts[0], parts[1]).getEnabled()) {
             try {
                 publishAutoReview(session);
                 log.info("Auto-published review {} to PR {}", session.getId(), session.getPrUrl());

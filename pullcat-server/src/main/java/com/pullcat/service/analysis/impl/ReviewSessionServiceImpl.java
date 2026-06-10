@@ -1,13 +1,10 @@
 package com.pullcat.service.analysis.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pullcat.common.convention.exception.ServiceException;
-import com.pullcat.dao.entity.RepoAutoPublishDO;
 import com.pullcat.dao.entity.ReviewDO;
-import com.pullcat.dao.mapper.RepoAutoPublishMapper;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.analysis.ReviewSessionService;
@@ -22,7 +19,6 @@ import java.util.List;
 public class ReviewSessionServiceImpl implements ReviewSessionService {
 
     private final ReviewMapper reviewMapper;
-    private final RepoAutoPublishMapper repoAutoPublishMapper;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -123,42 +119,6 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
     @Override
     public boolean exists(String id) {
         return reviewMapper.selectById(id) != null;
-    }
-
-    @Override
-    public boolean isAutoPublishEnabled(String owner, String repo) {
-        RepoAutoPublishDO config = repoAutoPublishMapper.selectById(owner + "/" + repo);
-        return config != null && config.isEnabled();
-    }
-
-    @Override
-    public void setAutoPublishEnabled(String owner, String repo, boolean enabled) {
-        String fullName = owner + "/" + repo;
-        if (enabled) {
-            RepoAutoPublishDO config = new RepoAutoPublishDO(owner, repo, true);
-            RepoAutoPublishDO existing = repoAutoPublishMapper.selectById(fullName);
-            if (existing != null) {
-                config.setCreatedAt(existing.getCreatedAt());
-            }
-            config.setUpdatedAt(Instant.now());
-            if (existing == null) {
-                repoAutoPublishMapper.insert(config);
-            } else {
-                repoAutoPublishMapper.updateById(config);
-            }
-        } else {
-            repoAutoPublishMapper.deleteById(fullName);
-        }
-    }
-
-    @Override
-    public List<String> listAutoPublishRepos() {
-        return repoAutoPublishMapper.selectList(new LambdaQueryWrapper<RepoAutoPublishDO>()
-                        .eq(RepoAutoPublishDO::isEnabled, true)
-                        .orderByAsc(RepoAutoPublishDO::getFullName))
-                .stream()
-                .map(RepoAutoPublishDO::getFullName)
-                .toList();
     }
 
     private ReviewDO toDO(ReviewSessionRespDTO session) {

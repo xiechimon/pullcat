@@ -34,10 +34,4 @@ public interface ReviewSessionService {
     void delete(String id);
 
     boolean exists(String id);
-
-    boolean isAutoPublishEnabled(String owner, String repo);
-
-    void setAutoPublishEnabled(String owner, String repo, boolean enabled);
-
-    List<String> listAutoPublishRepos();
 }
