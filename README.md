@@ -1,25 +1,23 @@
-<p style="text-align: center;">
+<div align="center">
   <img src="pullcat-web/public/cat.png" width="120" alt="pullcat logo" />
-</p>
 
-<h1 style="text-align: center;">Pullcat</h1>
+  <h1>Pullcat</h1>
 
-<p style="text-align: center;">
   <strong>AI 驱动的代码评审助手，让每次 Pull Request Review 都高效、全面、零遗漏。</strong>
-</p>
 
-<p style="text-align: center;">
+  <br /><br />
+
   <a href="https://xmon.me">
     <img src="https://img.shields.io/badge/🔗-xmon.me-4D6BFE?style=for-the-badge" alt="xmon.me" />
   </a>
-</p>
 
-<p style="text-align: center;">
+  <br /><br />
+
   <img src="https://img.shields.io/badge/Java-17+-orange" alt="Java 17+">
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen" alt="Spring Boot">
   <img src="https://img.shields.io/badge/React-19-blue" alt="React 19">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
-</p>
+</div>
 
 ---
 
