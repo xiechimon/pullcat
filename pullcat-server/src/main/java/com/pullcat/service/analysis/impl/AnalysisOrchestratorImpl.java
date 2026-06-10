@@ -454,13 +454,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         return taskFactory.create(type);
     }
 
-    /**
-     * 并行拉取约定文件内容，合并并截断至 8000 字符；任一文件拉取失败则静默跳过
-     */
-    private String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
-        return buildConventionContent(prUrl, candidates, gitHubApiService);
-    }
-
     private String buildConventionContent(GitHubApiService.PRUrl prUrl,
                                           List<String> candidates,
                                           GitHubApiService apiService) {

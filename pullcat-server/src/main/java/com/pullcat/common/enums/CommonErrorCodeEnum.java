@@ -3,7 +3,7 @@ package com.pullcat.common.enums;
 import com.pullcat.common.convention.errorcode.IErrorCode;
 
 /**
- * 通用错误码枚举，为尚未细分业务模块时提供默认错误码。
+ * 通用错误码枚举，为尚未细分业务模块时提供默认错误码
  */
 public enum CommonErrorCodeEnum implements IErrorCode {
 

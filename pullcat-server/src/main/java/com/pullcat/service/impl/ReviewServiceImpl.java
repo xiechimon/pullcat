@@ -34,6 +34,22 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewSessionService reviewSessionService;
 
     @Override
+    public CreateReviewRespDTO createReview(String prUrl, String login) {
+        // 校验
+        if (prUrl == null || prUrl.isBlank()) {
+            throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
+        }
+        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, login);
+        reviewSessionService.save(session);
+
+        CreateReviewRespDTO response = new CreateReviewRespDTO();
+        response.setReviewId(session.getId());
+        response.setStatus(session.getStatus().name());
+        response.setSseUrl("/api/pullcat/v1/reviews/" + session.getId() + "/sse");
+        return response;
+    }
+
+    @Override
     public ReviewListRespDTO listReviews(int page, int size, String repo, String login) {
         List<ReviewSessionRespDTO> reviews;
         long total;
@@ -79,21 +95,6 @@ public class ReviewServiceImpl implements ReviewService {
             throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权删除此审查");
         }
         reviewSessionService.delete(id);
-    }
-
-    @Override
-    public CreateReviewRespDTO createReview(String prUrl, String login) {
-        if (prUrl == null || prUrl.isBlank()) {
-            throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
-        }
-        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, login);
-        reviewSessionService.save(session);
-
-        CreateReviewRespDTO response = new CreateReviewRespDTO();
-        response.setReviewId(session.getId());
-        response.setStatus(session.getStatus().name());
-        response.setSseUrl("/api/pullcat/v1/reviews/" + session.getId() + "/sse");
-        return response;
     }
 
     @Override

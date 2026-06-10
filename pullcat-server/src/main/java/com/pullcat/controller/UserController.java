@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -17,16 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/pullcat/v1")
 public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/api/pullcat/v1/user")
+    @GetMapping("/user")
     public Result<CurrentUserRespDTO> currentUser(@CurrentLogin String login) {
         return Results.success(userService.getCurrentUser(login));
     }
 
-    @PostMapping("/api/pullcat/v1/logout")
+    /**
+     * 注销登录
+     */
+    @PostMapping("/logout")
     public Result<LogoutRespDTO> logout(HttpServletRequest request) {
         return Results.success(userService.logout(request));
     }
