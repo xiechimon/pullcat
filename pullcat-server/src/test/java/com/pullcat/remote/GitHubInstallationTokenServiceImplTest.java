@@ -2,9 +2,13 @@ package com.pullcat.remote;
 
 import com.pullcat.common.constant.RedisKeys;
 import com.pullcat.config.infra.GitHubConfig;
+import com.pullcat.remote.GitHubApiService;
+import com.pullcat.remote.GitHubInstallationTokenService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.pullcat.remote.impl.GitHubInstallationTokenServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -77,5 +81,26 @@ class GitHubInstallationTokenServiceImplTest {
 
         verify(valueOps).set(eq(RedisKeys.installationTokenKey(99L)),
                 eq("fresh-token"), eq(Duration.ofMinutes(58)));
+    }
+
+    @Test
+    void withInstallationToken_returnsIndependentApiServiceInstance() {
+        GitHubConfig config = new GitHubConfig();
+        GitHubInstallationTokenService tokenService = Mockito.mock(GitHubInstallationTokenService.class);
+        when(tokenService.getInstallationToken(77L)).thenReturn(Mono.just("installation-token"));
+
+        GitHubApiService service = new com.pullcat.remote.impl.GitHubApiServiceImpl(
+                config,
+                new SimpleMeterRegistry(),
+                Mockito.mock(OAuth2AuthorizedClientService.class),
+                tokenService
+        );
+
+        StepVerifier.create(service.withInstallationToken(77L))
+                .assertNext(api -> {
+                    org.junit.jupiter.api.Assertions.assertNotSame(service, api);
+                    org.junit.jupiter.api.Assertions.assertInstanceOf(GitHubApiService.class, api);
+                })
+                .verifyComplete();
     }
 }
