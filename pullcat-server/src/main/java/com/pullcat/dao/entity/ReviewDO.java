@@ -42,6 +42,12 @@ public class ReviewDO {
     private String userId;
 
     /**
+     * GitHub App Installation ID，webhook 触发时填充，与 userId 互斥
+     */
+    @TableField("installation_id")
+    private Long installationId;
+
+    /**
      * 会话状态
      */
     private String status;

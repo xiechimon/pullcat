@@ -51,4 +51,10 @@ public class UserDO {
      */
     @TableField("created_at")
     private Instant createdAt = Instant.now();
+
+    /**
+     * GitHub App Installation ID
+     */
+    @TableField("installation_id")
+    private Long installationId;
 }

@@ -180,6 +180,7 @@ public class ReviewSessionServiceImpl implements ReviewSessionService {
         reviewDO.setCreatedAt(session.getCreatedAt());
         reviewDO.setCompletedAt(session.getCompletedAt());
         reviewDO.setUpdatedAt(Instant.now());
+        reviewDO.setInstallationId(session.getInstallationId());
         reviewDO.setSnapshotJson(writeSnapshot(session));
         return reviewDO;
     }

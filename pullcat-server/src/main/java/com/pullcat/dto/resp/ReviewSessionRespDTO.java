@@ -35,4 +35,6 @@ public class ReviewSessionRespDTO {
     private String userId;
     /** 原始 unified diff 文本 */
     private String rawDiff;
+    /** GitHub App Installation ID，webhook 触发时填充 */
+    private Long installationId;
 }
