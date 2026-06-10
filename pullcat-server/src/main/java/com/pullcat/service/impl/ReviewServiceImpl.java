@@ -13,7 +13,8 @@ import com.pullcat.dto.resp.SseConnectedRespDTO;
 import com.pullcat.dto.resp.SseMessageRespDTO;
 import com.pullcat.dto.resp.SsePrInfoRespDTO;
 import com.pullcat.service.ReviewService;
-import com.pullcat.service.analysis.AnalysisOrchestrator;
+import com.pullcat.service.analysis.impl.ReviewOrchestrator;
+import com.pullcat.service.analysis.impl.ReviewPublisher;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
@@ -30,7 +31,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
-    private final AnalysisOrchestrator orchestrator;
+    private final ReviewOrchestrator reviewOrchestrator;
+    private final ReviewPublisher reviewPublisher;
     private final ReviewSessionService reviewSessionService;
 
     @Override
@@ -39,7 +41,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (prUrl == null || prUrl.isBlank()) {
             throw new ClientException(CommonErrorCodeEnum.CLIENT_ERROR.code(), "prUrl 不能为空");
         }
-        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, login);
+        ReviewSessionRespDTO session = reviewOrchestrator.createSession(prUrl, login);
         reviewSessionService.save(session);
 
         CreateReviewRespDTO response = new CreateReviewRespDTO();
@@ -106,7 +108,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (!isOwner(session, login)) {
             throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权发布此审查");
         }
-        ReviewSessionRespDTO updated = orchestrator.publishReview(id, requestParam);
+        ReviewSessionRespDTO updated = reviewPublisher.publishReview(id, requestParam);
         PublishReviewRespDTO response = new PublishReviewRespDTO();
         response.setStatus(updated.getStatus().name());
         response.setCommentId(updated.getPublishedCommentId());
@@ -167,7 +169,7 @@ public class ReviewServiceImpl implements ReviewService {
                             "summary", "risk", "quality", "consistency", "testing"))));
 
             if (session.getStatus() == com.pullcat.common.enums.SessionStatus.FETCHING) {
-                orchestrator.startReviewAsync(session);
+                reviewOrchestrator.startReviewAsync(session);
             }
 
         } catch (IOException e) {

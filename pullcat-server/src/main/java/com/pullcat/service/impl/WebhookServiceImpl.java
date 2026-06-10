@@ -4,7 +4,7 @@ import com.pullcat.dto.req.WebhookEventReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.WebhookService;
-import com.pullcat.service.analysis.AnalysisOrchestrator;
+import com.pullcat.service.analysis.impl.ReviewOrchestrator;
 import com.pullcat.service.analysis.GitHubInstallationService;
 import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class WebhookServiceImpl implements WebhookService {
 
-    private final AnalysisOrchestrator orchestrator;
+    private final ReviewOrchestrator reviewOrchestrator;
     private final ReviewSessionService reviewSessionService;
     private final GitHubInstallationService gitHubInstallationService;
 
@@ -68,9 +68,9 @@ public class WebhookServiceImpl implements WebhookService {
     }
 
     private void triggerReview(String prUrl, Long installationId) {
-        ReviewSessionRespDTO session = orchestrator.createSession(prUrl, null);
+        ReviewSessionRespDTO session = reviewOrchestrator.createSession(prUrl, null);
         session.setInstallationId(installationId);
         reviewSessionService.save(session);
-        orchestrator.startReviewAsync(session);
+        reviewOrchestrator.startReviewAsync(session);
     }
 }
