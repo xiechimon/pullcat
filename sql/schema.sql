@@ -19,26 +19,6 @@ CREATE TABLE IF NOT EXISTS `repo`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci COMMENT ='Pullcat 仓库表';
 
-CREATE TABLE IF NOT EXISTS `rule`
-(
-    `id`         varchar(64)  NOT NULL COMMENT '规则 ID',
-    `repo_owner` varchar(100) NOT NULL COMMENT '仓库 owner',
-    `repo_name`  varchar(100) NOT NULL COMMENT '仓库名',
-    `type`       varchar(64)  NOT NULL COMMENT '规则类型枚举',
-    `pattern`    text         NULL COMMENT '匹配模式',
-    `severity`   varchar(32)  NOT NULL COMMENT '严重级别枚举',
-    `name`       varchar(255) NOT NULL COMMENT '规则名称',
-    `message`    text         NULL COMMENT '问题提示',
-    `suggestion` text         NULL COMMENT '修复建议',
-    `enabled`    tinyint(1)   NOT NULL DEFAULT 1 COMMENT '是否启用',
-    `created_at` datetime(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '创建时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_rule_repo` (`repo_owner`, `repo_name`),
-    KEY `idx_rule_repo_enabled` (`repo_owner`, `repo_name`, `enabled`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci COMMENT ='Pullcat 仓库规则表';
-
 CREATE TABLE IF NOT EXISTS `user`
 (
     `id`           varchar(64)  NOT NULL COMMENT '用户 ID',
