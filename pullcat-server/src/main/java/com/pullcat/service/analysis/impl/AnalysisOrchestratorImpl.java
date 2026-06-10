@@ -17,6 +17,7 @@ import com.pullcat.dto.resp.SsePrInfoRespDTO;
 import com.pullcat.dto.resp.SseTaskProgressRespDTO;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.toolkit.ConventionUtil;
+import com.pullcat.toolkit.MarkdownUtil;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.AnalysisTaskFactory;
 import com.pullcat.service.analysis.ContextBuilder;
@@ -340,7 +341,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 .filter(issue -> issue.getSuggestionCode() != null && !issue.getSuggestionCode().isBlank())
                 .filter(issue -> issue.getFile() != null && issue.getLine() != null)
                 .map(issue -> new GitHubApiService.ReviewComment(
-                        issue.getFile(), issue.getLine(), buildSuggestionBlock(issue)))
+                        issue.getFile(), issue.getLine(), MarkdownUtil.buildSuggestionBlock(issue)))
                 .toList();
 
         Long commentId = apiService.publishReviewWithComments(parsed, summary, comments).block();
@@ -372,7 +373,7 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
 
         AnalysisResultRespDTO summaryResult = session.getAnalyses().get("summary");
         if (summaryResult != null && summaryResult.getContent() != null) {
-            sb.append("### 审查摘要\n\n").append(extractSummaryText(summaryResult.getContent())).append("\n\n");
+            sb.append("### 审查摘要\n\n").append(MarkdownUtil.extractSummaryText(summaryResult.getContent())).append("\n\n");
         }
 
         sb.append("### 问题概览（").append(dedupedIssues.size()).append(" 个）\n\n");
@@ -394,16 +395,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         }
 
         sb.append("\n---\n*由 [pullcat](https://xmon.me) 自动生成*");
-        return sb.toString();
-    }
-
-    String buildSuggestionBlock(IssueRespDTO issue) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("**[").append(issue.getSeverity()).append("] ").append(issue.getTitle()).append("**\n\n");
-        sb.append(issue.getDescription()).append("\n\n");
-        sb.append("```suggestion\n");
-        sb.append(issue.getSuggestionCode());
-        sb.append("\n```\n");
         return sb.toString();
     }
 
@@ -438,16 +429,6 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         apiService.publishReview(parsed, summary).block();
         session.setStatus(SessionStatus.PUBLISHED);
         reviewSessionService.save(session);
-    }
-
-    private String extractSummaryText(String content) {
-        try {
-            String json = com.pullcat.toolkit.JsonOutputParser.extractJson(content);
-            var node = new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
-            return node.has("summary") ? node.get("summary").asText("") : content;
-        } catch (Exception e) {
-            return content;
-        }
     }
 
     private AnalysisTask createTask(AnalysisType type) {
