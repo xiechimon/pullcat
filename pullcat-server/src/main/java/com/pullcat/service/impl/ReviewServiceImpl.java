@@ -1,13 +1,10 @@
 package com.pullcat.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.enums.AnalysisStatus;
 import com.pullcat.common.enums.AnalysisType;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.common.enums.SessionStatus;
-import com.pullcat.dao.entity.ReviewDO;
-import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.AnalysisResultRespDTO;
 import com.pullcat.dto.resp.CreateReviewRespDTO;
@@ -62,7 +59,7 @@ import java.util.concurrent.ExecutorService;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements ReviewService {
+public class ReviewServiceImpl implements ReviewService {
 
     private final GitHubApiService gitHubApiService;
     private final PromptLoader promptLoader;
