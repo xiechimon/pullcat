@@ -13,6 +13,7 @@ import com.pullcat.dto.resp.SseCompletionRespDTO;
 import com.pullcat.dto.resp.SseConnectedRespDTO;
 import com.pullcat.dto.resp.SseMessageRespDTO;
 import com.pullcat.dto.resp.SsePrInfoRespDTO;
+import com.pullcat.config.infra.GitHubConfig;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.ReviewService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
@@ -42,6 +43,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewSessionService reviewSessionService;
     private final ReviewPublisher reviewPublisher;
     private final AnalysisOrchestrator analysisOrchestrator;
+    private final GitHubConfig gitHubConfig;
 
     @Override
     public CreateReviewRespDTO createReview(String prUrl, String login) {
@@ -60,11 +62,31 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public void triggerReview(String prUrl, Long installationId) {
+    public void triggerReview(String prUrl, Long installationId, String headSha) {
         ReviewSessionRespDTO session = createSession(prUrl, null);
         session.setInstallationId(installationId);
+        session.setHeadSha(headSha);
         reviewSessionService.save(session);
+
+        if (headSha != null && !headSha.isBlank()) {
+            GitHubApiService apiService = resolveApiService(installationId);
+            GitHubApiService.PRUrl parsed = gitHubApiService.parsePrUrl(prUrl);
+            try {
+                apiService.updateCommitStatus(parsed, headSha, "pending", "pullcat 审查中\u2026", null).block();
+            } catch (Exception e) {
+                log.warn("Failed to post pending commit status for {}: {}", prUrl, e.getMessage());
+            }
+        }
+
         analysisOrchestrator.startAsync(session);
+    }
+
+    private GitHubApiService resolveApiService(Long installationId) {
+        if (installationId == null) {
+            return gitHubApiService;
+        }
+        return gitHubApiService.withInstallationToken(installationId).blockOptional()
+                .orElse(gitHubApiService);
     }
 
     @Override

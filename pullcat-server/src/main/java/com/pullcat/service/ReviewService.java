@@ -69,10 +69,11 @@ public interface ReviewService {
 
 
     /**
-     * Webhook 触发审查
+     * Webhook 触发审查，立即 post pending commit status
      *
-     * @param prUrl PR 链接
-     * @param installationId GitHub App 安装 ID
+     * @param prUrl          PR 链接
+     * @param installationId GitHub App 安装 ID，webhook 触发时提供
+     * @param headSha        PR head commit SHA，用于 commit status 回写，无则传 null
      */
-    void triggerReview(String prUrl, Long installationId);
+    void triggerReview(String prUrl, Long installationId, String headSha);
 }

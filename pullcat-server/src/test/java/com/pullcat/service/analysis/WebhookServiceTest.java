@@ -61,7 +61,7 @@ class WebhookServiceTest {
 
         assertEquals("review_triggered", result.getStatus());
         assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
-        verify(reviewService).triggerReview("https://github.com/a/b/pull/1", 1001L);
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/1", 1001L, null);
     }
 
     @Test
@@ -78,7 +78,7 @@ class WebhookServiceTest {
         WebhookRespDTO result = webhookService.handle("pull_request", req);
 
         assertEquals("review_triggered", result.getStatus());
-        verify(reviewService).triggerReview("https://github.com/a/b/pull/2", 1002L);
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/2", 1002L, null);
     }
 
     @Test
@@ -112,5 +112,43 @@ class WebhookServiceTest {
         assertEquals("installation_processed", result.getStatus());
         verify(gitHubInstallationService).suspendInstallation(3002L);
         verifyNoInteractions(reviewService);
+    }
+
+    @Test
+    void handle_prReopened_triggersReview() {
+        WebhookPullRequestReqDTO pr = new WebhookPullRequestReqDTO();
+        pr.setHtmlUrl("https://github.com/a/b/pull/3");
+        WebhookPullRequestReqDTO.HeadReqDTO head = new WebhookPullRequestReqDTO.HeadReqDTO();
+        head.setSha("abc123");
+        pr.setHead(head);
+
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("reopened");
+        req.setPullRequest(pr);
+
+        WebhookRespDTO result = webhookService.handle("pull_request", req);
+
+        assertEquals("review_triggered", result.getStatus());
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/3", null, "abc123");
+    }
+
+    @Test
+    void handle_prOpened_passesHeadShaToTrigger() {
+        WebhookPullRequestReqDTO pr = new WebhookPullRequestReqDTO();
+        pr.setHtmlUrl("https://github.com/a/b/pull/4");
+        WebhookPullRequestReqDTO.HeadReqDTO head = new WebhookPullRequestReqDTO.HeadReqDTO();
+        head.setSha("def456");
+        pr.setHead(head);
+
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("opened");
+        req.setPullRequest(pr);
+        WebhookEventReqDTO.InstallationReqDTO inst = new WebhookEventReqDTO.InstallationReqDTO();
+        inst.setId(9999L);
+        req.setInstallation(inst);
+
+        webhookService.handle("pull_request", req);
+
+        verify(reviewService).triggerReview("https://github.com/a/b/pull/4", 9999L, "def456");
     }
 }

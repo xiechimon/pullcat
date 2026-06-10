@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pullcat.dao.entity.ReviewDO;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.req.WebhookEventReqDTO;
+import com.pullcat.dto.req.WebhookPullRequestReqDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.ReviewService;
 import com.pullcat.service.WebhookService;
@@ -36,15 +37,17 @@ public class WebhookServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> impl
         }
 
         String action = requestParam.getAction();
-        if (!"opened".equals(action) && !"synchronize".equals(action)) {
+        if (!"opened".equals(action) && !"synchronize".equals(action) && !"reopened".equals(action)) {
             response.setStatus("ignored");
             response.setAction(action);
             return response;
         }
 
-        String prUrl = requestParam.getPullRequest().getHtmlUrl();
+        WebhookPullRequestReqDTO pr = requestParam.getPullRequest();
+        String prUrl = pr.getHtmlUrl();
         Long installationId = requestParam.getInstallation() != null ? requestParam.getInstallation().getId() : null;
-        reviewService.triggerReview(prUrl, installationId);
+        String headSha = pr.getHead() != null ? pr.getHead().getSha() : null;
+        reviewService.triggerReview(prUrl, installationId, headSha);
         response.setStatus("review_triggered");
         response.setPrUrl(prUrl);
         return response;
