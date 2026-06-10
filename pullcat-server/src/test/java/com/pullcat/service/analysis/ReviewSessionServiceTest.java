@@ -3,9 +3,7 @@ package com.pullcat.service.analysis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pullcat.common.enums.SessionStatus;
-import com.pullcat.dao.entity.RepoAutoPublishDO;
 import com.pullcat.dao.entity.ReviewDO;
-import com.pullcat.dao.mapper.RepoAutoPublishMapper;
 import com.pullcat.dao.mapper.ReviewMapper;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.service.analysis.impl.ReviewSessionServiceImpl;
@@ -15,18 +13,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,18 +27,14 @@ class ReviewSessionServiceTest {
     @Mock
     ReviewMapper reviewMapper;
 
-    @Mock
-    RepoAutoPublishMapper repoAutoPublishMapper;
-
     private ReviewSessionService reviewSessionService;
 
     @BeforeEach
     void setUp() {
         reviewSessionService = new ReviewSessionServiceImpl(
-                repoAutoPublishMapper,
+                reviewMapper,
                 new ObjectMapper().registerModule(new JavaTimeModule())
         );
-        ReflectionTestUtils.setField(reviewSessionService, "baseMapper", reviewMapper);
     }
 
     @Test
@@ -80,41 +67,6 @@ class ReviewSessionServiceTest {
         assertEquals("r1", result.getId());
         assertEquals("https://github.com/o/r/pull/1", result.getPrUrl());
         assertEquals(SessionStatus.COMPLETED, result.getStatus());
-    }
-
-    @Test
-    void listAutoPublishRepos_returnsEnabledFullNames() {
-        RepoAutoPublishDO config = new RepoAutoPublishDO("owner", "repo", true);
-        when(repoAutoPublishMapper.selectList(any())).thenReturn(List.of(config));
-
-        List<String> result = reviewSessionService.listAutoPublishRepos();
-
-        assertEquals(List.of("owner/repo"), result);
-    }
-
-    @Test
-    void isAutoPublishEnabled_returnsFlagFromDatabase() {
-        when(repoAutoPublishMapper.selectById("owner/repo")).thenReturn(new RepoAutoPublishDO("owner", "repo", true));
-
-        assertTrue(reviewSessionService.isAutoPublishEnabled("owner", "repo"));
-        assertFalse(reviewSessionService.isAutoPublishEnabled("owner", "missing"));
-    }
-
-    @Test
-    void setAutoPublishEnabled_true_insertsWhenMissing() {
-        when(repoAutoPublishMapper.selectById("owner/repo")).thenReturn(null);
-
-        reviewSessionService.setAutoPublishEnabled("owner", "repo", true);
-
-        verify(repoAutoPublishMapper).insert(any(RepoAutoPublishDO.class));
-        verify(repoAutoPublishMapper, never()).deleteById(anyString());
-    }
-
-    @Test
-    void setAutoPublishEnabled_false_deletesConfig() {
-        reviewSessionService.setAutoPublishEnabled("owner", "repo", false);
-
-        verify(repoAutoPublishMapper).deleteById("owner/repo");
     }
 
     private ReviewSessionRespDTO review(String id, String repo, String login) {
