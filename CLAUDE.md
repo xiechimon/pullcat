@@ -225,21 +225,15 @@ Controller 只负责四件事：
 - 涉及 LLM 的具体分析实现放 `service.llm`，不要把 Prompt 调用直接散落到 Controller 或通用 Service
 
 ### Redis Key 命名
-
 Redis Key 常量统一放在 `common.constant.RedisKeys`。
-
 约束：
-
 - 使用 `:` 分隔命名空间层级
 - Key 构造统一通过 `RedisKeys` 中的方法或常量完成，不要在业务代码里手写字符串
 - TTL 也应与 Key 常量一起集中管理，避免魔法值散落
 
 ### 远程调用
-
 GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，具体实现收敛在 `remote.impl`。
-
 约束：
-
 - 第三方 API 访问代码集中在 `remote` 层
 - `remote` 根目录优先定义接口，具体实现放到 `remote.impl`
 - 认证、重试、限流、错误翻译优先在远程调用层封装
@@ -254,9 +248,7 @@ GitHub 相关 HTTP 调用统一通过 `remote.GitHubApiService` 接口处理，�
 /api/pullcat/v1/stats/overview
 /api/pullcat/v1/user
 ```
-
 约束：
-
 - 新接口继续挂在 `/api` 前缀下
 - 资源命名优先使用复数名词
 - 子资源路径保持语义稳定，例如 `/{reviewId}/issues/{issueId}/feedback`
@@ -266,10 +258,6 @@ Controller、Service、Repository 等组件类，以及其中的公共方法，�
 ```java
 /**
  * 审查控制层
- */
-
-/**
- * 分页查询审查列表
  */
 ```
 适用于类注释、方法摘要注释、字段注释以及类似的简短中文说明。
