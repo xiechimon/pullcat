@@ -233,12 +233,21 @@ pullcat/
 | `DEEPSEEK_API_KEY`                          | DeepSeek API Key       | -                   |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | GitHub OAuth App 凭据    | -                   |
 | `GITHUB_TOKEN`                              | GitHub PAT（可选，登录后无需配置） | 空                   |
+| `GITHUB_APP_ID`                             | GitHub App ID          | 空                   |
+| `GITHUB_APP_PRIVATE_KEY`                    | GitHub App PKCS#8 私钥内容   | 空                   |
+| `GITHUB_WEBHOOK_SECRET`                     | GitHub App Webhook Secret | 空                |
+| `VITE_GITHUB_APP_INSTALL_URL`               | 前端 GitHub App 安装入口      | 空                   |
 | `REDIS_HOST` / `REDIS_PORT`                 | Redis 连接               | `localhost:6379`    |
 | `SPRING_DATASOURCE_URL`                     | MySQL JDBC 连接串         | -                   |
 | `SPRING_DATASOURCE_USERNAME`                | MySQL 用户名              | -                   |
 | `SPRING_DATASOURCE_PASSWORD`                | MySQL 密码               | -                   |
 | `pullcat.llm.light-model`                   | 轻量模型                   | `deepseek-v4-flash` |
 | `pullcat.llm.heavy-model`                   | 重量模型                   | `deepseek-v4-flash` |
+
+GitHub App 相关说明：
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 需要替换为 GitHub App 的 OAuth 凭据，继续用于网页登录
+- `GITHUB_APP_PRIVATE_KEY` 需要填入 PKCS#8 PEM 全文，多行内容可直接写入 `.env`
+- `VITE_GITHUB_APP_INSTALL_URL` 示例：`https://github.com/apps/<your-app-name>/installations/new`
 
 ---
 
