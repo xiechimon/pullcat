@@ -10,6 +10,7 @@ import com.pullcat.service.analysis.ResultAggregator;
 import com.pullcat.service.analysis.ReviewPublisher;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.toolkit.MarkdownUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -21,22 +22,13 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ReviewPublisherImpl implements ReviewPublisher {
 
     private final GitHubApiService gitHubApiService;
     private final ReviewSessionService reviewSessionService;
     private final ResultAggregator resultAggregator;
     private final AutoPublishService autoPublishService;
-
-    public ReviewPublisherImpl(GitHubApiService gitHubApiService,
-                               ReviewSessionService reviewSessionService,
-                               ResultAggregator resultAggregator,
-                               AutoPublishService autoPublishService) {
-        this.gitHubApiService = gitHubApiService;
-        this.reviewSessionService = reviewSessionService;
-        this.resultAggregator = resultAggregator;
-        this.autoPublishService = autoPublishService;
-    }
 
     /**
      * 发布审查结果到 PR，支持选择性发布和摘要配置
@@ -82,7 +74,7 @@ public class ReviewPublisherImpl implements ReviewPublisher {
             return false;
         }
 
-        if (autoPublishService.getStatus(parts[0], parts[1]).getEnabled()) {
+        if (autoPublishService.getStatus(parts[0], parts[1]).isEnabled()) {
             try {
                 publishAutoReview(session);
                 log.info("Auto-published review {} to PR {}", session.getId(), session.getPrUrl());
