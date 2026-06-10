@@ -4,7 +4,6 @@ import com.pullcat.common.convention.exception.ClientException;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.CreateReviewRespDTO;
-import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.PublishReviewRespDTO;
 import com.pullcat.dto.resp.ReviewListRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
@@ -13,7 +12,6 @@ import com.pullcat.dto.resp.SseCompletionRespDTO;
 import com.pullcat.dto.resp.SseConnectedRespDTO;
 import com.pullcat.dto.resp.SseMessageRespDTO;
 import com.pullcat.dto.resp.SsePrInfoRespDTO;
-import com.pullcat.dto.resp.StatusRespDTO;
 import com.pullcat.service.ReviewService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.ReviewSessionService;
@@ -96,31 +94,6 @@ public class ReviewServiceImpl implements ReviewService {
         response.setStatus(session.getStatus().name());
         response.setSseUrl("/api/pullcat/v1/reviews/" + session.getId() + "/sse");
         return response;
-    }
-
-    @Override
-    public StatusRespDTO submitFeedback(String reviewId, String issueId, boolean accepted, String reason, String login) {
-        ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
-        if (session == null) {
-            throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "审查记录不存在");
-        }
-        if (!isOwner(session, login)) {
-            throw new ClientException(CommonErrorCodeEnum.FORBIDDEN.code(), "无权操作此审查");
-        }
-
-        for (var entry : session.getAnalyses().entrySet()) {
-            if (entry.getValue().getIssues() != null) {
-                for (IssueRespDTO issue : entry.getValue().getIssues()) {
-                    if (issue.getId() != null && issue.getId().equals(issueId)) {
-                        issue.setFeedback(accepted ? "ACCEPTED" : "REJECTED");
-                        issue.setFeedbackReason(reason);
-                        reviewSessionService.save(session);
-                        return new StatusRespDTO("ok");
-                    }
-                }
-            }
-        }
-        throw new ClientException(CommonErrorCodeEnum.NOT_FOUND.code(), "问题不存在");
     }
 
     @Override

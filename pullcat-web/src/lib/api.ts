@@ -80,17 +80,6 @@ export async function deleteReview(id: string): Promise<DeletedRespDTO> {
   return request<DeletedRespDTO>(`${API_PREFIX}/reviews/${id}`, { method: 'DELETE' })
 }
 
-export async function submitFeedback(
-  reviewId: string,
-  issueId: string,
-  accepted: boolean,
-  reason?: string,
-): Promise<StatusRespDTO> {
-  return request<StatusRespDTO>(`${API_PREFIX}/reviews/${reviewId}/issues/${issueId}/feedback`, {
-    method: 'POST',
-    body: JSON.stringify({ accepted, reason }),
-  })
-}
 
 export async function publishReview(id: string, includeSummary: boolean, selectedIssueIds: string[]): Promise<PublishReviewRespDTO> {
   return request<PublishReviewRespDTO>(`${API_PREFIX}/reviews/${id}/publish`, {

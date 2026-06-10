@@ -5,7 +5,6 @@ import com.pullcat.dto.resp.CreateReviewRespDTO;
 import com.pullcat.dto.resp.PublishReviewRespDTO;
 import com.pullcat.dto.resp.ReviewListRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
-import com.pullcat.dto.resp.StatusRespDTO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -32,11 +31,6 @@ public interface ReviewService {
      * 创建审查会话并返回初始信息
      */
     CreateReviewRespDTO createReview(String prUrl, String login);
-
-    /**
-     * 提交问题反馈（接受或拒绝）
-     */
-    StatusRespDTO submitFeedback(String reviewId, String issueId, boolean accepted, String reason, String login);
 
     /**
      * 将审查结果发布到 PR 评论

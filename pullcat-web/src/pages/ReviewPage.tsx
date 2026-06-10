@@ -23,7 +23,7 @@ export function ReviewPage() {
   const navigate = useNavigate()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue, submitFeedback } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
@@ -124,11 +124,6 @@ export function ReviewPage() {
     }
   }, [activeIssues, toggleIssue])
 
-  const handleFeedback = useCallback((issueId: string, accepted: boolean, reason?: string) => {
-    if (!currentReviewId) return
-    submitFeedback(currentReviewId, issueId, accepted, reason)
-  }, [currentReviewId, submitFeedback])
-
   const handlePublish = useCallback(async () => {
     if (!currentReviewId) return
     const ok = await publish(currentReviewId, true, selectedIssueIds)
@@ -194,7 +189,6 @@ export function ReviewPage() {
                     type={activeTaskType}
                     result={activeResult}
                     onIssueToggle={toggleIssue}
-                    onFeedback={handleFeedback}
                   />
                 </div>
               )}

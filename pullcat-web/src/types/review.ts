@@ -14,8 +14,6 @@ export interface IssueRespDTO {
   confidence: number
   selected: boolean
   sourceDimensions?: string[]
-  feedback?: string | null
-  feedbackReason?: string | null
   suggestionCode?: string | null
 }
 

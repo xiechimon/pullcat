@@ -8,10 +8,9 @@ interface ResultSectionProps {
   type: AnalysisType
   result: AnalysisResultRespDTO
   onIssueToggle: (issueId: string) => void
-  onFeedback?: (issueId: string, accepted: boolean, reason?: string) => void
 }
 
-export function ResultSection({ type, result, onIssueToggle, onFeedback }: ResultSectionProps) {
+export function ResultSection({ type, result, onIssueToggle }: ResultSectionProps) {
   const [showLowConfidence, setShowLowConfidence] = useState(false)
   const issues = result.issues || []
   const visibleIssues = showLowConfidence
@@ -61,7 +60,6 @@ export function ResultSection({ type, result, onIssueToggle, onFeedback }: Resul
                 key={issue.id}
                 {...issue}
                 onToggle={onIssueToggle}
-                onFeedback={onFeedback}
               />
             ))}
             {hiddenCount > 0 && (

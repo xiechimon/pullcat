@@ -34,10 +34,6 @@ public class IssueRespDTO {
     private boolean selected = true;
     /** 来源分析维度列表（多维度交叉验证时非空） */
     private List<String> sourceDimensions;
-    /** 用户反馈：ACCEPTED / REJECTED / null */
-    private String feedback;
-    /** 用户反馈原因 */
-    private String feedbackReason;
     /** AI 生成的修复代码片段，可为 null */
     private String suggestionCode;
 

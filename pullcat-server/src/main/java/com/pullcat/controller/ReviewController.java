@@ -4,7 +4,6 @@ import com.pullcat.common.biz.user.CurrentLogin;
 import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.req.CreateReviewReqDTO;
-import com.pullcat.dto.req.IssueFeedbackReqDTO;
 import com.pullcat.dto.req.PublishReqDTO;
 import com.pullcat.dto.resp.*;
 import com.pullcat.service.ReviewService;
@@ -64,20 +63,6 @@ public class ReviewController {
             @CurrentLogin String login) {
         reviewService.deleteReview(id, login);
         return Results.success(new DeletedRespDTO(true));
-    }
-
-    /**
-     * 提交问题反馈（接受或拒绝）
-     */
-    @PostMapping("/{reviewId}/issues/{issueId}/feedback")
-    public Result<StatusRespDTO> submitFeedback(
-            @PathVariable String reviewId,
-            @PathVariable String issueId,
-            @RequestBody IssueFeedbackReqDTO requestParam,
-            @CurrentLogin String login) {
-        boolean accepted = Boolean.TRUE.equals(requestParam.getAccepted());
-        return Results.success(reviewService.submitFeedback(reviewId, issueId, accepted,
-                requestParam.getReason(), login));
     }
 
     /**
