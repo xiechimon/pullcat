@@ -36,7 +36,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         response.setLogin(login);
         if (user != null) {
             response.setAvatarUrl(user.getAvatarUrl());
-            response.setName(user.getGithubLogin());
+            response.setName(user.getName() != null ? user.getName() : user.getGithubLogin());
             response.setHasInstallation(user.getInstallationId() != null);
         }
         return response;

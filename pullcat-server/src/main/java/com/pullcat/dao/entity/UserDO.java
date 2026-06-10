@@ -47,6 +47,11 @@ public class UserDO {
     private String email;
 
     /**
+     * 展示名称
+     */
+    private String name;
+
+    /**
      * 创建时间
      */
     @TableField("created_at")

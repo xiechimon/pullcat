@@ -25,6 +25,8 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const [user, setUser] = useState<CurrentUserRespDTO>({ authenticated: false })
   const [mobileMenuState, setMobileMenuState] = useState({ open: false, path: '/' })
+  const [avatarPressed, setAvatarPressed] = useState(false)
+  const [suppressTooltip, setSuppressTooltip] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth < 640)
 
   useEffect(() => {
@@ -122,13 +124,13 @@ export function Layout({ children }: LayoutProps) {
             </a>
             <ThemeToggle />
             {user.authenticated ? (
-              <DropdownMenu.Root>
-                <Tooltip.Root>
+              <DropdownMenu.Root onOpenChange={open => { setAvatarPressed(open); if (!open) { setSuppressTooltip(true); setTimeout(() => setSuppressTooltip(false), 300); } }}>
+                <Tooltip.Root open={(avatarPressed || suppressTooltip) ? false : undefined}>
                   <Tooltip.Trigger asChild>
                     <DropdownMenu.Trigger asChild>
-                      <button className="flex items-center gap-2 rounded-full">
+                      <button style={{ transition: 'box-shadow 0.1s', boxShadow: avatarPressed ? '0px 0px 0px 4px rgba(0,0,0,0.15)' : '' }} className="flex items-center gap-2 rounded-full focus:outline-none">
                         {user.avatarUrl ? (
-                          <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full ring-2 ring-emerald-200" />
+                          <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
                         ) : (
                           <span className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
                             {user.login?.[0]?.toUpperCase()}

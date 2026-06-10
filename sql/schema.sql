@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS `user`
     `github_id`    bigint       NULL COMMENT 'GitHub 数字 ID',
     `avatar_url`   varchar(512) NULL COMMENT '头像地址',
     `email`        varchar(255) NULL COMMENT '邮箱',
+    `name`         varchar(255) NULL COMMENT '展示名称',
     `created_at`   datetime(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '创建时间',
     `installation_id` bigint       NULL COMMENT 'GitHub App Installation ID',
     PRIMARY KEY (`id`),

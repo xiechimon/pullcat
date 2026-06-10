@@ -1,5 +1,6 @@
 package com.pullcat.config.security;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,11 +17,11 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    /**
-     * API 链路：允许 OAuth2 session，但不强制认证。
-     */
+    private final CustomOAuth2UserService customOAuth2UserService;
+
     @Bean
     @Order(1)
     @Profile("!prod")
@@ -33,9 +34,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * 页面链路：启用 OAuth2 登录。
-     */
     @Bean
     @Order(2)
     @Profile("!prod")
@@ -44,7 +42,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .oauth2Login(oauth -> oauth.defaultSuccessUrl("http://localhost:5173/dashboard", true));
+                .oauth2Login(oauth -> oauth
+                        .defaultSuccessUrl("http://localhost:5173/", true)
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService)));
         return http.build();
     }
 
