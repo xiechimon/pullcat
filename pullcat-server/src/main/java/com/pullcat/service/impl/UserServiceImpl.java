@@ -37,6 +37,7 @@ public class UserServiceImpl implements UserService {
         if (user != null) {
             response.setAvatarUrl(user.getAvatarUrl());
             response.setName(user.getGithubLogin());
+            response.setHasInstallation(user.getInstallationId() != null);
         }
         return response;
     }

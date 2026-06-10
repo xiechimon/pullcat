@@ -6,6 +6,7 @@ import com.pullcat.dto.resp.FileContentRespDTO;
 import com.pullcat.dto.resp.PRDataRespDTO;
 import com.pullcat.dto.resp.PRMetadataRespDTO;
 import com.pullcat.remote.GitHubApiService;
+import com.pullcat.remote.GitHubInstallationTokenService;
 import com.pullcat.remote.dto.req.GitHubCommitStatusReqDTO;
 import com.pullcat.remote.dto.req.GitHubReviewCommentReqDTO;
 import com.pullcat.remote.dto.req.GitHubReviewReqDTO;
@@ -72,12 +73,15 @@ public class GitHubApiServiceImpl implements GitHubApiService {
     private final MeterRegistry meterRegistry;
     private final GitHubConfig config;
     private final OAuth2AuthorizedClientService oauth2ClientService;
+    private final GitHubInstallationTokenService gitHubInstallationTokenService;
 
     @Autowired
     public GitHubApiServiceImpl(GitHubConfig config, MeterRegistry meterRegistry,
-                                OAuth2AuthorizedClientService oauth2ClientService) {
+                                OAuth2AuthorizedClientService oauth2ClientService,
+                                GitHubInstallationTokenService gitHubInstallationTokenService) {
         this.config = config;
         this.oauth2ClientService = oauth2ClientService;
+        this.gitHubInstallationTokenService = gitHubInstallationTokenService;
         this.webClient = WebClient.builder()
                 .baseUrl("https://api.github.com")
                 .defaultHeader("Accept", "application/vnd.github.v3+json")
@@ -99,6 +103,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
         this.meterRegistry = meterRegistry;
         this.config = null;
         this.oauth2ClientService = null;
+        this.gitHubInstallationTokenService = null;
     }
 
     private String resolveToken() {
@@ -364,6 +369,26 @@ public class GitHubApiServiceImpl implements GitHubApiService {
                     return sb.toString();
                 })
                 .onErrorReturn("File tree unavailable");
+    }
+
+    @Override
+    public Mono<GitHubApiService> withInstallationToken(long installationId) {
+        if (gitHubInstallationTokenService == null) {
+            return Mono.just(this);
+        }
+        return gitHubInstallationTokenService.getInstallationToken(installationId)
+                .map(token -> {
+                    WebClient installationWebClient = WebClient.builder()
+                            .baseUrl("https://api.github.com")
+                            .defaultHeader("Accept", "application/vnd.github.v3+json")
+                            .defaultHeader("User-Agent", "pullcat")
+                            .defaultHeader("Authorization", "Bearer " + token)
+                            .filter(forbiddenHandler())
+                            .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(
+                                    HttpClient.create().responseTimeout(Duration.ofSeconds(30))))
+                            .build();
+                    return (GitHubApiService) new GitHubApiServiceImpl(installationWebClient, meterRegistry);
+                });
     }
 
     boolean shouldExcludeFile(String filename) {

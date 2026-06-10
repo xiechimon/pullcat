@@ -53,6 +53,7 @@ export interface ReviewSessionRespDTO {
   publishedCommentId: number | null
   repositoryFullName: string | null
   rawDiff: string | null
+  installationId?: number | null
 }
 
 export interface RepoRespDTO {
@@ -124,6 +125,7 @@ export interface CurrentUserRespDTO {
   login?: string
   avatarUrl?: string
   name?: string
+  hasInstallation?: boolean
 }
 
 export interface ReviewRefRespDTO {

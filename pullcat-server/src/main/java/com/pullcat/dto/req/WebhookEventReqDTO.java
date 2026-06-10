@@ -19,4 +19,43 @@ public class WebhookEventReqDTO {
      */
     @JsonProperty("pull_request")
     private WebhookPullRequestReqDTO pullRequest;
+
+    /**
+     * 安装信息
+     */
+    private InstallationReqDTO installation;
+
+    /**
+     * 安装信息请求 DTO
+     */
+    @Data
+    public static class InstallationReqDTO {
+
+        /**
+         * Installation ID
+         */
+        private Long id;
+
+        /**
+         * 安装所属账号
+         */
+        private AccountReqDTO account;
+
+        /**
+         * 安装账号请求 DTO
+         */
+        @Data
+        public static class AccountReqDTO {
+
+            /**
+             * GitHub 登录名
+             */
+            private String login;
+
+            /**
+             * 账号类型
+             */
+            private String type;
+        }
+    }
 }

@@ -27,4 +27,9 @@ public class CurrentUserRespDTO {
      * 展示名称
      */
     private String name;
+
+    /**
+     * 是否已安装 GitHub App
+     */
+    private boolean hasInstallation;
 }

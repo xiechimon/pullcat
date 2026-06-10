@@ -5,6 +5,7 @@ import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
 import com.pullcat.service.WebhookService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
+import com.pullcat.service.analysis.GitHubInstallationService;
 import com.pullcat.service.analysis.ReviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,18 @@ public class WebhookServiceImpl implements WebhookService {
 
     private final AnalysisOrchestrator orchestrator;
     private final ReviewSessionService reviewSessionService;
+    private final GitHubInstallationService gitHubInstallationService;
 
     @Override
     public WebhookRespDTO handle(String eventType, WebhookEventReqDTO requestParam) {
         WebhookRespDTO response = new WebhookRespDTO();
+
+        if ("installation".equals(eventType)) {
+            handleInstallationEvent(requestParam);
+            response.setStatus("installation_processed");
+            response.setAction(requestParam.getAction());
+            return response;
+        }
 
         if (!"pull_request".equals(eventType)) {
             response.setStatus("ignored");
@@ -34,14 +43,33 @@ public class WebhookServiceImpl implements WebhookService {
         }
 
         String prUrl = requestParam.getPullRequest().getHtmlUrl();
-        triggerReview(prUrl);
+        Long installationId = requestParam.getInstallation() != null ? requestParam.getInstallation().getId() : null;
+        triggerReview(prUrl, installationId);
         response.setStatus("review_triggered");
         response.setPrUrl(prUrl);
         return response;
     }
 
-    private void triggerReview(String prUrl) {
+    private void handleInstallationEvent(WebhookEventReqDTO requestParam) {
+        WebhookEventReqDTO.InstallationReqDTO installation = requestParam.getInstallation();
+        if (installation == null || installation.getId() == null) {
+            return;
+        }
+        String action = requestParam.getAction();
+        if ("created".equals(action) || "unsuspend".equals(action) || "new_permissions_accepted".equals(action)) {
+            String login = installation.getAccount() != null ? installation.getAccount().getLogin() : null;
+            String type = installation.getAccount() != null ? installation.getAccount().getType() : null;
+            gitHubInstallationService.saveInstallation(installation.getId(), login, type);
+            return;
+        }
+        if ("deleted".equals(action) || "suspend".equals(action)) {
+            gitHubInstallationService.suspendInstallation(installation.getId());
+        }
+    }
+
+    private void triggerReview(String prUrl, Long installationId) {
         ReviewSessionRespDTO session = orchestrator.createSession(prUrl, null);
+        session.setInstallationId(installationId);
         reviewSessionService.save(session);
         orchestrator.startReviewAsync(session);
     }

@@ -18,6 +18,8 @@ const NAV_ITEMS = [
   { path: '/stats', label: '统计' },
 ]
 
+const GITHUB_APP_INSTALL_URL = import.meta.env.VITE_GITHUB_APP_INSTALL_URL as string | undefined
+
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -49,10 +51,40 @@ export function Layout({ children }: LayoutProps) {
   }, [isMobileViewport, location.pathname])
 
   const mobileMenuOpen = mobileMenuState.open && mobileMenuState.path === location.pathname
+  const showInstallBanner = Boolean(
+    user.authenticated && !user.hasInstallation && GITHUB_APP_INSTALL_URL && location.pathname.startsWith('/dashboard'),
+  )
 
   const activePath = location.pathname === '/'
     ? '/'
     : NAV_ITEMS.find(item => item.path !== '/' && location.pathname.startsWith(item.path))?.path ?? null
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function refreshUser() {
+      try {
+        const nextUser = await getCurrentUser()
+        if (!cancelled) {
+          setUser(nextUser)
+        }
+      } catch {
+        // ignore refresh error
+      }
+    }
+
+    if (new URLSearchParams(location.search).get('installed') === 'true') {
+      refreshUser().finally(() => {
+        if (!cancelled) {
+          navigate(location.pathname, { replace: true })
+        }
+      })
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname, location.search, navigate])
 
   return (
     <Tooltip.Provider delayDuration={500}>
@@ -210,6 +242,22 @@ export function Layout({ children }: LayoutProps) {
         )}
 
         <main className="pt-[88px] pb-20 md:pt-[96px]">
+          {showInstallBanner && (
+            <div className="mx-auto mb-6 flex w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-950 shadow-sm dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100">
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold">未安装 GitHub App</span>
+                <span>安装后 PR 创建时将自动触发分析</span>
+              </div>
+              <a
+                href={GITHUB_APP_INSTALL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-full bg-amber-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-800 dark:bg-amber-300 dark:text-amber-950 dark:hover:bg-amber-200"
+              >
+                立即安装
+              </a>
+            </div>
+          )}
           {children}
         </main>
         <Toaster richColors position="top-center" />

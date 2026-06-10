@@ -36,6 +36,11 @@ public interface GitHubApiService {
 
     Mono<String> fetchFileTree(PRUrl prUrl);
 
+    /**
+     * 返回一个使用 Installation Token 的独立 API 服务实例
+     */
+    Mono<GitHubApiService> withInstallationToken(long installationId);
+
     Mono<Long> publishReviewWithComments(PRUrl prUrl, String summaryBody, List<ReviewComment> comments);
 
     Mono<Long> publishReview(PRUrl prUrl, String summaryBody);

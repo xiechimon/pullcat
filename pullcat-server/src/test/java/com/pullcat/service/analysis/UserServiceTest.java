@@ -89,6 +89,19 @@ class UserServiceTest {
     }
 
     @Test
+    void getCurrentUser_withInstallation_setsHasInstallationTrue() {
+        UserDO user = new UserDO();
+        user.setGithubLogin("xiechimon");
+        user.setInstallationId(42L);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(userMapper.selectOne(any())).thenReturn(user);
+
+        CurrentUserRespDTO result = userService.getCurrentUser("xiechimon");
+
+        assertTrue(result.isHasInstallation());
+    }
+
+    @Test
     void logout_withSession_invalidatesSession() {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpSession session = mock(HttpSession.class);

@@ -7,11 +7,13 @@ import com.pullcat.common.convention.result.Results;
 import com.pullcat.common.enums.CommonErrorCodeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Objects;
@@ -64,6 +66,13 @@ public class GlobalExceptionHandler {
     public Result<Void> handleBusinessException(HttpServletRequest request, AbstractBusinessException ex) {
         log.error("[{}] {} [ex] {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
         return Results.failure(ex);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Result<Void>> handleResponseStatus(HttpServletRequest request, ResponseStatusException ex) {
+        log.error("[{}] {} [ex] {}", request.getMethod(), request.getRequestURL(), ex.getMessage());
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(Results.failure(String.valueOf(ex.getStatusCode().value()), ex.getReason()));
     }
 
     /**

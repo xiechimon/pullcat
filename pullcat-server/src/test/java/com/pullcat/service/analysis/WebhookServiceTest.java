@@ -1,9 +1,11 @@
 package com.pullcat.service.analysis;
 
 import com.pullcat.dto.req.WebhookEventReqDTO;
+import com.pullcat.dto.req.WebhookEventReqDTO.InstallationReqDTO;
 import com.pullcat.dto.req.WebhookPullRequestReqDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.dto.resp.WebhookRespDTO;
+import com.pullcat.service.analysis.GitHubInstallationService;
 import com.pullcat.service.impl.WebhookServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +24,9 @@ class WebhookServiceTest {
 
     @Mock
     ReviewSessionService reviewSessionService;
+
+    @Mock
+    GitHubInstallationService gitHubInstallationService;
 
     @InjectMocks
     WebhookServiceImpl webhookService;
@@ -51,6 +56,9 @@ class WebhookServiceTest {
         WebhookEventReqDTO req = new WebhookEventReqDTO();
         req.setAction("opened");
         req.setPullRequest(pr);
+        InstallationReqDTO installation = new InstallationReqDTO();
+        installation.setId(1001L);
+        req.setInstallation(installation);
 
         ReviewSessionRespDTO session = new ReviewSessionRespDTO();
         session.setId("s1");
@@ -60,6 +68,7 @@ class WebhookServiceTest {
 
         assertEquals("review_triggered", result.getStatus());
         assertEquals("https://github.com/a/b/pull/1", result.getPrUrl());
+        assertEquals(1001L, session.getInstallationId());
         verify(orchestrator).startReviewAsync(session);
         verify(reviewSessionService).save(session);
     }
@@ -71,6 +80,9 @@ class WebhookServiceTest {
         WebhookEventReqDTO req = new WebhookEventReqDTO();
         req.setAction("synchronize");
         req.setPullRequest(pr);
+        InstallationReqDTO installation = new InstallationReqDTO();
+        installation.setId(1002L);
+        req.setInstallation(installation);
 
         ReviewSessionRespDTO session = new ReviewSessionRespDTO();
         session.setId("s2");
@@ -79,7 +91,41 @@ class WebhookServiceTest {
         WebhookRespDTO result = webhookService.handle("pull_request", req);
 
         assertEquals("review_triggered", result.getStatus());
+        assertEquals(1002L, session.getInstallationId());
         verify(reviewSessionService).save(session);
         verify(orchestrator).startReviewAsync(session);
+    }
+
+    @Test
+    void handle_installationCreated_savesInstallation() {
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("created");
+        InstallationReqDTO installation = new InstallationReqDTO();
+        installation.setId(3001L);
+        installation.setAccount(new InstallationReqDTO.AccountReqDTO());
+        installation.getAccount().setLogin("octo-org");
+        installation.getAccount().setType("Organization");
+        req.setInstallation(installation);
+
+        WebhookRespDTO result = webhookService.handle("installation", req);
+
+        assertEquals("installation_processed", result.getStatus());
+        verify(gitHubInstallationService).saveInstallation(3001L, "octo-org", "Organization");
+        verifyNoInteractions(orchestrator, reviewSessionService);
+    }
+
+    @Test
+    void handle_installationDeleted_suspendsInstallation() {
+        WebhookEventReqDTO req = new WebhookEventReqDTO();
+        req.setAction("deleted");
+        InstallationReqDTO installation = new InstallationReqDTO();
+        installation.setId(3002L);
+        req.setInstallation(installation);
+
+        WebhookRespDTO result = webhookService.handle("installation", req);
+
+        assertEquals("installation_processed", result.getStatus());
+        verify(gitHubInstallationService).suspendInstallation(3002L);
+        verifyNoInteractions(orchestrator, reviewSessionService);
     }
 }
