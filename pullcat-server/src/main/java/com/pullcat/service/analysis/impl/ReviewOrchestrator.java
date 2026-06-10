@@ -18,7 +18,6 @@ import com.pullcat.toolkit.ConventionUtil;
 import com.pullcat.service.analysis.AnalysisTaskFactory;
 import com.pullcat.service.analysis.ContextBuilder;
 import com.pullcat.service.analysis.PromptLoader;
-import com.pullcat.service.analysis.ResultAggregator;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
@@ -55,7 +54,6 @@ public class ReviewOrchestrator {
     private final ReviewSessionService reviewSessionService;
     private final AnalysisTaskFactory taskFactory;
     private final ExecutorService analysisExecutor;
-    private final ResultAggregator resultAggregator;
     private final MeterRegistry meterRegistry;
     private final ReviewPublisher reviewPublisher;
 
@@ -65,7 +63,6 @@ public class ReviewOrchestrator {
                               ReviewSessionService reviewSessionService,
                               AnalysisTaskFactory taskFactory,
                               @Qualifier("analysisExecutor") ExecutorService analysisExecutor,
-                              ResultAggregator resultAggregator,
                               MeterRegistry meterRegistry,
                               ReviewPublisher reviewPublisher) {
         this.gitHubApiService = gitHubApiService;
@@ -74,7 +71,6 @@ public class ReviewOrchestrator {
         this.reviewSessionService = reviewSessionService;
         this.taskFactory = taskFactory;
         this.analysisExecutor = analysisExecutor;
-        this.resultAggregator = resultAggregator;
         this.meterRegistry = meterRegistry;
         this.reviewPublisher = reviewPublisher;
     }
@@ -120,8 +116,6 @@ public class ReviewOrchestrator {
                         metadata.getHeadBranch(), metadata.getHeadBranch());
 
                 sendPrInfoSSE(session.getId(), session.getPrUrl(), prData.getMetadata(), prData.getDiff());
-
-                contextBuilder.buildVariables(prData.getMetadata(), prData.getFileTree(), prData.getFiles());
 
                 String discussion = fetchDiscussion(apiService, parsed);
 
