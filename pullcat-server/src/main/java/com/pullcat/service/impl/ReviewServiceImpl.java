@@ -28,7 +28,7 @@ import com.pullcat.service.analysis.PromptLoader;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.service.analysis.StreamContext;
 import com.pullcat.service.analysis.StreamRegistry;
-import com.pullcat.service.analysis.impl.ReviewPublisher;
+import com.pullcat.service.analysis.ReviewPublisher;
 import com.pullcat.service.llm.AnalysisTask;
 import com.pullcat.toolkit.ConventionUtil;
 import io.micrometer.core.instrument.MeterRegistry;

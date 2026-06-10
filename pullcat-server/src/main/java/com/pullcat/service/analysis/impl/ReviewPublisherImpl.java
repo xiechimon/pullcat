@@ -6,6 +6,7 @@ import com.pullcat.dto.resp.IssueRespDTO;
 import com.pullcat.dto.resp.ReviewSessionRespDTO;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.analysis.ResultAggregator;
+import com.pullcat.service.analysis.ReviewPublisher;
 import com.pullcat.service.analysis.ReviewSessionService;
 import com.pullcat.toolkit.MarkdownUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -19,15 +20,15 @@ import java.util.List;
  */
 @Slf4j
 @Component
-public class ReviewPublisher {
+public class ReviewPublisherImpl implements ReviewPublisher {
 
     private final GitHubApiService gitHubApiService;
     private final ReviewSessionService reviewSessionService;
     private final ResultAggregator resultAggregator;
 
-    public ReviewPublisher(GitHubApiService gitHubApiService,
-                           ReviewSessionService reviewSessionService,
-                           ResultAggregator resultAggregator) {
+    public ReviewPublisherImpl(GitHubApiService gitHubApiService,
+                               ReviewSessionService reviewSessionService,
+                               ResultAggregator resultAggregator) {
         this.gitHubApiService = gitHubApiService;
         this.reviewSessionService = reviewSessionService;
         this.resultAggregator = resultAggregator;
@@ -36,6 +37,7 @@ public class ReviewPublisher {
     /**
      * 发布审查结果到 PR，支持选择性发布和摘要配置
      */
+    @Override
     public ReviewSessionRespDTO publishReview(String reviewId) {
         ReviewSessionRespDTO session = reviewSessionService.findById(reviewId);
         if (session == null) {
@@ -65,6 +67,7 @@ public class ReviewPublisher {
         return session;
     }
 
+    @Override
     public boolean tryAutoPublish(ReviewSessionRespDTO session) {
         String fullName = session.getRepositoryFullName();
         if (fullName == null) {
@@ -129,6 +132,7 @@ public class ReviewPublisher {
         return sb.toString();
     }
 
+    @Override
     public String buildConventionContent(GitHubApiService.PRUrl prUrl, List<String> candidates) {
         if (candidates.isEmpty()) return "";
 
