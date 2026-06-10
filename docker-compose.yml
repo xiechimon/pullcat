@@ -25,6 +25,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt/live/xmon.me/fullchain.pem:/etc/letsencrypt/live/xmon.me/fullchain.pem:ro
+      - /etc/letsencrypt/live/xmon.me/privkey.pem:/etc/letsencrypt/live/xmon.me/privkey.pem:ro
     depends_on:
       - pullcat-server
 
