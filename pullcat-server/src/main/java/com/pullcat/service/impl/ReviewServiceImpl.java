@@ -246,7 +246,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private boolean isOwner(ReviewSessionRespDTO session, String login) {
         if (session.getUserId() == null) {
-            return login == null;
+            return true; // webhook 触发的审查无归属用户，任何人均可访问
         }
         return session.getUserId().equals(login);
     }
