@@ -18,4 +18,9 @@ public interface UserService {
      * 注销登录，清除 Session 与安全上下文
      */
     LogoutRespDTO logout(HttpServletRequest request);
+
+    /**
+     * 根据 GitHub App installation ID 查找用户 login
+     */
+    String findLoginByInstallationId(Long installationId);
 }

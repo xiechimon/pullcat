@@ -52,6 +52,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         return new LogoutRespDTO("logged_out");
     }
 
+    @Override
+    public String findLoginByInstallationId(Long installationId) {
+        if (installationId == null) return null;
+        UserDO user = baseMapper.selectOne(new LambdaQueryWrapper<UserDO>()
+                .eq(UserDO::getInstallationId, installationId)
+                .last("LIMIT 1"));
+        return user != null ? user.getGithubLogin() : null;
+    }
+
     public UserDO findByLogin(String login) {
         Object cachedId = redisTemplate.opsForValue().get(RedisKeys.userLoginKey(login));
         if (cachedId != null) {

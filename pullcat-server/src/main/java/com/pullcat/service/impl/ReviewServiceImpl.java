@@ -16,6 +16,7 @@ import com.pullcat.dto.resp.SsePrInfoRespDTO;
 import com.pullcat.config.infra.GitHubConfig;
 import com.pullcat.remote.GitHubApiService;
 import com.pullcat.service.ReviewService;
+import com.pullcat.service.UserService;
 import com.pullcat.service.analysis.AnalysisOrchestrator;
 import com.pullcat.service.analysis.ReviewPublisher;
 import com.pullcat.service.analysis.ReviewSessionService;
@@ -44,6 +45,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewPublisher reviewPublisher;
     private final AnalysisOrchestrator analysisOrchestrator;
     private final GitHubConfig gitHubConfig;
+    private final UserService userService;
 
     @Override
     public CreateReviewRespDTO createReview(String prUrl, String login) {
@@ -63,7 +65,8 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void triggerReview(String prUrl, Long installationId, String headSha) {
-        ReviewSessionRespDTO session = createSession(prUrl, null);
+        String ownerLogin = userService.findLoginByInstallationId(installationId);
+        ReviewSessionRespDTO session = createSession(prUrl, ownerLogin);
         session.setInstallationId(installationId);
         session.setHeadSha(headSha);
         reviewSessionService.save(session);
@@ -246,7 +249,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private boolean isOwner(ReviewSessionRespDTO session, String login) {
         if (session.getUserId() == null) {
-            return true; // webhook 触发的审查无归属用户，任何人均可访问
+            return true;
         }
         return session.getUserId().equals(login);
     }
