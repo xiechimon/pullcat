@@ -18,8 +18,7 @@ const NAV_ITEMS = [
   { path: '/stats', label: '统计' },
 ]
 
-const GITHUB_APP_INSTALL_URL = (import.meta.env.VITE_GITHUB_APP_INSTALL_URL as string | undefined)
-  ?? 'https://github.com/apps/pullkitty/installations/new'
+const GITHUB_APP_INSTALL_URL = 'https://github.com/apps/pullkitty/installations/new'
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation()
@@ -55,7 +54,7 @@ export function Layout({ children }: LayoutProps) {
 
   const mobileMenuOpen = mobileMenuState.open && mobileMenuState.path === location.pathname
   const showInstallBanner = Boolean(
-    user.authenticated && !user.hasInstallation && GITHUB_APP_INSTALL_URL && location.pathname.startsWith('/dashboard'),
+    user.authenticated && !user.hasInstallation && location.pathname === '/',
   )
 
   const activePath = location.pathname === '/'
