@@ -111,6 +111,32 @@ public class GitHubInstallationTokenServiceImpl implements GitHubInstallationTok
         }
     }
 
+    @Override
+    public Mono<GitHubInstallationTokenService.InstallationAccount> getInstallationAccount(long installationId) {
+        String jwt;
+        try {
+            jwt = generateAppJwt();
+        } catch (Exception e) {
+            return Mono.error(new IllegalStateException("Failed to generate App JWT: " + e.getMessage(), e));
+        }
+        return webClient.get()
+                .uri("/app/installations/{id}", installationId)
+                .header("Authorization", "Bearer " + jwt)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(body -> {
+                    try {
+                        JsonNode root = objectMapper.readTree(body);
+                        JsonNode account = root.get("account");
+                        String login = account.get("login").asText();
+                        String type = account.get("type").asText();
+                        return new GitHubInstallationTokenService.InstallationAccount(login, type);
+                    } catch (Exception e) {
+                        throw new IllegalStateException("Failed to parse installation response", e);
+                    }
+                });
+    }
+
     private String parseToken(String json) {
         try {
             JsonNode node = objectMapper.readTree(json);

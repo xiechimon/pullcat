@@ -31,12 +31,12 @@ public class GitHubAppController {
         if ("install".equals(setupAction) || "request".equals(setupAction) || "update".equals(setupAction)
                 || "unsuspend".equals(setupAction)) {
             gitHubInstallationService.saveInstallation(installationId, accountLogin, accountType);
-            return redirect("/dashboard?installed=true");
+            return redirect("/?installed=true");
         }
         if ("delete".equals(setupAction) || "suspend".equals(setupAction)) {
             gitHubInstallationService.suspendInstallation(installationId);
         }
-        return redirect("/dashboard");
+        return redirect("/");
     }
 
     private ResponseEntity<Void> redirect(String location) {

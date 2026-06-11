@@ -335,16 +335,10 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
             log.warn("Failed to post success commit status for review {}: {}", session.getId(), e.getMessage());
         }
 
-        AnalysisResultRespDTO aggResult = session.getAnalyses().get("aggregation");
-        if (aggResult != null && aggResult.getContent() != null && !aggResult.getContent().isBlank()) {
-            String commentBody = aggResult.getContent()
-                    + "\n\n---\n*由 [pullcat](" + gitHubConfig.getBaseUrl() + ") 自动生成 · "
-                    + "[查看完整报告](" + detailsUrl + ")*";
-            try {
-                apiService.postIssueComment(parsed, commentBody).block();
-            } catch (Exception e) {
-                log.error("Failed to post aggregation comment for review {}: {}", session.getId(), e.getMessage());
-            }
+        try {
+            reviewPublisher.publishReview(session.getId());
+        } catch (Exception e) {
+            log.error("Failed to publish review with comments for review {}: {}", session.getId(), e.getMessage());
         }
     }
 }

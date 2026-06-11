@@ -6,8 +6,10 @@ import com.pullcat.dao.entity.GitHubInstallationDO;
 import com.pullcat.dao.entity.UserDO;
 import com.pullcat.dao.mapper.GitHubInstallationMapper;
 import com.pullcat.dao.mapper.UserMapper;
+import com.pullcat.remote.GitHubInstallationTokenService;
 import com.pullcat.service.analysis.GitHubInstallationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -16,14 +18,29 @@ import java.util.Optional;
 /**
  * GitHub App 安装记录服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GitHubInstallationServiceImpl extends ServiceImpl<GitHubInstallationMapper, GitHubInstallationDO> implements GitHubInstallationService {
 
     private final UserMapper userMapper;
+    private final GitHubInstallationTokenService gitHubInstallationTokenService;
 
     @Override
     public void saveInstallation(long installationId, String accountLogin, String accountType) {
+        if (accountLogin == null || accountLogin.isBlank()) {
+            try {
+                GitHubInstallationTokenService.InstallationAccount account = gitHubInstallationTokenService
+                        .getInstallationAccount(installationId).block();
+                if (account != null) {
+                    accountLogin = account.login();
+                    accountType = account.type();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch installation account for {}: {}", installationId, e.getMessage());
+            }
+        }
+
         GitHubInstallationDO record = baseMapper.selectById(installationId);
         Instant now = Instant.now();
         if (record == null) {
