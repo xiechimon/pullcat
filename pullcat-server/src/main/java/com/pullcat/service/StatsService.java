@@ -11,7 +11,7 @@ public interface StatsService {
     /**
      * 查询总体统计
      */
-    StatsOverviewRespDTO getOverview();
+    StatsOverviewRespDTO getOverview(String login);
 
     /**
      * 查询仓库统计

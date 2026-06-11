@@ -23,8 +23,13 @@ public class StatsServiceImpl implements StatsService {
     private final ReviewSessionService reviewSessionService;
 
     @Override
-    public StatsOverviewRespDTO getOverview() {
-        List<ReviewSessionRespDTO> all = reviewSessionService.findAllReviews();
+    public StatsOverviewRespDTO getOverview(String login) {
+        List<ReviewSessionRespDTO> all;
+        if (login != null) {
+            all = reviewSessionService.findByLogin(login, 0, Integer.MAX_VALUE);
+        } else {
+            all = reviewSessionService.findAnonymous(0, Integer.MAX_VALUE);
+        }
 
         int totalReviews = all.size();
         int totalIssues = 0;

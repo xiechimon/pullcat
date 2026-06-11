@@ -1,5 +1,6 @@
 package com.pullcat.controller;
 
+import com.pullcat.common.biz.user.CurrentLogin;
 import com.pullcat.common.convention.result.Result;
 import com.pullcat.common.convention.result.Results;
 import com.pullcat.dto.resp.RepoStatsRespDTO;
@@ -18,8 +19,8 @@ public class StatsController {
     }
 
     @GetMapping("/stats/overview")
-    public Result<StatsOverviewRespDTO> getOverview() {
-        return Results.success(statsService.getOverview());
+    public Result<StatsOverviewRespDTO> getOverview(@CurrentLogin String login) {
+        return Results.success(statsService.getOverview(login));
     }
 
     @GetMapping("/repos/{owner}/{repo}/stats")
