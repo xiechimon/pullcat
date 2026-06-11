@@ -96,18 +96,21 @@ public class GitHubInstallationTokenServiceImpl implements GitHubInstallationTok
     }
 
     private PrivateKey loadPrivateKey(String pem) {
-        // 移除 PEM 头尾行与空白，期望 PKCS#8 格式
-        // 转换命令：openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in key.pem -out key-pkcs8.pem
+        if (pem.contains("BEGIN RSA PRIVATE KEY")) {
+            throw new IllegalStateException(
+                    "Private key is in PKCS#1 format. Please convert to PKCS#8:\n" +
+                    "openssl pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in key.pem -out key-pkcs8.pem");
+        }
+        // 剥离任意 PEM 头尾行并去除空白
         String stripped = pem
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
+                .replaceAll("-----[A-Z ]+-----", "")
+                .replaceAll("\\s+", "");
         byte[] keyBytes = Base64.getDecoder().decode(stripped);
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
             return kf.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to load RSA private key", e);
+            throw new IllegalStateException("Failed to load RSA private key: " + e.getMessage(), e);
         }
     }
 
