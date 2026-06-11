@@ -31,16 +31,6 @@ public final class RedisKeys {
     public static final String REVIEW_REPO_PREFIX = "review:repo:";
 
     /**
-     * 仓库收藏 key 前缀，完整 key 格式: repo:{owner}/{repo}
-     */
-    public static final String REPO_PREFIX = "repo:";
-
-    /**
-     * 仓库收藏 ID 索引（set）
-     */
-    public static final String REPO_INDEX = "repo:index";
-
-    /**
      * 用户缓存 key 前缀，格式: user:{id}
      */
     public static final String USER_PREFIX = "user:";
@@ -62,13 +52,6 @@ public final class RedisKeys {
      */
     public static String reviewRepoKey(String owner, String repo) {
         return REVIEW_REPO_PREFIX + owner + "/" + repo;
-    }
-
-    /**
-     * 根据 fullName 构造仓库 key
-     */
-    public static String repoKey(String fullName) {
-        return REPO_PREFIX + fullName;
     }
 
     public static String userKey(String id) {

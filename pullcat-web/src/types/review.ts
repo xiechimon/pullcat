@@ -56,16 +56,6 @@ export interface ReviewSessionRespDTO {
   installationId?: number | null
 }
 
-export interface RepoRespDTO {
-  owner: string
-  repo: string
-  fullName: string
-  description: string | null
-  stars: number | null
-  language: string | null
-  addedAt: string
-}
-
 export interface ReviewListRespDTO {
   items: ReviewSessionRespDTO[]
   total: number

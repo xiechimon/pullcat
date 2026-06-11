@@ -6,7 +6,6 @@ import type {
   CurrentUserRespDTO,
   DeletedRespDTO,
   PublishReviewRespDTO,
-  RepoRespDTO,
   RepoStatsRespDTO,
   ReviewListRespDTO,
   ReviewSessionRespDTO,
@@ -89,25 +88,6 @@ export async function publishReview(id: string): Promise<PublishReviewRespDTO> {
 
 export function createSSEConnection(sseUrl: string): EventSource {
   return new EventSource(`${BASE_URL}${sseUrl}`)
-}
-
-export async function getRepos(): Promise<RepoRespDTO[]> {
-  return request<RepoRespDTO[]>(`${API_PREFIX}/repos`)
-}
-
-export async function addRepo(owner: string, repo: string): Promise<RepoRespDTO> {
-  return request<RepoRespDTO>(`${API_PREFIX}/repos`, {
-    method: 'POST',
-    body: JSON.stringify({ owner, repo }),
-  })
-}
-
-export async function deleteRepo(owner: string, repo: string): Promise<DeletedRespDTO> {
-  return request<DeletedRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}`, { method: 'DELETE' })
-}
-
-export async function getRepo(owner: string, repo: string): Promise<RepoRespDTO> {
-  return request<RepoRespDTO>(`${API_PREFIX}/repos/${owner}/${repo}`)
 }
 
 export async function getStatsOverview(): Promise<StatsOverviewRespDTO> {

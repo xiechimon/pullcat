@@ -4,21 +4,6 @@ CREATE DATABASE IF NOT EXISTS `pullcat`
 
 USE `pullcat`;
 
-CREATE TABLE IF NOT EXISTS `repo`
-(
-    `full_name`   varchar(191) NOT NULL COMMENT 'owner/repo',
-    `owner`       varchar(100) NOT NULL COMMENT '仓库 owner',
-    `repo`        varchar(100) NOT NULL COMMENT '仓库名',
-    `description` text         NULL COMMENT '仓库描述',
-    `stars`       int          NULL COMMENT 'Star 数',
-    `language`    varchar(64)  NULL COMMENT '主语言',
-    `added_at`    datetime(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '添加时间',
-    PRIMARY KEY (`full_name`),
-    KEY `idx_repo_owner_repo` (`owner`, `repo`)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci COMMENT ='Pullcat 仓库表';
-
 CREATE TABLE IF NOT EXISTS `user`
 (
     `id`           varchar(64)  NOT NULL COMMENT '用户 ID',
