@@ -12,6 +12,11 @@ spring:
         options:
           model: deepseek-chat
 
+  # --- Session 配置 ---
+  session:
+    store-type: redis
+    timeout: 30d
+
   # --- Redis 配置 ---
   # Redis 主要用于缓存与限流。
   data:
