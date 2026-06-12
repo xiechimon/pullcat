@@ -8,6 +8,7 @@ import com.pullcat.dao.mapper.UserMapper;
 import com.pullcat.dto.resp.CurrentUserRespDTO;
 import com.pullcat.dto.resp.LogoutRespDTO;
 import com.pullcat.service.UserService;
+import com.pullcat.service.analysis.GitHubInstallationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private static final String ANONYMOUS_LOGIN = "anonymousUser";
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final GitHubInstallationService gitHubInstallationService;
 
     @Override
     public CurrentUserRespDTO getCurrentUser(String login) {
@@ -37,7 +39,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (user != null) {
             response.setAvatarUrl(user.getAvatarUrl());
             response.setName(user.getName() != null ? user.getName() : user.getGithubLogin());
-            response.setHasInstallation(user.getInstallationId() != null);
+            response.setHasInstallation(gitHubInstallationService.findInstallationIdByLogin(login).isPresent());
         }
         return response;
     }
