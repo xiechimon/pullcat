@@ -1,7 +1,7 @@
 import { useReducer, useRef, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createSSEConnection, createReview, getReview } from '../lib/api'
-import type { AnalysisResultRespDTO, AnalysisStatus, ReviewSessionRespDTO, TaskStateRespDTO } from '../types/review'
+import type { AnalysisResultRespDTO, AnalysisStatus, SessionStatus, ReviewSessionRespDTO, TaskStateRespDTO } from '../types/review'
 import { TASK_LABELS, ANALYSIS_TYPES } from '../types/review'
 
 interface ReviewState {
@@ -15,6 +15,7 @@ interface ReviewState {
   prAdditions: number | null
   prDeletions: number | null
   rawDiff: string | null
+  sessionStatus: SessionStatus | null
   loading: boolean
   isAnalyzing: boolean
   error: string | null
@@ -185,6 +186,7 @@ function reviewReducer(state: ReviewState, action: Action): ReviewState {
         prAdditions: meta?.additions || null,
         prDeletions: meta?.deletions || null,
         rawDiff: session.rawDiff || null,
+        sessionStatus: session.status,
         loading: false,
         isAnalyzing: false,
         tasks: loadedTasks,
@@ -209,6 +211,7 @@ function createInitialState(): ReviewState {
     prAdditions: null,
     prDeletions: null,
     rawDiff: null,
+    sessionStatus: null,
     loading: false,
     isAnalyzing: false,
     error: null,
@@ -228,6 +231,7 @@ interface UseReviewReducerReturn {
   prAdditions: number | null
   prDeletions: number | null
   rawDiff: string | null
+  sessionStatus: SessionStatus | null
   error: string | null
   loading: boolean
   isAnalyzing: boolean
@@ -396,6 +400,7 @@ export function useReviewReducer(): UseReviewReducerReturn {
     prAdditions: state.prAdditions,
     prDeletions: state.prDeletions,
     rawDiff: state.rawDiff,
+    sessionStatus: state.sessionStatus,
     error: state.error,
     loading: state.loading,
     isAnalyzing: state.isAnalyzing,

@@ -23,8 +23,10 @@ export function ReviewPage() {
   const navigate = useNavigate()
   const navigateState = location.state as NavigateState | null
 
-  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
+  const { reviewId, prUrl, prTitle, prOwner, prRepo, prNumber, prFileCount, prAdditions, prDeletions, rawDiff, error, isAnalyzing, sessionStatus, tasks, results, resumeReview, loadReview, toggleIssue } = useReviewReducer()
   const { publishing, publishError, published, publish } = usePublish()
+  const isAlreadyPublished = published || sessionStatus === 'PUBLISHED'
+  const canPublish = sessionStatus === null || sessionStatus === 'COMPLETED'
 
   const [activeTaskType, setActiveTaskType] = useState<AnalysisType | null>(
     navigateState?.reviewId ? 'summary' : null
@@ -229,12 +231,12 @@ export function ReviewPage() {
         </div>
       )}
 
-      {completedTasks.length > 0 && totalCount >= 0 && !published && (
+      {completedTasks.length > 0 && totalCount >= 0 && canPublish && (
         <ActionBar
           selectedCount={selectedCount}
           totalCount={totalCount}
           publishing={publishing}
-          published={published}
+          published={isAlreadyPublished}
           disabled={isAnalyzing}
           onPublish={handlePublish}
         />
