@@ -72,9 +72,13 @@ export function ReviewPage() {
   const currentReviewId = id || reviewId
 
   // 分析完成后清除 sseUrl，防止刷新时重走 resumeReview 路径
+  // wasAnalyzingRef 确保只在 isAnalyzing true→false 转变时触发，避免初始挂载时 isAnalyzing=false 误触发
   const clearedRef = useRef(false)
+  const wasAnalyzingRef = useRef(false)
   useEffect(() => {
-    if (!isAnalyzing && !clearedRef.current && navigateState?.sseUrl && currentReviewId) {
+    if (isAnalyzing) {
+      wasAnalyzingRef.current = true
+    } else if (wasAnalyzingRef.current && !clearedRef.current && navigateState?.sseUrl && currentReviewId) {
       clearedRef.current = true
       navigate(`/review/${currentReviewId}`, { replace: true, state: null })
     }
