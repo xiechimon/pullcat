@@ -47,6 +47,11 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
     private final ReviewPublisher reviewPublisher;
     private final GitHubConfig gitHubConfig;
 
+    /**
+     * 启动完整审查流程
+     *
+     * @param session 审查会话，记录单次 PR 审查的完整状态及各分析维度结果
+     */
     @Override
     public void startAsync(ReviewSessionRespDTO session) {
         SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -181,6 +186,12 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
         });
     }
 
+    /**
+     * 根据会话信息解析并返回适用的 GitHubApiService 实例，支持安装令牌切换以访问私有仓库
+     *
+     * @param session
+     * @return
+     */
     private GitHubApiService resolveGitHubApiService(ReviewSessionRespDTO session) {
         if (session.getInstallationId() == null) {
             return gitHubApiService;
@@ -189,6 +200,13 @@ public class AnalysisOrchestratorImpl implements AnalysisOrchestrator {
                 .orElse(gitHubApiService);
     }
 
+    /**
+     * 抓取 PR 评论
+     *
+     * @param apiService GitHub 远程调用服务接口
+     * @param parsed PR URL 解析结果
+     * @return PR 评论内容字符串
+     */
     private String fetchDiscussion(GitHubApiService apiService, GitHubApiService.PRUrl parsed) {
         try {
             String discussion = apiService.fetchPRComments(parsed).block();

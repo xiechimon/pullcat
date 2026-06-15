@@ -13,6 +13,9 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * 分析任务定义
+ */
 @Slf4j
 public abstract class AnalysisTask implements AnalysisService {
 
