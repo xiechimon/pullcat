@@ -86,6 +86,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
                 .baseUrl("https://api.github.com")
                 .defaultHeader("Accept", "application/vnd.github.v3+json")
                 .defaultHeader("User-Agent", "pullcat")
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                 .filter(authFilter())
                 .filter(forbiddenHandler())
                 .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(
@@ -385,6 +386,7 @@ public class GitHubApiServiceImpl implements GitHubApiService {
                             .defaultHeader("Accept", "application/vnd.github.v3+json")
                             .defaultHeader("User-Agent", "pullcat")
                             .defaultHeader("Authorization", "Bearer " + token)
+                            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                             .filter(forbiddenHandler())
                             .clientConnector(new org.springframework.http.client.reactive.ReactorClientHttpConnector(
                                     HttpClient.create().responseTimeout(Duration.ofSeconds(30))))
